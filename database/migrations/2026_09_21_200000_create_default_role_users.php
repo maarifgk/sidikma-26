@@ -5,6 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 return new class extends Migration
 {
@@ -18,6 +19,7 @@ return new class extends Migration
     public function up(): void
     {
         foreach ($this->accounts as $account) {
+            Role::firstOrCreate(['name' => $account['role'], 'guard_name' => 'web']);
             $user = User::updateOrCreate(
                 ['email' => $account['email']],
                 ['name' => $account['name'], 'password' => Hash::make($account['password']), 'is_active' => true]

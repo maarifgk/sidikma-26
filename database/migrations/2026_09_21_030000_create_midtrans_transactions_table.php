@@ -30,9 +30,10 @@ return new class extends Migration
             $table->index('transaction_id');
         });
 
-        // Laravel's Blueprint has no portable check() helper. Both PostgreSQL
-        // and MySQL 8 support this constraint through raw DDL.
-        DB::statement('ALTER TABLE midtrans_transactions ADD CONSTRAINT midtrans_transactions_gross_amount_positive CHECK (gross_amount > 0)');
+        // SQLite cannot add a named table constraint with ALTER TABLE.
+        if (in_array(DB::getDriverName(), ['pgsql', 'mysql'], true)) {
+            DB::statement('ALTER TABLE midtrans_transactions ADD CONSTRAINT midtrans_transactions_gross_amount_positive CHECK (gross_amount > 0)');
+        }
     }
 
     public function down(): void

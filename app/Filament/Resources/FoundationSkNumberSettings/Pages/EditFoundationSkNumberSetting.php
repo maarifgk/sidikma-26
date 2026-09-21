@@ -1,0 +1,1 @@
+<?php namespace App\Filament\Resources\FoundationSkNumberSettings\Pages; use App\Filament\Resources\FoundationSkNumberSettings\FoundationSkNumberSettingResource; use Filament\Resources\Pages\EditRecord; class EditFoundationSkNumberSetting extends EditRecord {protected static string $resource=FoundationSkNumberSettingResource::class;}

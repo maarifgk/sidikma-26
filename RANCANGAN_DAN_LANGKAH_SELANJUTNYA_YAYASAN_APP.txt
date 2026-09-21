@@ -1,0 +1,1043 @@
+RANCANGAN DAN LANGKAH SELANJUTNYA
+APLIKASI DASHBOARD YAYASAN PENDIDIKAN
+============================================================
+
+Nama Project : yayasan-app
+Lokasi Project: C:\laragon\www\yayasan-app
+
+STACK UTAMA
+-----------
+- Laravel 13
+- PHP 8.3
+- Filament 5
+- PostgreSQL 18
+- Spatie Laravel Permission
+- Redis (ditambahkan setelah fitur inti stabil)
+- Laravel Policies
+- Audit Log
+- Private File Storage
+
+STATUS SAAT INI
+---------------
+[SELESAI] PHP CLI menggunakan Laragon PHP 8.3
+[SELESAI] Extension PostgreSQL aktif: pdo_pgsql dan pgsql
+[SELESAI] Extension ZIP aktif
+[SELESAI] PostgreSQL terpasang dan dapat digunakan
+[SELESAI] Database yayasan_db dibuat
+[SELESAI] User database yayasan_app dibuat
+[SELESAI] Laravel 13 terpasang
+[SELESAI] Laravel berhasil terhubung ke PostgreSQL
+[SELESAI] Migration bawaan Laravel berhasil
+[SELESAI] Filament 5 terpasang
+[SELESAI] Panel /admin dibuat
+[SELESAI] Route /admin dan /admin/login aktif
+[SELESAI] User admin pertama berhasil dibuat
+[SELESAI] Dashboard Filament dapat disiapkan untuk tahap pengembangan
+[PROSES]  Spatie Laravel Permission
+
+============================================================
+1. TUJUAN APLIKASI
+============================================================
+
+Aplikasi ini digunakan sebagai sistem administrasi dan dashboard yayasan
+pendidikan yang memiliki banyak sekolah, pengguna, pegawai, guru, kepala
+sekolah, dan pengurus yayasan.
+
+Aplikasi harus mendukung:
+- Banyak sekolah di bawah satu yayasan.
+- Banyak pengguna.
+- Pengguna dapat memiliki peran berbeda.
+- Hak akses berdasarkan role dan permission.
+- Pembatasan data berdasarkan sekolah/yayasan.
+- Super Admin dapat melihat seluruh data.
+- Admin Yayasan dapat mengelola data yayasan.
+- Admin Sekolah hanya dapat melihat/mengelola sekolahnya.
+- Kepala Sekolah hanya dapat mengakses data sesuai kewenangannya.
+- Guru hanya dapat mengakses data yang diberikan kepadanya.
+- Riwayat aktivitas penting dapat dilacak.
+
+============================================================
+2. PRINSIP ARSITEKTUR
+============================================================
+
+Aplikasi menggunakan konsep MODULAR MONOLITH.
+
+Artinya:
+- Tetap satu project Laravel.
+- Fitur dipisahkan secara rapi berdasarkan domain/modul.
+- Tidak menggunakan microservice pada tahap awal.
+- Lebih mudah dikembangkan, diuji, dan dipelihara.
+
+Pemisahan penting:
+
+ROLE
+----
+Menentukan posisi pengguna.
+Contoh:
+- super-admin
+- admin-yayasan
+- pengurus-yayasan
+- admin-sekolah
+- kepala-sekolah
+- guru
+- staf
+
+PERMISSION
+----------
+Menentukan tindakan yang boleh dilakukan.
+Contoh:
+- school.view
+- school.create
+- school.update
+- school.delete
+- user.view
+- user.create
+- employee.view
+- employee.update
+
+DATA SCOPE
+----------
+Menentukan data mana yang boleh dilihat pengguna.
+
+Contoh:
+Admin Sekolah A boleh memiliki permission "employee.view",
+tetapi hanya boleh melihat pegawai di Sekolah A.
+
+Jadi:
+ROLE != PERMISSION != DATA SCOPE
+
+============================================================
+3. STRATEGI PANEL FILAMENT
+============================================================
+
+Jangan membuat satu panel untuk setiap role.
+
+Rencana panel:
+
+A. /admin
+---------
+Untuk:
+- Super Admin
+- Administrator teknis aplikasi
+
+B. /app
+-------
+Untuk:
+- Admin Yayasan
+- Pengurus Yayasan
+- Admin Sekolah
+- Kepala Sekolah
+- Guru
+- Staf
+
+Hak akses menu dan resource akan dikontrol menggunakan:
+- Role
+- Permission
+- Laravel Policy
+- Data Scope
+
+CATATAN:
+Menyembunyikan menu bukan pengamanan utama.
+Backend tetap harus melakukan pengecekan authorization.
+
+============================================================
+4. ROLE AWAL YANG DIRENCANAKAN
+============================================================
+
+1. super-admin
+   Akses penuh ke seluruh aplikasi.
+
+2. admin-yayasan
+   Mengelola data pada yayasan.
+
+3. pengurus-yayasan
+   Melihat atau mengelola modul tertentu sesuai permission.
+
+4. admin-sekolah
+   Mengelola administrasi sekolah tertentu.
+
+5. kepala-sekolah
+   Melihat dashboard sekolah dan melakukan approval tertentu.
+
+6. guru
+   Mengakses fitur khusus guru.
+
+7. staf
+   Mengakses fitur sesuai tugas yang diberikan.
+
+Role dapat ditambah kemudian tanpa mengubah struktur inti aplikasi.
+
+============================================================
+5. DATABASE INTI YANG DIRENCANAKAN
+============================================================
+
+Tabel Laravel/Spatie:
+- users
+- roles
+- permissions
+- model_has_roles
+- model_has_permissions
+- role_has_permissions
+
+Tabel organisasi:
+- foundations
+- schools
+- memberships
+
+Tabel SDM:
+- employees
+- employee_positions
+- employee_assignments
+
+Tabel pendukung:
+- documents
+- approvals
+- notifications
+- activity_logs
+
+Hubungan dasar:
+
+FOUNDATION
+    |
+    +---- SCHOOLS
+             |
+             +---- EMPLOYEES
+
+USER
+    |
+    +---- MEMBERSHIPS
+              |
+              +---- foundation_id
+              +---- school_id
+              +---- role/scope
+
+PENTING:
+Jangan menaruh satu kolom seperti:
+
+users.role
+atau
+users.school_id
+
+sebagai satu-satunya sumber hak akses.
+
+Alasannya:
+Satu user pada masa depan mungkin memiliki akses ke lebih dari satu sekolah
+atau memiliki penugasan berbeda.
+
+============================================================
+6. MODEL INTI
+============================================================
+
+A. Foundation
+-------------
+Data yayasan.
+
+Contoh field:
+- id
+- name
+- code
+- address
+- phone
+- email
+- is_active
+- timestamps
+- softDeletes
+
+B. School
+---------
+Data sekolah.
+
+Contoh field:
+- id
+- foundation_id
+- name
+- npsn
+- school_level
+- address
+- phone
+- email
+- principal_name (sementara, nanti dapat dihubungkan ke employee)
+- is_active
+- timestamps
+- softDeletes
+
+C. User
+-------
+Untuk login aplikasi.
+
+Field dasar:
+- id
+- name
+- email
+- password
+- timestamps
+
+User menggunakan trait:
+HasRoles
+
+D. Membership
+-------------
+Menghubungkan user dengan organisasi.
+
+Contoh:
+- id
+- user_id
+- foundation_id
+- school_id nullable
+- status
+- start_date
+- end_date
+- timestamps
+
+E. Employee
+-----------
+Data guru dan pegawai.
+
+Contoh:
+- id
+- foundation_id
+- school_id
+- user_id nullable
+- nip/niy
+- name
+- gender
+- birth_place
+- birth_date
+- employment_status
+- employee_type
+- phone
+- email
+- address
+- is_active
+- timestamps
+- softDeletes
+
+============================================================
+7. MODUL APLIKASI
+============================================================
+
+MODUL 1 - MASTER ORGANISASI
+----------------------------
+- Data Yayasan
+- Data Sekolah
+- Jenjang sekolah
+- Status sekolah
+
+MODUL 2 - USER & AUTHORIZATION
+-------------------------------
+- User
+- Role
+- Permission
+- Membership
+- Reset Password
+- Aktivasi/Nonaktif pengguna
+
+MODUL 3 - SDM
+-------------
+- Guru
+- Pegawai
+- Kepala Sekolah
+- Jabatan
+- Penugasan
+- Status kepegawaian
+
+MODUL 4 - DOKUMEN
+-----------------
+- Dokumen pegawai
+- Dokumen sekolah
+- Dokumen yayasan
+- Upload file private
+- Download berdasarkan authorization
+
+MODUL 5 - APPROVAL
+------------------
+Contoh:
+- Pengajuan perubahan data
+- Verifikasi admin sekolah
+- Persetujuan kepala sekolah
+- Persetujuan yayasan
+
+MODUL 6 - DASHBOARD
+-------------------
+Super Admin:
+- Jumlah yayasan
+- Jumlah sekolah
+- Jumlah user
+- Jumlah guru
+- Jumlah pegawai
+
+Yayasan:
+- Jumlah sekolah
+- Guru per sekolah
+- Pegawai per sekolah
+- Dokumen/approval
+
+Sekolah:
+- Jumlah guru
+- Jumlah pegawai
+- Status dokumen
+- Pengajuan
+
+MODUL 7 - AUDIT LOG
+-------------------
+Mencatat:
+- Login
+- Tambah data
+- Edit data
+- Hapus data
+- Approval
+- Perubahan role
+- Perubahan permission
+
+============================================================
+8. RENCANA FOLDER APLIKASI
+============================================================
+
+Struktur tetap mengikuti Laravel.
+
+app/
+|
++-- Filament/
+|   |
+|   +-- Admin/
+|   |   +-- Resources/
+|   |   +-- Pages/
+|   |   +-- Widgets/
+|   |
+|   +-- App/
+|       +-- Resources/
+|       +-- Pages/
+|       +-- Widgets/
+|
++-- Models/
+|
++-- Policies/
+|
++-- Services/
+|
++-- Actions/
+|
++-- Enums/
+|
++-- Providers/
+    +-- Filament/
+
+Jangan memasukkan seluruh business logic ke dalam Filament Resource.
+
+Gunakan:
+- Model untuk relasi/database.
+- Policy untuk authorization.
+- Service/Action untuk business logic.
+- Filament Resource untuk UI administrasi.
+
+============================================================
+9. URUTAN LANGKAH PENGEMBANGAN
+============================================================
+
+LANGKAH 13 - ROLE & PERMISSION
+------------------------------
+
+13A. Install:
+composer require spatie/laravel-permission
+
+13B. Publish configuration dan migration Spatie.
+
+13C. Jalankan migration.
+
+13D. Tambahkan trait HasRoles ke model User.
+
+13E. Buat seeder Role dan Permission.
+
+13F. Buat role:
+- super-admin
+- admin-yayasan
+- pengurus-yayasan
+- admin-sekolah
+- kepala-sekolah
+- guru
+- staf
+
+13G. Assign role super-admin ke user admin pertama.
+
+13H. Verifikasi role dari Laravel Tinker.
+
+JANGAN lanjut ke tabel organisasi sebelum sistem role berhasil.
+
+------------------------------------------------------------
+
+LANGKAH 14 - FOUNDATION
+-----------------------
+
+14A. Buat model + migration Foundation.
+
+14B. Tentukan field final.
+
+14C. Jalankan migration.
+
+14D. Buat Filament FoundationResource.
+
+14E. Form tambah/edit yayasan.
+
+14F. Tabel daftar yayasan.
+
+14G. Tambah validation.
+
+14H. Tambah soft delete.
+
+14I. Uji CRUD yayasan.
+
+------------------------------------------------------------
+
+LANGKAH 15 - SCHOOL
+-------------------
+
+15A. Buat model + migration School.
+
+15B. Relasi:
+Foundation hasMany School
+School belongsTo Foundation
+
+15C. Jalankan migration.
+
+15D. Buat SchoolResource.
+
+15E. Form sekolah:
+- yayasan
+- nama
+- NPSN
+- jenjang
+- alamat
+- kontak
+- status aktif
+
+15F. Search dan filter.
+
+15G. Uji CRUD.
+
+------------------------------------------------------------
+
+LANGKAH 16 - MEMBERSHIP & DATA SCOPE
+------------------------------------
+
+Ini salah satu bagian paling penting.
+
+16A. Buat tabel memberships.
+
+16B. Hubungkan:
+User -> Foundation
+User -> School
+
+16C. Buat scope akses.
+
+Contoh:
+Super Admin:
+semua sekolah.
+
+Admin Yayasan:
+semua sekolah di yayasannya.
+
+Admin Sekolah:
+hanya sekolah yang ditugaskan.
+
+16D. Terapkan pada query Filament Resource.
+
+16E. Buat Laravel Policies.
+
+16F. Uji user tidak dapat membuka URL data sekolah lain.
+
+------------------------------------------------------------
+
+LANGKAH 17 - PANEL /app
+-----------------------
+
+Setelah authorization dasar stabil:
+
+php artisan make:filament-panel app
+
+Panel:
+http://127.0.0.1:8000/app
+
+Panel ini digunakan oleh user operasional.
+
+Atur:
+- Login
+- Navigation
+- Branding
+- Authorization
+- Resource sesuai role
+
+------------------------------------------------------------
+
+LANGKAH 18 - USER MANAGEMENT
+----------------------------
+
+18A. Buat UserResource.
+
+18B. Super Admin dapat:
+- tambah user
+- edit user
+- aktif/nonaktif
+- assign role
+- assign membership
+
+18C. Password tidak pernah ditampilkan kembali.
+
+18D. Tambah validasi email unik.
+
+18E. Tambah policy.
+
+------------------------------------------------------------
+
+LANGKAH 19 - EMPLOYEE / GURU
+----------------------------
+
+19A. Buat employees.
+
+19B. Hubungkan dengan:
+- Foundation
+- School
+- User optional
+
+19C. Buat EmployeeResource.
+
+19D. Filter:
+- sekolah
+- status
+- tipe pegawai
+- aktif/nonaktif
+
+19E. Import data dapat ditambahkan setelah CRUD stabil.
+
+------------------------------------------------------------
+
+LANGKAH 20 - POSISI & PENUGASAN
+-------------------------------
+
+Buat:
+- employee_positions
+- employee_assignments
+
+Tujuan:
+Seorang pegawai dapat memiliki riwayat jabatan.
+
+Contoh:
+Guru -> Wakil Kepala Sekolah -> Kepala Sekolah.
+
+Hindari menyimpan seluruh riwayat hanya dalam satu field pada employees.
+
+------------------------------------------------------------
+
+LANGKAH 21 - DOKUMEN
+--------------------
+
+PROGRES:
+- 21A SELESAI: fondasi tabel/model dokumen polymorphic, metadata,
+  private disk, policy, permission, soft delete, dan pengujian.
+- 21B SELESAI: antarmuka upload/list dokumen pada Pegawai, Sekolah,
+  dan Yayasan, validasi file, serta download terotorisasi.
+- LANGKAH 21 SELESAI.
+
+Upload dokumen harus PRIVATE.
+
+Jangan menyimpan dokumen sensitif langsung pada public storage.
+
+Tambahkan:
+- document_type
+- owner_type
+- owner_id
+- path
+- uploaded_by
+- status
+- timestamps
+
+Download file wajib melalui authorization.
+
+------------------------------------------------------------
+
+LANGKAH 22 - APPROVAL WORKFLOW
+------------------------------
+
+PROGRES:
+- 22A SELESAI: tabel/model approval polymorphic, state machine,
+  pelaku dan waktu setiap tahap, policy, permission, serta pengujian.
+- 22B SELESAI: halaman daftar/detail approval, filter, tombol pengajuan
+  pada data terkait, serta aksi verifikasi, persetujuan, dan penolakan.
+- LANGKAH 22 SELESAI.
+
+Buat alur persetujuan.
+
+Contoh:
+
+DRAFT
+  |
+SUBMITTED
+  |
+VERIFIED
+  |
+APPROVED
+
+atau
+
+REJECTED
+
+Simpan:
+- siapa pengaju
+- siapa verifikator
+- siapa pemberi persetujuan
+- tanggal
+- catatan
+- status
+
+------------------------------------------------------------
+
+LANGKAH 23 - AUDIT LOG
+----------------------
+
+PROGRES:
+- 23A SELESAI: paket Spatie Activitylog, migration, konfigurasi,
+  indeks pencarian, permission, dan pencatatan model prioritas.
+- 23B SELESAI: pencatatan assignment role/permission dan seluruh
+  transisi approval dengan identitas pelaku.
+- 23C SELESAI: halaman daftar/detail audit read-only, filter,
+  konteks request, policy, dan pengujian.
+- LANGKAH 23 SELESAI.
+
+Pasang audit/activity log.
+
+Catat aktivitas penting.
+
+Prioritas:
+- perubahan User
+- Role
+- Permission
+- Data Sekolah
+- Data Pegawai
+- Approval
+
+------------------------------------------------------------
+
+LANGKAH 24 - DASHBOARD
+----------------------
+
+PROGRES:
+- 24A SELESAI: service statistik berdasarkan role dan membership aktif.
+- 24B SELESAI: widget ringkasan yayasan, sekolah, pegawai, dan user.
+- 24C SELESAI: grafik komposisi pegawai serta jenjang MI, MTs, dan SMP.
+- 24D SELESAI: status/daftar approval dan aktivitas audit terbaru.
+- 24E SELESAI: dashboard admin dan operasional, banner cakupan,
+  keadaan kosong, navigasi detail, dan pengujian scope.
+- LANGKAH 24 SELESAI.
+
+Buat widget berdasarkan scope user.
+
+Jangan menghitung semua data untuk setiap user.
+
+Contoh:
+
+Admin Sekolah A:
+SELECT hanya data Sekolah A.
+
+Admin Yayasan:
+SELECT data sekolah dalam yayasan.
+
+Super Admin:
+seluruh data.
+
+------------------------------------------------------------
+
+LANGKAH 25 - NOTIFICATION
+-------------------------
+
+PROGRES:
+- 25A SELESAI: tabel database notifications, indeks, dan pusat
+  notifikasi Filament pada panel Admin serta panel App.
+- 25B SELESAI: notifikasi pengajuan baru, disetujui, ditolak,
+  pengingat dokumen belum lengkap, dan perubahan akun penting.
+- 25C SELESAI: status baca/belum dibaca, isolasi kepemilikan,
+  observer/event, fallback penerima, dan pengujian.
+- LANGKAH 25 SELESAI.
+
+Tambahkan notifikasi untuk:
+- Pengajuan baru
+- Pengajuan disetujui
+- Pengajuan ditolak
+- Dokumen belum lengkap
+- Perubahan akun penting
+
+Pada tahap awal gunakan database notification.
+
+------------------------------------------------------------
+
+LANGKAH 26 - REDIS
+------------------
+
+PROGRES:
+- 26A SELESAI: evaluasi kebutuhan Redis telah dilakukan.
+- 26B DIPUTUSKAN DITUNDA: aplikasi tetap menggunakan database
+  untuk cache, queue, dan session karena CRUD, scope, serta panel
+  sudah berjalan stabil tanpa ketergantungan Redis.
+- Redis baru diaktifkan saat ada kebutuhan beban, antrean worker,
+  atau cache terdistribusi yang terukur.
+- LANGKAH 26 SELESAI (tidak memerlukan instalasi saat ini).
+
+Redis tidak perlu dipaksakan pada tahap awal.
+
+Pasang setelah:
+- CRUD stabil
+- Role stabil
+- Scope stabil
+- Panel stabil
+
+Kemudian dapat digunakan untuk:
+- cache
+- queue
+- session jika diperlukan
+
+------------------------------------------------------------
+
+LANGKAH 27 - TESTING
+--------------------
+
+PROGRES:
+- 27A SELESAI: pengujian akses seluruh data untuk Admin Induk.
+- 27B SELESAI: pengujian isolasi data berdasarkan membership
+  sekolah/yayasan untuk Admin Sekolah dan Guru/Pegawai.
+- 27C SELESAI: pengujian akses panel, permission, policy, aksi
+  manajemen pengguna, dan penolakan akses melalui URL langsung.
+- 27D SELESAI: rangkaian authorization lulus 28 test dengan
+  151 assertion.
+- LANGKAH 27 SELESAI.
+
+Wajib membuat test untuk authorization.
+
+Contoh pengujian:
+
+TEST 1
+Super Admin dapat melihat seluruh sekolah.
+
+TEST 2
+Admin Sekolah A dapat melihat Sekolah A.
+
+TEST 3
+Admin Sekolah A TIDAK dapat melihat Sekolah B.
+
+TEST 4
+Guru tidak dapat mengakses User Management.
+
+TEST 5
+User tanpa permission tidak dapat menghapus data.
+
+TEST 6
+User tidak dapat mengakses resource hanya dengan mengetik URL langsung.
+
+------------------------------------------------------------
+
+LANGKAH 28 - SECURITY HARDENING
+-------------------------------
+
+PROGRES:
+- 28A SELESAI: audit environment, migration, session, upload/private
+  storage, authorization download, secret source code, dependency,
+  backup, dan HTTP security headers.
+- 28B SELESAI: middleware security headers, dokumentasi konfigurasi
+  production, perintah app:production-check, verifikasi rate limiting
+  login Filament, serta pengujian otomatis.
+- Catatan: HSTS hanya aktif pada HTTPS production agar localhost tetap
+  dapat digunakan. Audit dependency daring dijalankan kembali saat
+  server mempunyai akses ke Packagist.
+- LANGKAH 28 SELESAI.
+
+Sebelum produksi:
+
+APP_ENV=production
+APP_DEBUG=false
+
+Lakukan:
+- Ganti semua password development.
+- Ganti password database yang pernah digunakan saat development.
+- Gunakan HTTPS.
+- Batasi upload file.
+- Validasi MIME type.
+- Batasi ukuran file.
+- Rate limiting login.
+- Backup database.
+- Backup file.
+- Audit permission.
+- Pastikan tidak ada secret di Git.
+
+File .env:
+JANGAN di-commit ke GitHub.
+
+------------------------------------------------------------
+
+LANGKAH 29 - BACKUP
+-------------------
+
+Backup:
+1. PostgreSQL
+2. Uploaded document
+3. Environment/secret secara aman
+
+Buat prosedur restore dan uji restore secara berkala.
+
+------------------------------------------------------------
+
+LANGKAH 30 - DEPLOYMENT
+-----------------------
+
+Setelah aplikasi lokal stabil:
+
+- Tentukan server production.
+- Install PHP versi kompatibel.
+- PostgreSQL.
+- Nginx/Apache.
+- SSL.
+- Queue worker.
+- Scheduler.
+- Redis jika digunakan.
+- Backup otomatis.
+- Monitoring.
+
+============================================================
+10. URUTAN PRIORITAS FITUR
+============================================================
+
+FASE 1 - FONDASI
+----------------
+1. Spatie Permission
+2. Role
+3. Permission
+4. Super Admin
+5. Foundation
+6. School
+7. Membership
+8. Policies
+9. Data Scope
+
+FASE 2 - SDM
+------------
+10. User Management
+11. Employee
+12. Teacher
+13. Position
+14. Assignment
+
+FASE 3 - OPERASIONAL
+--------------------
+15. Document
+16. Approval
+17. Notification
+18. Dashboard
+19. Audit Log
+
+FASE 4 - OPTIMASI
+-----------------
+20. Redis
+21. Queue
+22. Import/Export
+23. Reports
+24. Performance optimization
+25. Automated tests
+
+FASE 5 - PRODUKSI
+-----------------
+26. Security review
+27. Backup
+28. Deployment
+29. Monitoring
+
+============================================================
+11. ATURAN PENGEMBANGAN
+============================================================
+
+1. Setiap fitur dibuat bertahap.
+2. Migration harus diperiksa sebelum dijalankan.
+3. Jangan mengedit migration lama yang sudah digunakan di production.
+4. Gunakan foreign key.
+5. Gunakan transaction untuk proses penting.
+6. Gunakan validation.
+7. Gunakan Policy untuk authorization.
+8. Jangan mengandalkan menu tersembunyi sebagai security.
+9. Jangan menyimpan password plaintext.
+10. Jangan commit .env.
+11. Jangan menaruh secret di source code.
+12. File penting harus private.
+13. Gunakan SoftDeletes bila data perlu memiliki riwayat.
+14. Gunakan database index untuk kolom yang sering dicari.
+15. Setiap perubahan besar harus diuji.
+
+============================================================
+12. TARGET PERTAMA
+============================================================
+
+Target pertama bukan membuat semua modul sekaligus.
+
+TARGET MVP PERTAMA:
+
+Super Admin dapat login
+        |
+        v
+Kelola Yayasan
+        |
+        v
+Kelola Sekolah
+        |
+        v
+Kelola User
+        |
+        v
+Assign Role
+        |
+        v
+Assign Sekolah
+        |
+        v
+Admin Sekolah login
+        |
+        v
+Admin hanya melihat sekolahnya
+
+Jika alur ini berhasil, fondasi multi-school dan authorization sudah benar.
+
+============================================================
+13. LANGKAH YANG HARUS DILAKUKAN SEKARANG
+============================================================
+
+POSISI SAAT INI:
+
+Langkah 13A:
+composer require spatie/laravel-permission
+
+Setelah berhasil, jangan langsung membuat tabel lain.
+
+Urutan setelahnya:
+
+13B -> Publish migration/config Spatie
+13C -> Migrate
+13D -> Tambahkan HasRoles ke User
+13E -> Buat RolePermissionSeeder
+13F -> Jalankan seeder
+13G -> Assign super-admin
+13H -> Test authorization
+
+Setelah Langkah 13 selesai dan berhasil,
+baru masuk Langkah 14: Foundation.
+
+============================================================
+14. CATATAN UNTUK PENGEMBANGAN BERSAMA CHATGPT
+============================================================
+
+Pengembangan dilakukan SATU LANGKAH PER SATU LANGKAH.
+
+Setiap langkah:
+1. Jalankan satu perintah/perubahan.
+2. Kirim hasil terminal atau screenshot.
+3. Periksa error.
+4. Jika berhasil, baru lanjut.
+5. Jangan lompat beberapa tahap sekaligus.
+
+Tujuannya agar ketika ada error, penyebabnya mudah ditemukan.
+
+============================================================
+END OF ROADMAP
+============================================================

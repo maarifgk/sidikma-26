@@ -1,0 +1,682 @@
+RANCANGAN REVISI APLIKASI YAYASAN PENDIDIKAN
+3 ROLE USER: ADMIN INDUK, ADMIN SEKOLAH/MADRASAH, GURU/PEGAWAI
+================================================================
+
+Nama Project : yayasan-app
+Lokasi       : C:\laragon\www\yayasan-app
+
+STACK UTAMA
+-----------
+- Laravel 13
+- PHP 8.3
+- Filament 5
+- PostgreSQL 18
+- Spatie Laravel Permission
+- Laravel Policies
+- Audit Log (tahap lanjutan)
+- Redis (tahap optimasi, bukan prioritas sekarang)
+
+================================================================
+1. TUJUAN APLIKASI
+================================================================
+
+Aplikasi dipakai yayasan pendidikan untuk mengelola banyak
+sekolah/madrasah dalam satu sistem.
+
+Fokus utama:
+- Admin Induk mengelola seluruh data yayasan dan seluruh sekolah.
+- Admin Sekolah/Madrasah hanya mengelola sekolahnya sendiri.
+- Guru/Pegawai hanya mengakses data pribadi dan fitur yang diizinkan.
+- Data antar sekolah wajib terpisah.
+- Hak akses tidak hanya berdasarkan menu, tetapi juga Policy dan query scope.
+- Semua user tetap menggunakan satu sistem login.
+
+================================================================
+2. ROLE USER FINAL
+================================================================
+
+ROLE 1: admin-induk
+-------------------
+Fungsi:
+- Dashboard seluruh yayasan.
+- Mengelola semua sekolah/madrasah.
+- Mengelola akun Admin Sekolah/Madrasah.
+- Mengelola akun Guru/Pegawai.
+- Melihat semua data Guru/Pegawai.
+- Mengelola role/permission.
+- Melihat laporan global.
+- Mengakses pengaturan sistem.
+- Mengakses audit log ketika modul sudah dibuat.
+
+DATA SCOPE:
+Semua sekolah/madrasah.
+
+------------------------------------------------------------
+
+ROLE 2: admin-sekolah
+---------------------
+Fungsi:
+- Dashboard sekolah sendiri.
+- Mengelola profil sekolah sendiri.
+- Mengelola Guru/Pegawai sekolah sendiri.
+- Membuat akun Guru/Pegawai untuk sekolah sendiri.
+- Melihat laporan sekolah sendiri.
+- Mengelola dokumen sekolah jika modul sudah tersedia.
+
+TIDAK BOLEH:
+- Melihat atau mengubah sekolah lain.
+- Melihat Guru/Pegawai sekolah lain.
+- Membuat akun Admin Induk.
+- Mengubah role menjadi Admin Induk.
+- Mengakses pengaturan global yayasan.
+
+DATA SCOPE:
+Hanya sekolah/madrasah yang ditugaskan.
+
+------------------------------------------------------------
+
+ROLE 3: guru-pegawai
+--------------------
+Fungsi:
+- Dashboard pribadi.
+- Melihat profil sendiri.
+- Melihat data kepegawaian sendiri.
+- Melihat informasi sekolah tempat bertugas.
+- Mengubah data pribadi tertentu jika diizinkan.
+- Mengunggah/melihat dokumen pribadi jika modul sudah tersedia.
+- Melihat status pengajuan milik sendiri.
+
+TIDAK BOLEH:
+- Mengelola sekolah.
+- Mengelola user global.
+- Mengelola role.
+- Melihat atau mengedit data pegawai lain.
+- Mengakses pengaturan sistem.
+
+DATA SCOPE:
+Data diri sendiri + informasi sekolah yang memang diizinkan.
+
+================================================================
+3. JABATAN BUKAN ROLE
+================================================================
+
+Kepala Sekolah, Wakil Kepala Sekolah, Bendahara, Operator,
+Guru, Tenaga Administrasi, dan jabatan lain TIDAK perlu dibuat
+sebagai role login terpisah.
+
+Mereka tetap berada pada role:
+guru-pegawai
+
+Jabatan disimpan di data pegawai, misalnya:
+
+employee_type:
+- guru
+- pegawai
+
+position:
+- kepala-sekolah
+- wakil-kepala-sekolah
+- bendahara
+- operator
+- guru
+- tenaga-administrasi
+- lainnya
+
+Dengan desain ini, sistem role tetap sederhana tetapi struktur jabatan
+tetap fleksibel.
+
+================================================================
+4. STRATEGI PANEL FILAMENT
+================================================================
+
+Gunakan SATU panel Filament terlebih dahulu:
+
+/admin
+
+Semua role login melalui panel yang sama.
+
+Setelah login:
+- admin-induk melihat menu global.
+- admin-sekolah melihat menu sekolahnya.
+- guru-pegawai melihat menu pribadi yang terbatas.
+
+JANGAN membuat panel terpisah untuk setiap role pada tahap awal.
+
+Keamanan wajib menggunakan:
+- Spatie Role/Permission
+- Laravel Policies
+- Query/Data Scope
+
+Catatan:
+Menyembunyikan menu bukan keamanan utama.
+User tetap harus ditolak jika mencoba membuka URL yang bukan haknya.
+
+================================================================
+5. DATABASE INTI
+================================================================
+
+A. users
+--------
+Untuk akun login.
+
+Field utama:
+- id
+- name
+- email
+- password
+- is_active
+- timestamps
+
+Jangan memakai users.role sebagai sumber utama jika Spatie Permission
+sudah digunakan.
+
+------------------------------------------------------------
+
+B. roles dan permissions
+------------------------
+Dikelola oleh Spatie Laravel Permission.
+
+Role:
+- admin-induk
+- admin-sekolah
+- guru-pegawai
+
+------------------------------------------------------------
+
+C. schools
+----------
+Data sekolah/madrasah.
+
+Field yang disarankan:
+- id
+- name
+- npsn
+- school_level
+- address
+- phone
+- email
+- is_active
+- timestamps
+- softDeletes
+
+------------------------------------------------------------
+
+D. school_user
+--------------
+Relasi akun dengan sekolah.
+
+Field:
+- id
+- user_id
+- school_id
+- is_primary
+- start_date
+- end_date
+- timestamps
+
+Tujuan:
+- Menentukan sekolah milik Admin Sekolah.
+- Menentukan sekolah tempat Guru/Pegawai bertugas.
+- Memungkinkan pengembangan lebih dari satu sekolah per user bila nanti dibutuhkan.
+
+------------------------------------------------------------
+
+E. employees
+------------
+Data Guru/Pegawai.
+
+Field yang disarankan:
+- id
+- user_id nullable
+- school_id
+- name
+- niy nullable
+- nip nullable
+- nik nullable
+- gender nullable
+- birth_place nullable
+- birth_date nullable
+- employee_type
+- position nullable
+- employment_status nullable
+- phone nullable
+- email nullable
+- address nullable
+- is_active
+- timestamps
+- softDeletes
+
+Catatan:
+Akun login dan data pegawai DIPISAHKAN.
+Tidak semua pegawai harus langsung memiliki akun login.
+
+================================================================
+6. HUBUNGAN DATA
+================================================================
+
+SCHOOL
+  |
+  +---- EMPLOYEES
+  |
+  +---- SCHOOL_USER ---- USER
+                         |
+                         +---- ROLE
+
+Contoh:
+
+Admin Induk:
+USER -> role admin-induk -> akses semua school
+
+Admin Sekolah:
+USER -> role admin-sekolah -> school_user -> Sekolah A
+
+Guru/Pegawai:
+USER -> role guru-pegawai -> school_user -> Sekolah A
+                         -> employee -> data pribadi
+
+================================================================
+7. PERMISSION YANG DIRENCANAKAN
+================================================================
+
+Admin Induk:
+- dashboard.global.view
+- school.viewAny
+- school.create
+- school.update
+- school.delete
+- user.viewAny
+- user.create
+- user.update
+- user.disable
+- employee.viewAny
+- employee.create
+- employee.update
+- employee.delete
+- report.global.view
+- setting.manage
+
+Admin Sekolah:
+- dashboard.school.view
+- school.viewOwn
+- school.updateOwn
+- employee.viewSchool
+- employee.createSchool
+- employee.updateSchool
+- employee.deleteSchool
+- user.createEmployee
+- user.updateEmployee
+- report.school.view
+
+Guru/Pegawai:
+- dashboard.personal.view
+- profile.viewOwn
+- profile.updateOwn
+- document.viewOwn
+- document.uploadOwn
+
+Permission dapat ditambah sesuai modul baru.
+
+================================================================
+8. RANCANGAN DASHBOARD
+================================================================
+
+A. DASHBOARD ADMIN INDUK
+------------------------
+Ini adalah bagian yang sedang dikerjakan sekarang.
+
+Sidebar yang disarankan:
+- Dashboard
+- Sekolah/Madrasah
+- Guru/Pegawai
+- Manajemen Akun
+- Laporan
+- Pengaturan
+
+Widget yang disarankan:
+- Total Sekolah/Madrasah
+- Total Guru
+- Total Pegawai
+- Total Admin Sekolah
+- Total User Aktif
+
+Tabel ringkas:
+- Sekolah terbaru
+- User terbaru
+- Data pegawai terbaru
+
+Pada tahap tampilan, widget boleh masih statis/placeholder.
+Setelah tabel School dan Employee selesai, widget baru dihubungkan ke database.
+
+------------------------------------------------------------
+
+B. DASHBOARD ADMIN SEKOLAH
+--------------------------
+Sidebar:
+- Dashboard
+- Profil Sekolah
+- Guru/Pegawai
+- Akun Guru/Pegawai
+- Dokumen
+- Laporan Sekolah
+
+Widget:
+- Total Guru
+- Total Pegawai
+- Total Akun
+- Dokumen/Pengajuan
+
+Semua query wajib difilter berdasarkan sekolah user login.
+
+------------------------------------------------------------
+
+C. DASHBOARD GURU/PEGAWAI
+-------------------------
+Sidebar:
+- Dashboard
+- Profil Saya
+- Data Kepegawaian
+- Dokumen Saya
+- Pengajuan Saya
+
+Tidak boleh memiliki:
+- Manajemen Sekolah
+- Manajemen Role
+- Manajemen User Global
+- Pengaturan Sistem
+
+================================================================
+9. STATUS PROJECT SAAT INI
+================================================================
+
+[SELESAI] PHP 8.3
+[SELESAI] PostgreSQL 18
+[SELESAI] Database yayasan_db
+[SELESAI] Laravel 13
+[SELESAI] Koneksi Laravel ke PostgreSQL
+[SELESAI] Migration bawaan Laravel
+[SELESAI] Filament 5
+[SELESAI] Panel /admin
+[SELESAI] Akun admin awal
+[PROSES ] Edit tampilan utama Admin Induk
+
+Role belum dianggap selesai sampai:
+- Spatie Permission terpasang.
+- Tiga role dibuat.
+- Admin Induk diberikan ke akun awal.
+- Data scope Admin Sekolah diuji.
+- Akses Guru/Pegawai diuji.
+
+================================================================
+10. URUTAN PENGEMBANGAN DARI POSISI SEKARANG
+================================================================
+
+TAHAP 1 - SELESAIKAN DASHBOARD ADMIN INDUK
+-------------------------------------------
+1. Branding panel.
+2. Nama aplikasi.
+3. Logo.
+4. Sidebar.
+5. Dashboard utama.
+6. Widget awal.
+7. Pastikan tidak ada error.
+
+TARGET:
+Tampilan Admin Induk stabil.
+
+------------------------------------------------------------
+
+TAHAP 2 - ROLE & PERMISSION
+---------------------------
+1. Install Spatie Laravel Permission.
+2. Publish config dan migration.
+3. Jalankan migration.
+4. Tambahkan HasRoles ke User.
+5. Buat RolePermissionSeeder.
+6. Buat tiga role:
+   - admin-induk
+   - admin-sekolah
+   - guru-pegawai
+7. Assign admin-induk ke akun admin awal.
+8. Verifikasi role.
+9. Batasi menu/resource berdasarkan role.
+
+TARGET:
+Admin Induk dikenali sistem sebagai role admin-induk.
+
+------------------------------------------------------------
+
+TAHAP 3 - DATA SEKOLAH/MADRASAH
+-------------------------------
+1. Buat model School.
+2. Buat migration schools.
+3. Periksa field.
+4. Migrate.
+5. Buat Filament SchoolResource.
+6. Form tambah/edit.
+7. Tabel daftar sekolah.
+8. Search/filter.
+9. Soft delete.
+10. Uji CRUD.
+
+TARGET:
+Admin Induk dapat mengelola semua sekolah/madrasah.
+
+------------------------------------------------------------
+
+TAHAP 4 - MANAJEMEN USER
+------------------------
+1. Buat UserResource.
+2. Admin Induk dapat membuat Admin Sekolah.
+3. Admin Induk dapat membuat Guru/Pegawai.
+4. Pilih role saat membuat akun.
+5. Tambah status is_active.
+6. Password disimpan secara hash.
+7. Batasi siapa yang boleh memberikan role tertentu.
+
+TARGET:
+Admin Induk dapat membuat akun Role 2 dan Role 3.
+
+------------------------------------------------------------
+
+TAHAP 5 - HUBUNGKAN USER DENGAN SEKOLAH
+---------------------------------------
+1. Buat tabel school_user.
+2. Buat relasi User <-> School.
+3. Admin Sekolah wajib memiliki school assignment.
+4. Guru/Pegawai wajib memiliki school assignment.
+5. Buat helper/scope untuk sekolah user login.
+
+TARGET:
+Setiap Role 2 dan Role 3 terhubung ke sekolah yang benar.
+
+------------------------------------------------------------
+
+TAHAP 6 - DATA GURU/PEGAWAI
+---------------------------
+1. Buat Employee model.
+2. Buat migration employees.
+3. Hubungkan Employee ke School.
+4. Hubungkan Employee ke User secara optional.
+5. Buat EmployeeResource.
+6. Form Guru/Pegawai.
+7. Filter sekolah.
+8. Filter guru/pegawai.
+9. Filter status kepegawaian.
+
+TARGET:
+Admin Induk dapat melihat seluruh data Guru/Pegawai.
+
+------------------------------------------------------------
+
+TAHAP 7 - DATA SCOPE
+--------------------
+Aturan:
+
+admin-induk:
+- seluruh data.
+
+admin-sekolah:
+- hanya data school_id miliknya.
+
+guru-pegawai:
+- hanya data pribadi dan yang diizinkan.
+
+Terapkan pada:
+- SchoolResource
+- EmployeeResource
+- UserResource
+- Widget Dashboard
+- Laporan
+
+Gunakan:
+- Laravel Policy
+- Eloquent query scope
+- Spatie Permission
+
+TARGET TEST:
+Admin Sekolah A tidak dapat mengakses data Sekolah B walaupun mengetahui URL.
+
+------------------------------------------------------------
+
+TAHAP 8 - DASHBOARD ADMIN SEKOLAH
+---------------------------------
+Setelah data scope benar:
+- Widget total Guru.
+- Widget total Pegawai.
+- Widget total User Sekolah.
+- Menu khusus sekolah.
+
+------------------------------------------------------------
+
+TAHAP 9 - DASHBOARD GURU/PEGAWAI
+--------------------------------
+- Profil pribadi.
+- Data kepegawaian pribadi.
+- Informasi sekolah.
+- Dokumen pribadi.
+- Menu terbatas.
+
+------------------------------------------------------------
+
+TAHAP 10 - MODUL LANJUTAN
+-------------------------
+Setelah fondasi stabil:
+- Dokumen
+- Approval
+- Laporan
+- Audit Log
+- Notification
+- Import/Export
+- Redis
+- Queue
+- Backup
+- Deployment
+
+================================================================
+11. PRIORITAS UTAMA
+================================================================
+
+POSISI SEKARANG:
+
+EDIT DASHBOARD ADMIN INDUK
+          |
+          v
+ROLE & PERMISSION 3 LEVEL
+          |
+          v
+DATA SEKOLAH/MADRASAH
+          |
+          v
+MANAJEMEN USER
+          |
+          v
+HUBUNGKAN USER KE SEKOLAH
+          |
+          v
+DATA GURU/PEGAWAI
+          |
+          v
+DATA SCOPE
+          |
+          v
+DASHBOARD ADMIN SEKOLAH
+          |
+          v
+DASHBOARD GURU/PEGAWAI
+
+================================================================
+12. TARGET MVP
+================================================================
+
+ADMIN INDUK LOGIN
+        |
+        v
+MEMBUAT SEKOLAH A
+        |
+        v
+MEMBUAT AKUN ADMIN SEKOLAH A
+        |
+        v
+ADMIN SEKOLAH A LOGIN
+        |
+        v
+MENGELOLA GURU/PEGAWAI SEKOLAH A
+        |
+        v
+GURU/PEGAWAI LOGIN
+        |
+        v
+MELIHAT DATA PRIBADI
+        |
+        v
+ADMIN SEKOLAH A TIDAK DAPAT MELIHAT SEKOLAH B
+
+Jika alur ini berhasil, fondasi aplikasi sudah benar.
+
+================================================================
+13. LANGKAH TERDEKAT
+================================================================
+
+Karena project sekarang masih pada edit tampilan utama Admin Induk:
+
+STEP A
+Selesaikan tampilan dasar Dashboard Admin Induk.
+
+STEP B
+Pastikan branding, sidebar, dan dashboard berjalan tanpa error.
+
+STEP C
+Lanjutkan Spatie Laravel Permission.
+
+STEP D
+Buat role:
+- admin-induk
+- admin-sekolah
+- guru-pegawai
+
+STEP E
+Assign role admin-induk ke akun admin awal.
+
+STEP F
+Baru mulai tabel School.
+
+Jangan membuat dashboard Admin Sekolah atau Guru/Pegawai sebelum
+Role, School, dan Data Scope dasar sudah tersedia.
+
+================================================================
+14. ATURAN PENGEMBANGAN
+================================================================
+
+Kerjakan SATU LANGKAH PER SATU LANGKAH.
+
+Setiap langkah:
+1. Lakukan satu perubahan/perintah.
+2. Jalankan.
+3. Periksa output/error.
+4. Jika berhasil baru lanjut.
+
+Jangan lompat ke banyak migration/fitur sekaligus.
+
+================================================================
+END
+================================================================

@@ -1,0 +1,4 @@
+<?php
+namespace App\Filament\Resources\FoundationSkDocuments\Pages;
+use App\Filament\Resources\FoundationSkDocuments\FoundationSkDocumentResource;use App\Models\FoundationSkDocument;use App\Models\User;use App\Services\FoundationSkDocumentService;use Filament\Resources\Pages\CreateRecord;use Illuminate\Database\Eloquent\Model;
+class CreateFoundationSkDocument extends CreateRecord { protected static string $resource=FoundationSkDocumentResource::class; protected function handleRecordCreation(array $data): Model { $file=$data['file']??null;unset($data['file']);abort_unless($file instanceof \Illuminate\Http\UploadedFile,422,'File SK wajib diunggah.');$user=User::findOrFail($data['user_id']);return app(FoundationSkDocumentService::class)->store($user,(int)$data['tahun_sk'],(int)$data['sk_template_id'],$file,auth()->user()); } }

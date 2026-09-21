@@ -1,0 +1,1 @@
+<div style="line-height:1.9"><p>Gunakan placeholder berikut pada format nomor SK:</p><code>@{{nomor_urut}}</code>, <code>@{{nomor_urut_raw}}</code>, <code>@{{teks_nomor_sk}}</code>, <code>@{{periode}}</code>, <code>@{{periode_upper}}</code>, <code>@{{tahun}}</code>, <code>@{{bulan_romawi}}</code></div>

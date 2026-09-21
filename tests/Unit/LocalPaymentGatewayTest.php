@@ -1,0 +1,3 @@
+<?php
+namespace Tests\Unit; use App\Models\PaymentInvoice; use App\Services\Payments\LocalPaymentGateway; use PHPUnit\Framework\TestCase;
+class LocalPaymentGatewayTest extends TestCase { public function test_local_gateway_returns_pending_without_external_call():void{$r=(new LocalPaymentGateway)->create(new PaymentInvoice(['amount'=>12500]),'LOCAL-TEST');$this->assertSame('LOCAL-TEST',$r['order_id']);$this->assertSame('pending',$r['status']);} public function test_callback_returns_status():void{$r=(new LocalPaymentGateway)->callback('LOCAL-TEST','paid','TX-1');$this->assertSame('paid',$r['status']);$this->assertSame('TX-1',$r['transaction_id']);} }

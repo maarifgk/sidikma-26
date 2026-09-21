@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['foundation_id', 'transaction_date']);
-            $table->index(['foundation_id', 'transaction_type', 'category']);
+            $table->index(['foundation_id', 'transaction_type', 'category'], 'treasury_foundation_type_category_idx');
         });
     }
 

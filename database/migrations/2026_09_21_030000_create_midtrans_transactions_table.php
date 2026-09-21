@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -29,9 +30,9 @@ return new class extends Migration
             $table->index('transaction_id');
         });
 
-        Schema::table('midtrans_transactions', function (Blueprint $table): void {
-            $table->check('gross_amount > 0', 'midtrans_transactions_gross_amount_positive');
-        });
+        // Laravel's Blueprint has no portable check() helper. Both PostgreSQL
+        // and MySQL 8 support this constraint through raw DDL.
+        DB::statement('ALTER TABLE midtrans_transactions ADD CONSTRAINT midtrans_transactions_gross_amount_positive CHECK (gross_amount > 0)');
     }
 
     public function down(): void

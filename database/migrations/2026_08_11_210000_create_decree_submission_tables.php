@@ -9,16 +9,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('decree_submission_types', function (Blueprint $table): void {
+        if (! Schema::hasTable('decree_submission_types')) {
+            Schema::create('decree_submission_types', function (Blueprint $table): void {
             $table->id();
             $table->string('code', 50)->unique();
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
-        });
+            });
+        }
 
-        Schema::create('decree_submissions', function (Blueprint $table): void {
+        if (! Schema::hasTable('decree_submissions')) {
+            Schema::create('decree_submissions', function (Blueprint $table): void {
             $table->id();
             $table->string('submission_number', 50)->unique();
             $table->date('submission_date')->index();
@@ -38,9 +41,11 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index(['school_id', 'status', 'submission_date'], 'decree_submissions_school_status_date');
-        });
+            });
+        }
 
-        Schema::create('decree_submission_status_histories', function (Blueprint $table): void {
+        if (! Schema::hasTable('decree_submission_status_histories')) {
+            Schema::create('decree_submission_status_histories', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('decree_submission_id')->constrained()->cascadeOnDelete();
             $table->string('from_status', 30)->nullable();
@@ -49,9 +54,10 @@ return new class extends Migration
             $table->foreignId('changed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->index(['decree_submission_id', 'created_at'], 'decree_submission_history_time');
-        });
+            });
+        }
 
-        DB::table('decree_submission_types')->insert([
+        DB::table('decree_submission_types')->insertOrIgnore([
             ['code' => 'SK-PENGANGKATAN', 'name' => 'SK Pengangkatan', 'description' => null, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
             ['code' => 'SK-PERPANJANGAN', 'name' => 'SK Perpanjangan', 'description' => null, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
             ['code' => 'SK-PENUGASAN', 'name' => 'SK Penugasan', 'description' => null, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],

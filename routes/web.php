@@ -19,7 +19,7 @@ use App\Http\Controllers\LocalPaymentController;
 use App\Http\Controllers\SafeLocalPaymentController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/admin/login');
 });
 Route::middleware('auth')->group(function (): void {
     Route::get('/payments/local/{invoice}', [LocalPaymentController::class, 'show'])->name('payments.local.show');

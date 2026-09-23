@@ -8,12 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('decree_correction_requests', function (Blueprint $table): void {
+        if (! Schema::hasTable('decree_correction_requests')) {
+            Schema::create('decree_correction_requests', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('school_id')->constrained()->restrictOnDelete();
-            $table->foreignId('submitted_by')->constrained('users')->restrictOnDelete();
-            $table->foreignId('processed_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->bigInteger('submitted_by');
+            $table->bigInteger('processed_by')->nullable();
+            $table->bigInteger('approved_by')->nullable();
             $table->string('request_number', 40)->unique();
             $table->date('request_date');
             $table->string('decree_number', 150);
@@ -34,7 +35,14 @@ return new class extends Migration
             $table->timestampsTz();
             $table->softDeletesTz();
             $table->index(['school_id', 'request_date']);
-        });
+            $table->index('submitted_by');
+            $table->index('processed_by');
+            $table->index('approved_by');
+            $table->foreign('submitted_by')->references('id')->on('users')->restrictOnDelete();
+            $table->foreign('processed_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('approved_by')->references('id')->on('users')->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void

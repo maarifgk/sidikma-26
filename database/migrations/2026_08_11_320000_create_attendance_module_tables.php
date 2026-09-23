@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('attendance_settings', function (Blueprint $table): void {
+        if (! Schema::hasTable('attendance_settings')) {
+            Schema::create('attendance_settings', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('school_id')->unique()->constrained()->cascadeOnDelete();
             $table->time('check_in_start')->default('06:00:00');
@@ -20,13 +21,17 @@ return new class extends Migration
             $table->boolean('require_location')->default(false);
             $table->boolean('require_selfie')->default(false);
             $table->boolean('is_active')->default(true);
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->bigInteger('updated_by')->nullable();
             $table->timestamps();
-        });
+            $table->index('updated_by');
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
+            });
+        }
 
-        Schema::create('attendance_records', function (Blueprint $table): void {
+        if (! Schema::hasTable('attendance_records')) {
+            Schema::create('attendance_records', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->bigInteger('user_id');
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->foreignId('school_id')->constrained()->cascadeOnDelete();
             $table->date('attendance_date');
@@ -45,11 +50,14 @@ return new class extends Migration
             $table->unique(['employee_id', 'attendance_date']);
             $table->index(['school_id', 'attendance_date']);
             $table->index(['user_id', 'attendance_date']);
-        });
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            });
+        }
 
-        Schema::create('attendance_leave_requests', function (Blueprint $table): void {
+        if (! Schema::hasTable('attendance_leave_requests')) {
+            Schema::create('attendance_leave_requests', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->bigInteger('user_id');
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->foreignId('school_id')->constrained()->cascadeOnDelete();
             $table->string('leave_type', 20);
@@ -59,13 +67,18 @@ return new class extends Migration
             $table->string('attachment_path')->nullable();
             $table->string('status', 20)->default('pending')->index();
             $table->text('review_notes')->nullable();
-            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->bigInteger('reviewed_by')->nullable();
             $table->timestampTz('reviewed_at')->nullable();
             $table->timestamps();
 
             $table->index(['school_id', 'start_date', 'end_date']);
             $table->index(['employee_id', 'status']);
-        });
+            $table->index('user_id');
+            $table->index('reviewed_by');
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('reviewed_by')->references('id')->on('users')->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void

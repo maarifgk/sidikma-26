@@ -30,6 +30,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class AttendanceRecord extends Model
 {
+    protected $connection = 'sidikma_induk';
+
     public const STATUS_PRESENT = 'present';
 
     public const STATUS_LATE = 'late';

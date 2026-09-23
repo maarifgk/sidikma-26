@@ -42,6 +42,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
 ])]
 class Employee extends Model
 {
+    protected $connection = 'sidikma_induk';
+
     public const TYPE_GURU = 'guru';
 
     public const TYPE_PEGAWAI = 'pegawai';

@@ -33,6 +33,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
 ])]
 class School extends Model
 {
+    protected $connection = 'sidikma_induk';
+
     use AddsAuditContext, HasFactory, LogsActivity, SoftDeletes;
 
     /**

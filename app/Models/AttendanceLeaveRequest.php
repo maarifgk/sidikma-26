@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class AttendanceLeaveRequest extends Model
 {
+    protected $connection = 'sidikma_induk';
+
     public const TYPE_PERMIT = 'permit';
 
     public const TYPE_SICK = 'sick';

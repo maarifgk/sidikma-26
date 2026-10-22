@@ -49,7 +49,7 @@ class Dashboard extends BaseDashboard
             ->where('academic_year', $academicYear)
             ->with(['school', 'user'])
             ->get();
-        $unpaidInvoices = $invoices->where('status', PaymentInvoice::STATUS_UNPAID);
+        $unpaidInvoices = $invoices->reject(fn (PaymentInvoice $invoice): bool => $invoice->status === PaymentInvoice::STATUS_PAID);
         $paidInvoices = $invoices->where('status', PaymentInvoice::STATUS_PAID);
         $hasPaymentTransactionsTable = DatabaseSchema::hasTable('payment_transactions');
         $paidTransactions = $hasPaymentTransactionsTable
@@ -59,13 +59,16 @@ class Dashboard extends BaseDashboard
                 ->with(['school', 'user', 'invoice'])
                 ->get()
             : collect();
-        $paidPayments = $hasPaymentTransactionsTable ? $paidTransactions : $paidInvoices;
+        // A newly-created transaction table can be empty while existing paid
+        // invoices still contain the historical payment data.
+        $useTransactionPayments = $hasPaymentTransactionsTable && $paidTransactions->isNotEmpty();
+        $paidPayments = $useTransactionPayments ? $paidTransactions : $paidInvoices;
         $months = collect(range(1, 12))->map(function (int $month) use ($paidTransactions): array {
             $amount = (float) $paidTransactions->filter(fn (PaymentTransaction $transaction): bool => ($transaction->transacted_at?->month ?? $transaction->updated_at?->month) === $month)->sum('amount');
 
             return ['label' => now('Asia/Jakarta')->month($month)->locale('id')->translatedFormat('M'), 'amount' => $amount];
         });
-        if (! $hasPaymentTransactionsTable) {
+        if (! $useTransactionPayments) {
             $months = collect(range(1, 12))->map(function (int $month) use ($paidInvoices): array {
                 $amount = (float) $paidInvoices->filter(fn (PaymentInvoice $invoice): bool => ($invoice->paid_at?->month ?? $invoice->updated_at?->month) === $month)->sum('amount');
 
@@ -88,7 +91,7 @@ class Dashboard extends BaseDashboard
             'paidAmount' => (float) $paidPayments->sum('amount'),
             'unpaidAmount' => (float) $unpaidInvoices->sum('amount'),
             'months' => $months->map(fn (array $row): array => [...$row, 'percentage' => (int) round(($row['amount'] / $maxMonthly) * 100)]),
-            'recentPayments' => $hasPaymentTransactionsTable
+            'recentPayments' => $useTransactionPayments
                 ? $paidTransactions->sortByDesc(fn (PaymentTransaction $transaction) => $transaction->transacted_at ?? $transaction->updated_at)->take(5)
                 : $paidInvoices->sortByDesc(fn (PaymentInvoice $invoice) => $invoice->paid_at ?? $invoice->updated_at)->take(5),
             'userCounts' => ['Admin Induk' => User::role(User::ROLE_ADMIN_INDUK)->count(), 'Admin Madrasah' => User::role(User::ROLE_ADMIN_SEKOLAH_MADRASAH)->count(), 'Guru/Pegawai' => User::role(User::ROLE_GURU_PEGAWAI)->count(), 'Semua Pengguna' => User::query()->count()],

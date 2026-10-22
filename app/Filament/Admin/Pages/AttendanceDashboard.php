@@ -115,10 +115,14 @@ class AttendanceDashboard extends Page
         $leaveEmployees = $recordLeaveEmployees->merge(
             (clone $approvedLeaveQuery)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->pluck('employee_id')
         )->unique()->values();
-        $present = $presentEmployees->count();
-        $late = $lateEmployees->count();
-        $permit = $permitEmployees->count();
-        $leave = $leaveEmployees->count();
+        // Kartu menampilkan jumlah catatan database pada periode, sedangkan
+        // persentase tetap memakai pegawai unik agar tidak melebihi 100%.
+        $present = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_PRESENT)->count();
+        $late = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_LATE)->count();
+        $permit = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_PERMIT)->count()
+            + (clone $approvedLeaveQuery)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->count();
+        $leave = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_LEAVE)->count()
+            + (clone $approvedLeaveQuery)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->count();
         $coveredEmployees = $presentEmployees->merge($lateEmployees)->merge($permitEmployees)->merge($leaveEmployees)->unique();
         $eventQuery = AttendanceEvent::query()->whereIn('school_id', $schoolIds)
             ->whereBetween('attendance_date', [$from, $to])
@@ -168,7 +172,7 @@ class AttendanceDashboard extends Page
             $approved = AttendanceLeaveRequest::query()->whereIn('school_id', $schoolIds)->where('status', AttendanceLeaveRequest::STATUS_APPROVED)->whereDate('start_date', '<=', $day)->whereDate('end_date', '>=', $day)->when($this->selectedSchoolId, fn (Builder $q): Builder => $q->where('school_id', $this->selectedSchoolId));
             $permitEmployees = (clone $base)->where('status', AttendanceRecord::STATUS_PERMIT)->pluck('employee_id')->merge((clone $approved)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->pluck('employee_id'))->unique();
             $leaveEmployees = (clone $base)->where('status', AttendanceRecord::STATUS_LEAVE)->pluck('employee_id')->merge((clone $approved)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->pluck('employee_id'))->unique();
-            return ['date' => $day, 'label' => $date->locale('id')->translatedFormat('D, d M'), 'present' => (clone $base)->where('status', AttendanceRecord::STATUS_PRESENT)->distinct('employee_id')->count('employee_id'), 'late' => (clone $base)->where('status', AttendanceRecord::STATUS_LATE)->distinct('employee_id')->count('employee_id'), 'permit' => $permitEmployees->count(), 'leave' => $leaveEmployees->count(), 'rejected' => (clone $events)->where('event_status', 'rejected')->count(), 'fake_gps' => (clone $events)->where('is_mock_location', true)->count(), 'early' => (clone $base)->whereNotNull('check_out_reason')->distinct('employee_id')->count('employee_id')];
+            return ['date' => $day, 'label' => $date->locale('id')->translatedFormat('D, d M'), 'present' => (clone $base)->where('status', AttendanceRecord::STATUS_PRESENT)->count(), 'late' => (clone $base)->where('status', AttendanceRecord::STATUS_LATE)->count(), 'permit' => (clone $base)->where('status', AttendanceRecord::STATUS_PERMIT)->count() + (clone $approved)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->count(), 'leave' => (clone $base)->where('status', AttendanceRecord::STATUS_LEAVE)->count() + (clone $approved)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->count(), 'rejected' => (clone $events)->where('event_status', 'rejected')->count(), 'fake_gps' => (clone $events)->where('is_mock_location', true)->count(), 'early' => (clone $base)->whereNotNull('check_out_reason')->count()];
         })->values();
 
         return [

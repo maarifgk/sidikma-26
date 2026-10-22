@@ -57,6 +57,7 @@ class AttendanceDashboardFeatureTest extends TestCase
     {
         $this->actingAs($this->admin);
         AttendanceRecord::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-01', 'status' => 'late', 'check_in_at' => '2026-09-01 01:00:00', 'check_out_at' => '2026-09-01 07:00:00', 'check_out_reason' => 'Keperluan dinas']);
+        AttendanceRecord::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-02', 'status' => AttendanceRecord::STATUS_PRESENT, 'check_in_at' => '2026-09-02 00:30:00']);
         AttendanceLeaveRequest::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'leave_type' => AttendanceLeaveRequest::TYPE_PERMIT, 'start_date' => '2026-09-02', 'end_date' => '2026-09-02', 'reason' => 'Keperluan keluarga', 'status' => AttendanceLeaveRequest::STATUS_APPROVED]);
         AttendanceLeaveRequest::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'leave_type' => AttendanceLeaveRequest::TYPE_LEAVE, 'start_date' => '2026-09-03', 'end_date' => '2026-09-03', 'reason' => 'Cuti tahunan', 'status' => AttendanceLeaveRequest::STATUS_APPROVED]);
         AttendanceEvent::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-03', 'event_type' => 'check_in', 'event_status' => 'rejected', 'rejection_code' => 'fake_gps', 'rejection_reason' => 'Lokasi palsu', 'is_mock_location' => true, 'checked_at' => '2026-09-03 01:00:00']);
@@ -65,6 +66,7 @@ class AttendanceDashboardFeatureTest extends TestCase
         $this->assertSame(1, $metrics['Pegawai Aktif']['value']);
         $this->assertSame(1, $metrics['Presensi Tercatat']['value']);
         $this->assertSame(1, $metrics['Terlambat']['value']);
+        $this->assertSame(1, $metrics['Hadir']['value']);
         $this->assertSame(1, $metrics['Izin']['value']);
         $this->assertSame(1, $metrics['Cuti']['value']);
         $this->assertSame(1, $metrics['Percobaan Ditolak']['value']);

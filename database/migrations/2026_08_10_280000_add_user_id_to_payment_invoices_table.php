@@ -9,13 +9,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('payment_invoices', function (Blueprint $table): void {
-            $table->foreignId('user_id')
-                ->nullable()
-                ->after('school_id')
-                ->constrained()
-                ->nullOnDelete();
-        });
+        if (! Schema::hasColumn('payment_invoices', 'user_id')) {
+            Schema::table('payment_invoices', function (Blueprint $table): void {
+                // Keep compatibility with the existing production users table.
+                $table->unsignedBigInteger('user_id')->nullable()->after('school_id')->index();
+            });
+        }
 
         DB::table('payment_invoices')
             ->whereNotNull('employee_id')
@@ -35,8 +34,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('payment_invoices', function (Blueprint $table): void {
-            $table->dropConstrainedForeignId('user_id');
-        });
+        if (Schema::hasColumn('payment_invoices', 'user_id')) {
+            Schema::table('payment_invoices', function (Blueprint $table): void {
+                $table->dropColumn('user_id');
+            });
+        }
     }
 };

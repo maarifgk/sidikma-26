@@ -107,6 +107,8 @@ class AttendanceDashboardFeatureTest extends TestCase
         $this->assertSame('Asia/Jakarta', config('app.timezone'));
         $this->assertSame('06:15:00', $record->check_in_at->format('H:i:s'));
         $this->assertSame('14:05:00', $record->check_out_at->format('H:i:s'));
+        $this->assertSame('06:15', $record->formattedStoredTime('check_in_at', 'H:i'));
+        $this->assertSame('14:05', $record->formattedStoredTime('check_out_at', 'H:i'));
     }
 
     public function test_dashboard_filters_school_and_rejects_unauthorized_school(): void

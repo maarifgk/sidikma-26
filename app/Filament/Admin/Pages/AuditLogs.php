@@ -13,6 +13,14 @@ class AuditLogs extends Page
  public ?int $selectedSchoolId = null; public string $actionFilter = ''; public string $entityType = ''; public string $dateFrom = ''; public string $dateTo = '';
  public static function canAccess(): bool { return auth()->user()?->hasAnyRole([\App\Models\User::ROLE_ADMIN_INDUK,\App\Models\User::ROLE_ADMIN_SEKOLAH_MADRASAH]) ?? false; }
  public function mount(): void { $this->dateFrom = now(config('attendance.timezone'))->subDays(30)->toDateString(); $this->dateTo = now(config('attendance.timezone'))->toDateString(); }
+ public function resetFilters(): void
+ {
+  $this->selectedSchoolId = null;
+  $this->actionFilter = '';
+  $this->entityType = '';
+  $this->dateFrom = now(config('attendance.timezone'))->subDays(30)->toDateString();
+  $this->dateTo = now(config('attendance.timezone'))->toDateString();
+ }
  public function content(Schema $schema): Schema { return $schema->components([View::make('filament.admin.pages.audit-logs')->viewData(fn () => $this->pageData())]); }
  private function pageData(): array
  {
@@ -24,7 +32,7 @@ class AuditLogs extends Page
     ->with(['actor','target','employee','school'])
     ->when($this->selectedSchoolId, fn(Builder $q) => $q->where('school_id',$this->selectedSchoolId))
     ->when($this->actionFilter, fn(Builder $q) => $q->where('action','like','%'.$this->actionFilter.'%'))
-    ->when($this->entityType, fn(Builder $q) => $q->where('entity_type',$this->entityType))
+    ->when($this->entityType, fn(Builder $q) => $q->where('entity_type','like','%'.$this->entityType.'%'))
     ->when($this->dateFrom, fn(Builder $q) => $q->whereDate('created_at','>=',$this->dateFrom))
     ->when($this->dateTo, fn(Builder $q) => $q->whereDate('created_at','<=',$this->dateTo))
     ->latest()

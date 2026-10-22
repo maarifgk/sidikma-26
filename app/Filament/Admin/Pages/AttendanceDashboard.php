@@ -40,7 +40,15 @@ class AttendanceDashboard extends Page
 
     public function mount(): void
     {
-        $this->dateFrom = now('Asia/Jakarta')->toDateString();
+        $today = now('Asia/Jakarta')->toDateString();
+        $schoolIds = $this->accessibleAttendanceSchoolIds();
+        $latestAttendanceDate = AttendanceRecord::query()
+            ->whereIn('school_id', $schoolIds)
+            ->max('attendance_date');
+
+        $this->dateFrom = $latestAttendanceDate
+            ? Carbon::parse($latestAttendanceDate)->toDateString()
+            : $today;
         $this->dateTo = $this->dateFrom;
     }
 

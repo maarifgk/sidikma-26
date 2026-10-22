@@ -71,6 +71,24 @@ class AttendanceDashboardFeatureTest extends TestCase
         $this->assertSame(0, $data['dailyCharts'][1]['present']);
     }
 
+    public function test_dashboard_opens_the_latest_available_attendance_date(): void
+    {
+        $this->actingAs($this->admin);
+        AttendanceRecord::create([
+            'user_id' => $this->admin->id,
+            'employee_id' => $this->employee->id,
+            'school_id' => $this->one->id,
+            'attendance_date' => '2026-08-12',
+            'status' => AttendanceRecord::STATUS_PRESENT,
+        ]);
+
+        filament()->setCurrentPanel(filament()->getPanel('admin'));
+        Livewire::test(AttendanceDashboard::class)
+            ->assertSet('dateFrom', '2026-08-12')
+            ->assertSet('dateTo', '2026-08-12')
+            ->assertSee('1');
+    }
+
     public function test_dashboard_filters_school_and_rejects_unauthorized_school(): void
     {
         $schoolAdmin = User::factory()->create();

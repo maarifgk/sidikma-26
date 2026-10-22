@@ -15,6 +15,7 @@ use App\Models\User;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Schema as DatabaseSchema;
 use UnitEnum;
 
 class Dashboard extends BaseDashboard
@@ -49,16 +50,28 @@ class Dashboard extends BaseDashboard
             ->with(['school', 'user'])
             ->get();
         $unpaidInvoices = $invoices->where('status', PaymentInvoice::STATUS_UNPAID);
-        $paidTransactions = PaymentTransaction::query()
-            ->where('status', PaymentTransaction::STATUS_PAID)
-            ->whereHas('invoice', fn ($query) => $query->where('academic_year', $academicYear))
-            ->with(['school', 'user', 'invoice'])
-            ->get();
+        $paidInvoices = $invoices->where('status', PaymentInvoice::STATUS_PAID);
+        $hasPaymentTransactionsTable = DatabaseSchema::hasTable('payment_transactions');
+        $paidTransactions = $hasPaymentTransactionsTable
+            ? PaymentTransaction::query()
+                ->where('status', PaymentTransaction::STATUS_PAID)
+                ->whereHas('invoice', fn ($query) => $query->where('academic_year', $academicYear))
+                ->with(['school', 'user', 'invoice'])
+                ->get()
+            : collect();
+        $paidPayments = $hasPaymentTransactionsTable ? $paidTransactions : $paidInvoices;
         $months = collect(range(1, 12))->map(function (int $month) use ($paidTransactions): array {
             $amount = (float) $paidTransactions->filter(fn (PaymentTransaction $transaction): bool => ($transaction->transacted_at?->month ?? $transaction->updated_at?->month) === $month)->sum('amount');
 
             return ['label' => now('Asia/Jakarta')->month($month)->locale('id')->translatedFormat('M'), 'amount' => $amount];
         });
+        if (! $hasPaymentTransactionsTable) {
+            $months = collect(range(1, 12))->map(function (int $month) use ($paidInvoices): array {
+                $amount = (float) $paidInvoices->filter(fn (PaymentInvoice $invoice): bool => ($invoice->paid_at?->month ?? $invoice->updated_at?->month) === $month)->sum('amount');
+
+                return ['label' => now('Asia/Jakarta')->month($month)->locale('id')->translatedFormat('M'), 'amount' => $amount];
+            });
+        }
         $maxMonthly = max(1, (float) $months->max('amount'));
         $statusCounts = Employee::query()->where('is_active', true)->selectRaw('employment_status, count(*) as total')->groupBy('employment_status')->pluck('total', 'employment_status');
         $decreeSubmissions = DecreeSubmission::query()->with(['school', 'employee'])->latest('submission_date')->limit(5)->get()->map(fn (DecreeSubmission $item): array => [
@@ -72,10 +85,12 @@ class Dashboard extends BaseDashboard
 
         return [
             'academicYear' => $academicYear,
-            'paidAmount' => (float) $paidTransactions->sum('amount'),
+            'paidAmount' => (float) $paidPayments->sum('amount'),
             'unpaidAmount' => (float) $unpaidInvoices->sum('amount'),
             'months' => $months->map(fn (array $row): array => [...$row, 'percentage' => (int) round(($row['amount'] / $maxMonthly) * 100)]),
-            'recentPayments' => $paidTransactions->sortByDesc(fn (PaymentTransaction $transaction) => $transaction->transacted_at ?? $transaction->updated_at)->take(5),
+            'recentPayments' => $hasPaymentTransactionsTable
+                ? $paidTransactions->sortByDesc(fn (PaymentTransaction $transaction) => $transaction->transacted_at ?? $transaction->updated_at)->take(5)
+                : $paidInvoices->sortByDesc(fn (PaymentInvoice $invoice) => $invoice->paid_at ?? $invoice->updated_at)->take(5),
             'userCounts' => ['Admin Induk' => User::role(User::ROLE_ADMIN_INDUK)->count(), 'Admin Madrasah' => User::role(User::ROLE_ADMIN_SEKOLAH_MADRASAH)->count(), 'Guru/Pegawai' => User::role(User::ROLE_GURU_PEGAWAI)->count(), 'Semua Pengguna' => User::query()->count()],
             'employeeStatusCounts' => collect(Employee::employmentStatusOptions())->mapWithKeys(fn (string $label, string $key): array => [$label => (int) ($statusCounts[$key] ?? 0)]),
             'employeeTotal' => Employee::query()->where('is_active', true)->count(),

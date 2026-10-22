@@ -57,17 +57,64 @@ class AttendanceDashboardFeatureTest extends TestCase
     {
         $this->actingAs($this->admin);
         AttendanceRecord::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-01', 'status' => 'late', 'check_in_at' => '2026-09-01 01:00:00', 'check_out_at' => '2026-09-01 07:00:00', 'check_out_reason' => 'Keperluan dinas']);
+        AttendanceRecord::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-02', 'status' => AttendanceRecord::STATUS_PRESENT, 'check_in_at' => '2026-09-02 00:30:00']);
+        AttendanceLeaveRequest::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'leave_type' => AttendanceLeaveRequest::TYPE_PERMIT, 'start_date' => '2026-09-02', 'end_date' => '2026-09-02', 'reason' => 'Keperluan keluarga', 'status' => AttendanceLeaveRequest::STATUS_APPROVED]);
+        AttendanceLeaveRequest::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'leave_type' => AttendanceLeaveRequest::TYPE_LEAVE, 'start_date' => '2026-09-03', 'end_date' => '2026-09-03', 'reason' => 'Cuti tahunan', 'status' => AttendanceLeaveRequest::STATUS_APPROVED]);
         AttendanceEvent::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-03', 'event_type' => 'check_in', 'event_status' => 'rejected', 'rejection_code' => 'fake_gps', 'rejection_reason' => 'Lokasi palsu', 'is_mock_location' => true, 'checked_at' => '2026-09-03 01:00:00']);
         $data = $this->dashboardData();
         $metrics = collect($data['metrics'])->keyBy('label');
-        $this->assertSame(1, $metrics['Total User Aktif']['value']);
+        $this->assertSame(1, $metrics['Pegawai Aktif']['value']);
+        $this->assertSame(1, $metrics['Presensi Tercatat']['value']);
         $this->assertSame(1, $metrics['Terlambat']['value']);
-        $this->assertSame(1, $metrics['Ditolak']['value']);
+        $this->assertSame(1, $metrics['Tidak Terlambat']['value']);
+        $this->assertSame(1, $metrics['Izin']['value']);
+        $this->assertSame(1, $metrics['Cuti']['value']);
+        $this->assertSame(1, $metrics['Percobaan Ditolak']['value']);
         $this->assertSame(1, $metrics['Fake GPS']['value']);
         $this->assertSame(1, $metrics['Pulang Awal']['value']);
         $this->assertSame('100.0%', $metrics['Persentase']['value']);
         $this->assertCount(3, $data['dailyCharts']);
         $this->assertSame(0, $data['dailyCharts'][1]['present']);
+    }
+
+    public function test_dashboard_opens_the_latest_available_attendance_date(): void
+    {
+        $this->actingAs($this->admin);
+        AttendanceRecord::create([
+            'user_id' => $this->admin->id,
+            'employee_id' => $this->employee->id,
+            'school_id' => $this->one->id,
+            'attendance_date' => '2026-08-12',
+            'status' => AttendanceRecord::STATUS_PRESENT,
+        ]);
+
+        filament()->setCurrentPanel(filament()->getPanel('admin'));
+        Livewire::test(AttendanceDashboard::class)
+            ->assertSet('dateFrom', '2026-08-12')
+            ->assertSet('dateTo', '2026-08-12')
+            ->assertSee('1');
+    }
+
+    public function test_attendance_time_uses_the_database_local_timezone(): void
+    {
+        $this->actingAs($this->admin);
+        AttendanceRecord::create([
+            'user_id' => $this->admin->id,
+            'employee_id' => $this->employee->id,
+            'school_id' => $this->one->id,
+            'attendance_date' => '2026-10-22',
+            'status' => AttendanceRecord::STATUS_PRESENT,
+            'check_in_at' => '2026-10-22 06:15:00',
+            'check_out_at' => '2026-10-22 14:05:00',
+        ]);
+
+        $record = AttendanceRecord::query()->firstOrFail();
+
+        $this->assertSame('Asia/Jakarta', config('app.timezone'));
+        $this->assertSame('06:15:00', $record->check_in_at->format('H:i:s'));
+        $this->assertSame('14:05:00', $record->check_out_at->format('H:i:s'));
+        $this->assertSame('06:15', $record->formattedStoredTime('check_in_at', 'H:i'));
+        $this->assertSame('14:05', $record->formattedStoredTime('check_out_at', 'H:i'));
     }
 
     public function test_dashboard_filters_school_and_rejects_unauthorized_school(): void

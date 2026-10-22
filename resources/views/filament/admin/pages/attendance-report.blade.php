@@ -182,8 +182,8 @@
                             <td>{{ $record->school?->name ?? '-' }}</td>
                             <td class="ar-name">{{ $record->employee?->name ?? '-' }}</td>
                             <td><span class="ar-badge {{ $statusClass }}">{{ strtoupper($statusOptions[$record->status] ?? $record->status) }}</span></td>
-                            <td><span class="ar-time">{{ $record->check_in_at?->timezone('Asia/Jakarta')->format('H:i:s') ?? '-' }}</span></td>
-                            <td><span class="ar-time">{{ $record->check_out_at?->timezone('Asia/Jakarta')->format('H:i:s') ?? '-' }}</span></td>
+                            <td><span class="ar-time">{{ $record->formattedStoredTime('check_in_at') ?? '-' }}</span></td>
+                            <td><span class="ar-time">{{ $record->formattedStoredTime('check_out_at') ?? '-' }}</span></td>
                             <td>
                                 @if(filled($record->check_in_latitude) && filled($record->check_in_longitude))
                                     <span class="ar-location">

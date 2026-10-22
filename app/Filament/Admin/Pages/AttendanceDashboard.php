@@ -17,6 +17,9 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema as DbSchema;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 class AttendanceDashboard extends Page
@@ -41,7 +44,15 @@ class AttendanceDashboard extends Page
 
     public function mount(): void
     {
-        $this->dateFrom = now('Asia/Jakarta')->toDateString();
+        $today = now('Asia/Jakarta')->toDateString();
+        $schoolIds = $this->accessibleAttendanceSchoolIds();
+        $latestAttendanceDate = AttendanceRecord::query()
+            ->whereIn('school_id', $schoolIds)
+            ->max('attendance_date');
+
+        $this->dateFrom = $latestAttendanceDate
+            ? Carbon::parse($latestAttendanceDate)->toDateString()
+            : $today;
         $this->dateTo = $this->dateFrom;
     }
 
@@ -69,6 +80,14 @@ class AttendanceDashboard extends Page
         $today = now('Asia/Jakarta')->toDateString();
         $from = $this->dateFrom ?: $today;
         $to = $this->dateTo ?: $today;
+        if ($from > $to) {
+            [$from, $to] = [$to, $from];
+        }
+        if (Carbon::parse($from)->diffInDays(Carbon::parse($to)) > 30) {
+            $from = Carbon::parse($to)->subDays(30)->toDateString();
+        }
+        $this->dateFrom = $from;
+        $this->dateTo = $to;
         $schoolIds = $this->accessibleAttendanceSchoolIds();
         abort_if($this->selectedSchoolId && ! $schoolIds->contains($this->selectedSchoolId), 403);
         $employeeQuery = Employee::query()->whereIn('school_id', $schoolIds)
@@ -78,15 +97,58 @@ class AttendanceDashboard extends Page
             ->whereBetween('attendance_date', [$from, $to])
             ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('school_id', $this->selectedSchoolId));
         $totalEmployees = (clone $employeeQuery)->distinct('id')->count('id');
-        $present = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_PRESENT)->distinct('employee_id')->count('employee_id');
-        $late = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_LATE)->distinct('employee_id')->count('employee_id');
-        $permit = AttendanceLeaveRequest::query()->whereIn('school_id', $schoolIds)->where('status', AttendanceLeaveRequest::STATUS_APPROVED)->whereDate('start_date', '<=', $to)->whereDate('end_date', '>=', $from)->when($this->selectedSchoolId, fn ($q) => $q->where('school_id', $this->selectedSchoolId))->distinct('employee_id')->count('employee_id');
-        $leave = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_LEAVE)->distinct('employee_id')->count('employee_id');
-        $eventQuery = AttendanceEvent::query()->whereIn('school_id', $schoolIds)->whereBetween('checked_at', [$from.' 00:00:00', $to.' 23:59:59'])->when($this->selectedSchoolId, fn ($q) => $q->where('school_id', $this->selectedSchoolId));
-        $rejected = (clone $eventQuery)->where('event_status', 'rejected')->distinct('employee_id')->count('employee_id');
-        $fakeGps = (clone $eventQuery)->where('is_mock_location', true)->distinct('employee_id')->count('employee_id');
-        $early = (clone $recordQuery)->whereNotNull('check_out_reason')->distinct('employee_id')->count('employee_id');
-        $covered = collect((clone $recordQuery)->whereIn('status', [AttendanceRecord::STATUS_PRESENT, AttendanceRecord::STATUS_LATE])->pluck('employee_id'))->merge(collect(AttendanceLeaveRequest::query()->whereIn('school_id', $schoolIds)->where('status', AttendanceLeaveRequest::STATUS_APPROVED)->whereDate('start_date', '<=', $to)->whereDate('end_date', '>=', $from)->when($this->selectedSchoolId, fn ($q) => $q->where('school_id', $this->selectedSchoolId))->pluck('employee_id')))->unique()->count();
+        $statusEmployees = (clone $recordQuery)
+            ->get(['employee_id', 'status'])
+            ->groupBy('status')
+            ->map(fn ($records) => $records->pluck('employee_id')->unique()->values());
+        $totalRecords = (clone $recordQuery)->count();
+        $presentEmployees = $statusEmployees->get(AttendanceRecord::STATUS_PRESENT, collect());
+        $lateEmployees = $statusEmployees->get(AttendanceRecord::STATUS_LATE, collect());
+        $recordPermitEmployees = $statusEmployees->get(AttendanceRecord::STATUS_PERMIT, collect());
+        $recordLeaveEmployees = $statusEmployees->get(AttendanceRecord::STATUS_LEAVE, collect());
+        $approvedLeaveQuery = AttendanceLeaveRequest::query()
+            ->whereIn('school_id', $schoolIds)
+            ->where('status', AttendanceLeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $to)
+            ->whereDate('end_date', '>=', $from)
+            ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('school_id', $this->selectedSchoolId));
+        $permitEmployees = $recordPermitEmployees->merge(
+            (clone $approvedLeaveQuery)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->pluck('employee_id')
+        )->unique()->values();
+        $leaveEmployees = $recordLeaveEmployees->merge(
+            (clone $approvedLeaveQuery)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->pluck('employee_id')
+        )->unique()->values();
+        // Kartu menampilkan jumlah catatan database pada periode, sedangkan
+        // persentase tetap memakai pegawai unik agar tidak melebihi 100%.
+        $present = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_PRESENT)->count();
+        $late = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_LATE)->count();
+        $permit = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_PERMIT)->count()
+            + (clone $approvedLeaveQuery)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->count();
+        $leave = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_LEAVE)->count()
+            + (clone $approvedLeaveQuery)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->count();
+        // Kompatibilitas dengan database lama sebelum data dipindahkan.
+        if ((clone $approvedLeaveQuery)->count() === 0 && DbSchema::connection('sidikma_induk')->hasTable('attendance_permissions')) {
+            $legacy = DB::connection('sidikma_induk')->table('attendance_permissions')
+                ->whereDate('start_date', '<=', $to)
+                ->whereDate('end_date', '>=', $from)
+                ->where(function ($query): void {
+                    $query->whereIn('status', ['approved', 'disetujui', 'diterima', 'accepted'])
+                        ->orWhereNull('status');
+                });
+            $legacyRows = $legacy->get(['category']);
+            if ($legacyRows->isNotEmpty()) {
+                $legacyLeave = $legacyRows->filter(fn ($row): bool => Str::contains(Str::lower((string) $row->category), ['cuti', 'leave']))->count();
+                $leave += $legacyLeave;
+                $permit += $legacyRows->count() - $legacyLeave;
+            }
+        }
+        $coveredEmployees = $presentEmployees->merge($lateEmployees)->merge($permitEmployees)->merge($leaveEmployees)->unique();
+        $eventQuery = AttendanceEvent::query()->whereIn('school_id', $schoolIds)
+            ->whereBetween('attendance_date', [$from, $to])
+            ->when($this->selectedSchoolId, fn ($q) => $q->where('school_id', $this->selectedSchoolId));
+        $rejected = (clone $eventQuery)->where('event_status', 'rejected')->count();
+        $fakeGps = (clone $eventQuery)->where('is_mock_location', true)->count();
+        $early = (clone $recordQuery)->whereNotNull('check_out_reason')->count();
         $mapRecords = (clone $recordQuery)
             ->whereNotNull('check_in_latitude')
             ->whereNotNull('check_in_longitude')
@@ -96,7 +158,7 @@ class AttendanceDashboard extends Page
             ->get();
         $mapSchoolIds = $this->selectedSchoolId
             ? collect([$this->selectedSchoolId])
-            : $mapRecords->pluck('school_id')->unique()->values();
+            : $schoolIds;
         $mapSettings = AttendanceSetting::query()
             ->with('school')
             ->whereIn('school_id', $mapSchoolIds)
@@ -104,8 +166,8 @@ class AttendanceDashboard extends Page
             ->whereNotNull('office_longitude')
             ->get();
 
-        $sevenDays = collect(range(6, 0))->map(function (int $daysAgo) use ($schoolIds): array {
-            $date = now('Asia/Jakarta')->subDays($daysAgo);
+        $sevenDays = collect(range(6, 0))->map(function (int $daysAgo) use ($schoolIds, $to): array {
+            $date = Carbon::parse($to, 'Asia/Jakarta')->subDays($daysAgo);
             $count = AttendanceRecord::query()
                 ->whereIn('school_id', $schoolIds)
                 ->whereDate('attendance_date', $date->toDateString())
@@ -120,29 +182,31 @@ class AttendanceDashboard extends Page
         });
         $maxDay = max(1, (int) $sevenDays->max('count'));
         $startDate = Carbon::parse($from, 'Asia/Jakarta');
-        $dayCount = min(31, max(0, $startDate->diffInDays(Carbon::parse($to, 'Asia/Jakarta'))));
+        $dayCount = min(30, max(0, (int) $startDate->diffInDays(Carbon::parse($to, 'Asia/Jakarta'))));
         $dailyCharts = collect(range(0, $dayCount))->map(function (int $offset) use ($startDate, $schoolIds): array {
             $date = $startDate->copy()->addDays($offset);
             $day = $date->toDateString();
             $base = AttendanceRecord::query()->whereIn('school_id', $schoolIds)->whereDate('attendance_date', $day)->when($this->selectedSchoolId, fn (Builder $q): Builder => $q->where('school_id', $this->selectedSchoolId));
-            $events = AttendanceEvent::query()->whereIn('school_id', $schoolIds)->whereDate('checked_at', $day)->when($this->selectedSchoolId, fn ($q) => $q->where('school_id', $this->selectedSchoolId));
-            $approvedLeave = AttendanceLeaveRequest::query()->whereIn('school_id', $schoolIds)->where('status', AttendanceLeaveRequest::STATUS_APPROVED)->whereDate('start_date', '<=', $day)->whereDate('end_date', '>=', $day)->when($this->selectedSchoolId, fn ($q) => $q->where('school_id', $this->selectedSchoolId));
-            return ['date' => $day, 'label' => $date->locale('id')->translatedFormat('D, d M'), 'present' => (clone $base)->where('status', AttendanceRecord::STATUS_PRESENT)->distinct('employee_id')->count('employee_id'), 'late' => (clone $base)->where('status', AttendanceRecord::STATUS_LATE)->distinct('employee_id')->count('employee_id'), 'permit' => (clone $approvedLeave)->distinct('employee_id')->count('employee_id'), 'rejected' => (clone $events)->where('event_status', 'rejected')->distinct('employee_id')->count('employee_id'), 'fake_gps' => (clone $events)->where('is_mock_location', true)->distinct('employee_id')->count('employee_id'), 'early' => (clone $base)->whereNotNull('check_out_reason')->distinct('employee_id')->count('employee_id')];
+            $events = AttendanceEvent::query()->whereIn('school_id', $schoolIds)->whereDate('attendance_date', $day)->when($this->selectedSchoolId, fn ($q) => $q->where('school_id', $this->selectedSchoolId));
+            $approved = AttendanceLeaveRequest::query()->whereIn('school_id', $schoolIds)->where('status', AttendanceLeaveRequest::STATUS_APPROVED)->whereDate('start_date', '<=', $day)->whereDate('end_date', '>=', $day)->when($this->selectedSchoolId, fn (Builder $q): Builder => $q->where('school_id', $this->selectedSchoolId));
+            $permitEmployees = (clone $base)->where('status', AttendanceRecord::STATUS_PERMIT)->pluck('employee_id')->merge((clone $approved)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->pluck('employee_id'))->unique();
+            $leaveEmployees = (clone $base)->where('status', AttendanceRecord::STATUS_LEAVE)->pluck('employee_id')->merge((clone $approved)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->pluck('employee_id'))->unique();
+            return ['date' => $day, 'label' => $date->locale('id')->translatedFormat('D, d M'), 'present' => (clone $base)->where('status', AttendanceRecord::STATUS_PRESENT)->count(), 'late' => (clone $base)->where('status', AttendanceRecord::STATUS_LATE)->count(), 'permit' => (clone $base)->where('status', AttendanceRecord::STATUS_PERMIT)->count() + (clone $approved)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->count(), 'leave' => (clone $base)->where('status', AttendanceRecord::STATUS_LEAVE)->count() + (clone $approved)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->count(), 'rejected' => (clone $events)->where('event_status', 'rejected')->count(), 'fake_gps' => (clone $events)->where('is_mock_location', true)->count(), 'early' => (clone $base)->whereNotNull('check_out_reason')->count()];
         })->values();
 
         return [
             'schoolOptions' => School::query()->whereKey($schoolIds)->where('is_active', true)->orderBy('name')->pluck('name', 'id'),
             'metrics' => [
-                ['label' => 'Total User Aktif', 'value' => $totalEmployees, 'class' => 'total'],
-                ['label' => 'Hadir', 'value' => $present, 'class' => 'present'],
+                ['label' => 'Pegawai Aktif', 'value' => $totalEmployees, 'class' => 'total'],
+                ['label' => 'Presensi Tercatat', 'value' => $totalRecords, 'class' => 'recorded'],
+                ['label' => 'Tidak Terlambat', 'value' => $present, 'class' => 'present'],
                 ['label' => 'Terlambat', 'value' => $late, 'class' => 'late'],
-                ['label' => 'Izin Approved', 'value' => $permit, 'class' => 'permit'],
-                ['label' => 'Cuti Approved', 'value' => $leave, 'class' => 'leave'],
-                ['label' => 'Tidak Hadir', 'value' => max(0, $totalEmployees - $covered), 'class' => 'absent'],
-                ['label' => 'Ditolak', 'value' => $rejected, 'class' => 'rejected'],
+                ['label' => 'Izin', 'value' => $permit, 'class' => 'permit'],
+                ['label' => 'Cuti', 'value' => $leave, 'class' => 'leave'],
+                ['label' => 'Percobaan Ditolak', 'value' => $rejected, 'class' => 'rejected'],
                 ['label' => 'Fake GPS', 'value' => $fakeGps, 'class' => 'fake-gps'],
                 ['label' => 'Pulang Awal', 'value' => $early, 'class' => 'early'],
-                ['label' => 'Persentase', 'value' => $totalEmployees > 0 ? number_format(($covered / $totalEmployees) * 100, 1).'%' : '0%', 'class' => 'percentage'],
+                ['label' => 'Persentase', 'value' => $totalEmployees > 0 ? number_format(($coveredEmployees->count() / $totalEmployees) * 100, 1).'%' : '0%', 'class' => 'percentage'],
             ],
             'sevenDays' => $sevenDays->map(fn (array $day): array => $day + [
                 'height' => max(4, (int) round(($day['count'] / $maxDay) * 100)),
@@ -150,6 +214,7 @@ class AttendanceDashboard extends Page
             'dailyCharts' => $dailyCharts,
             'latestRecords' => AttendanceRecord::query()
                 ->whereIn('school_id', $schoolIds)
+                ->whereBetween('attendance_date', [$from, $to])
                 ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('school_id', $this->selectedSchoolId))
                 ->with(['employee', 'school'])
                 ->latest('check_in_at')
@@ -169,14 +234,18 @@ class AttendanceDashboard extends Page
                 'school' => $record->school?->name ?? '-',
                 'latitude' => (float) $record->check_in_latitude,
                 'longitude' => (float) $record->check_in_longitude,
-                'checkIn' => $record->check_in_at?->timezone('Asia/Jakarta')->format('H:i').' WIB',
-                'checkOut' => $record->check_out_at?->timezone('Asia/Jakarta')->format('H:i').' WIB',
+                'checkIn' => $record->formattedStoredTime('check_in_at', 'H:i') ? $record->formattedStoredTime('check_in_at', 'H:i').' WIB' : null,
+                'checkOut' => $record->formattedStoredTime('check_out_at', 'H:i') ? $record->formattedStoredTime('check_out_at', 'H:i').' WIB' : null,
                 'status' => AttendanceRecord::statusOptions()[$record->status] ?? $record->status,
                 'distance' => $record->check_in_distance !== null ? number_format((float) $record->check_in_distance, 0).' meter' : '-',
             ])->values(),
             'reportUrl' => AttendanceReport::getUrl(panel: $this->attendancePanelId(), isAbsolute: false),
             'settingsUrl' => AttendanceSettings::getUrl(panel: $this->attendancePanelId(), isAbsolute: false),
-            'todayLabel' => Carbon::parse($today)->locale('id')->translatedFormat('d F Y'),
+            'from' => $from,
+            'to' => $to,
+            'periodLabel' => $from === $to
+                ? Carbon::parse($from)->locale('id')->translatedFormat('d F Y')
+                : Carbon::parse($from)->locale('id')->translatedFormat('d M Y').' – '.Carbon::parse($to)->locale('id')->translatedFormat('d M Y'),
         ];
     }
 }

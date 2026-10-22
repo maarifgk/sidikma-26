@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 #[Fillable([
     'user_id',
@@ -65,6 +66,15 @@ class AttendanceRecord extends Model
             self::STATUS_PERMIT => 'Izin',
             self::STATUS_LEAVE => 'Cuti',
         ];
+    }
+
+    public function formattedStoredTime(string $attribute, string $format = 'H:i:s'): ?string
+    {
+        $value = $this->getRawOriginal($attribute);
+
+        return filled($value)
+            ? Carbon::parse((string) $value, config('attendance.timezone'))->format($format)
+            : null;
     }
 
     protected function casts(): array

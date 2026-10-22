@@ -4,12 +4,16 @@
         flex: none;
         width: 0.48rem;
         height: 0.48rem;
-        margin-inline: auto 0.3rem;
+        margin-inline: auto 0.2rem;
         border-right: 2px solid currentColor;
         border-bottom: 2px solid currentColor;
         color: rgba(255, 255, 255, 0.65);
         transform: translateY(-0.15rem) rotate(45deg);
         transition: transform 160ms ease;
+    }
+
+    .fi-panel-app .fi-sidebar-item.app-nav-has-children > .fi-sidebar-item-btn:hover::after {
+        color: rgba(255, 255, 255, 0.9);
     }
 
     .fi-panel-app .fi-sidebar-item.app-nav-has-children.fi-active > .fi-sidebar-item-btn::after,

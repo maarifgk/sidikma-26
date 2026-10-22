@@ -17,6 +17,9 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema as DbSchema;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 class AttendanceDashboard extends Page
@@ -123,6 +126,22 @@ class AttendanceDashboard extends Page
             + (clone $approvedLeaveQuery)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->count();
         $leave = (clone $recordQuery)->where('status', AttendanceRecord::STATUS_LEAVE)->count()
             + (clone $approvedLeaveQuery)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->count();
+        // Kompatibilitas dengan database lama sebelum data dipindahkan.
+        if ((clone $approvedLeaveQuery)->count() === 0 && DbSchema::connection('sidikma_induk')->hasTable('attendance_permissions')) {
+            $legacy = DB::connection('sidikma_induk')->table('attendance_permissions')
+                ->whereDate('start_date', '<=', $to)
+                ->whereDate('end_date', '>=', $from)
+                ->where(function ($query): void {
+                    $query->whereIn('status', ['approved', 'disetujui', 'diterima', 'accepted'])
+                        ->orWhereNull('status');
+                });
+            $legacyRows = $legacy->get(['category']);
+            if ($legacyRows->isNotEmpty()) {
+                $legacyLeave = $legacyRows->filter(fn ($row): bool => Str::contains(Str::lower((string) $row->category), ['cuti', 'leave']))->count();
+                $leave += $legacyLeave;
+                $permit += $legacyRows->count() - $legacyLeave;
+            }
+        }
         $coveredEmployees = $presentEmployees->merge($lateEmployees)->merge($permitEmployees)->merge($leaveEmployees)->unique();
         $eventQuery = AttendanceEvent::query()->whereIn('school_id', $schoolIds)
             ->whereBetween('attendance_date', [$from, $to])

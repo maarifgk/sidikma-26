@@ -13,13 +13,24 @@ abstract class TestCase extends BaseTestCase
         $connection = $app['config']->get('database.default');
         $database = $app['config']->get("database.connections.{$connection}.database");
 
-        if (($connection !== 'sqlite') || ($database !== ':memory:')) {
+        $databaseIsTestingSqlite = $connection === 'sqlite'
+            && in_array($database, [':memory:', 'database/testing.sqlite'], true);
+
+        if (! $databaseIsTestingSqlite) {
             throw new \RuntimeException(
-                'Pengujian dibatalkan: database test wajib menggunakan SQLite :memory:. '
+                'Pengujian dibatalkan: database test wajib menggunakan SQLite testing. '
                 . "Koneksi aktif: {$connection}; database: {$database}. "
                 . 'Jalankan php artisan config:clear sebelum menjalankan test.',
             );
         }
+
+        // Domain models use the named sidikma_induk connection in production.
+        // During tests it must point at the same in-memory SQLite database so
+        // RefreshDatabase migrates and resets one schema for every test.
+        $app['config']->set(
+            'database.connections.sidikma_induk',
+            $app['config']->get('database.connections.sqlite'),
+        );
 
         return $app;
     }

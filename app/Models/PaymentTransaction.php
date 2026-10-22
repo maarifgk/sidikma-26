@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class PaymentTransaction extends Model
 {
+    public const STATUS_PAID = 'paid';
+
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(PaymentInvoice::class, 'payment_invoice_id');

@@ -60,7 +60,8 @@ class AttendanceDashboardFeatureTest extends TestCase
         AttendanceEvent::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-03', 'event_type' => 'check_in', 'event_status' => 'rejected', 'rejection_code' => 'fake_gps', 'rejection_reason' => 'Lokasi palsu', 'is_mock_location' => true, 'checked_at' => '2026-09-03 01:00:00']);
         $data = $this->dashboardData();
         $metrics = collect($data['metrics'])->keyBy('label');
-        $this->assertSame(1, $metrics['Total User Aktif']['value']);
+        $this->assertSame(1, $metrics['Pegawai Aktif']['value']);
+        $this->assertSame(1, $metrics['Presensi Tercatat']['value']);
         $this->assertSame(1, $metrics['Terlambat']['value']);
         $this->assertSame(1, $metrics['Ditolak']['value']);
         $this->assertSame(1, $metrics['Fake GPS']['value']);

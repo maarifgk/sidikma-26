@@ -8,13 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('attendance_leave_requests', fn (Blueprint $t) => $t->unsignedBigInteger('legacy_permission_id')->nullable()->unique());
-        Schema::table('attendance_records', function (Blueprint $t): void {
-            $t->json('legacy_snapshot')->nullable();
-            $t->json('legacy_attendance_ids')->nullable();
+        if (Schema::hasTable('attendance_leave_requests') && ! Schema::hasColumn('attendance_leave_requests', 'legacy_permission_id')) Schema::table('attendance_leave_requests', fn (Blueprint $t) => $t->unsignedBigInteger('legacy_permission_id')->nullable()->unique());
+        if (Schema::hasTable('attendance_records')) Schema::table('attendance_records', function (Blueprint $t): void {
+            if (! Schema::hasColumn('attendance_records', 'legacy_snapshot')) $t->json('legacy_snapshot')->nullable();
+            if (! Schema::hasColumn('attendance_records', 'legacy_attendance_ids')) $t->json('legacy_attendance_ids')->nullable();
         });
         foreach (['correspondence_requests' => 'legacy_correspondence_id', 'proposal_requests' => 'legacy_proposal_id', 'batik_orders' => 'legacy_order_id', 'secretariat_agendas' => 'legacy_agenda_id', 'learning_modules' => 'legacy_module_id', 'employee_activity_requests' => 'legacy_activity_id'] as $table => $column) {
-            Schema::table($table, function (Blueprint $t) use ($column): void {
+            if (! Schema::hasTable($table)) continue;
+            Schema::table($table, function (Blueprint $t) use ($column, $table): void {
+                if (Schema::hasColumn($table, $column)) return;
                 $t->unsignedBigInteger($column)->nullable()->unique();
                 $t->json('legacy_snapshot')->nullable();
             });

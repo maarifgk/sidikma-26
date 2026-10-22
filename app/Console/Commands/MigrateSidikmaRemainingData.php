@@ -10,7 +10,7 @@ use Throwable;
 
 class MigrateSidikmaRemainingData extends Command
 {
-    protected $signature = 'sidikma:migrate-remaining {--dry-run} {--force} {--target-connection= : Koneksi database target, misalnya mysql atau pgsql}';
+    protected $signature = 'sidikma:migrate-remaining {--dry-run} {--force} {--only= : Batasi modul, misalnya attendance} {--target-connection= : Koneksi database target, misalnya mysql atau pgsql}';
     protected $description = 'Migrasi modul SIDIKMA tersisa secara idempoten';
 
     private array $counts = [];
@@ -59,6 +59,10 @@ class MigrateSidikmaRemainingData extends Command
         $leaves=$m->table('attendance_permissions')->get();$existing=$p->table('attendance_leave_requests')->whereNotNull('legacy_permission_id')->pluck('legacy_permission_id')->flip();$new=[];$skip=0;
         foreach($leaves as$r){$e=$employees->get($r->user_id);$s=$school($r->kelas_id);if(!$e||!$s||!$users->has($r->user_id)){$skip++;continue;}if($existing->has($r->id))continue;$new[]=['legacy_permission_id'=>$r->id,'user_id'=>$r->user_id,'employee_id'=>$e->id,'school_id'=>$s->id,'leave_type'=>$r->category,'start_date'=>$r->start_date,'end_date'=>$r->end_date,'reason'=>$this->null($r->reason)??'-','attachment_path'=>$this->null($r->attachment_path),'status'=>$r->status,'review_notes'=>$this->null($r->review_notes),'reviewed_by'=>$users->has($r->reviewer_id)?$r->reviewer_id:null,'reviewed_at'=>$r->reviewed_at,'created_at'=>$r->created_at?:$now,'updated_at'=>$r->updated_at?:$now];}
         $out['attendance_leave_requests']=$new;$this->stat('Izin absensi',$leaves->count(),count($new),$leaves->count()-count($new)-$skip,$skip);
+
+        if ($this->option('only') === 'attendance') {
+            return $out;
+        }
 
         $this->simpleRequests($out,$m,$p,$school,$users,$now);
         $this->recaps($out,$m,$p,$school,$now);

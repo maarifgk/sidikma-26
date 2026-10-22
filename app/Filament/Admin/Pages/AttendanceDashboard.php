@@ -199,7 +199,7 @@ class AttendanceDashboard extends Page
             'metrics' => [
                 ['label' => 'Pegawai Aktif', 'value' => $totalEmployees, 'class' => 'total'],
                 ['label' => 'Presensi Tercatat', 'value' => $totalRecords, 'class' => 'recorded'],
-                ['label' => 'Hadir', 'value' => $present, 'class' => 'present'],
+                ['label' => 'Tidak Terlambat', 'value' => $present, 'class' => 'present'],
                 ['label' => 'Terlambat', 'value' => $late, 'class' => 'late'],
                 ['label' => 'Izin', 'value' => $permit, 'class' => 'permit'],
                 ['label' => 'Cuti', 'value' => $leave, 'class' => 'leave'],

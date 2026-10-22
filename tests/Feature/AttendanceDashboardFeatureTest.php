@@ -66,7 +66,7 @@ class AttendanceDashboardFeatureTest extends TestCase
         $this->assertSame(1, $metrics['Pegawai Aktif']['value']);
         $this->assertSame(1, $metrics['Presensi Tercatat']['value']);
         $this->assertSame(1, $metrics['Terlambat']['value']);
-        $this->assertSame(1, $metrics['Hadir']['value']);
+        $this->assertSame(1, $metrics['Tidak Terlambat']['value']);
         $this->assertSame(1, $metrics['Izin']['value']);
         $this->assertSame(1, $metrics['Cuti']['value']);
         $this->assertSame(1, $metrics['Percobaan Ditolak']['value']);

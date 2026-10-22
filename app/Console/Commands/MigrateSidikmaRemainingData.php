@@ -63,6 +63,10 @@ class MigrateSidikmaRemainingData extends Command
         if ($this->option('only') === 'attendance') {
             return $out;
         }
+        if ($this->option('only') === 'sipinter') {
+            $this->migrateSipinterOnly($out, $m, $p, $school);
+            return $out;
+        }
 
         $this->simpleRequests($out,$m,$p,$school,$users,$now);
         $this->recaps($out,$m,$p,$school,$now);
@@ -87,6 +91,37 @@ class MigrateSidikmaRemainingData extends Command
         $out['student_enrollments']=$this->dedupe($out['student_enrollments']??[]);$srcCount=$m->table('data_siswa')->count()+$m->table('kesiswaan')->count();$ex=$p->table('student_enrollments')->get()->keyBy(fn($r)=>$r->school_id.'|'.$r->academic_year);$out['student_enrollments']=array_values(array_filter($out['student_enrollments'],fn($r)=>!$ex->has($r['school_id'].'|'.$r['academic_year'])));$this->stat('Rekap siswa',$srcCount,count($out['student_enrollments']),$srcCount-count($out['student_enrollments']),0);
         foreach([['data_tenaga_pendidik','madrasah_id','tahun_pelajaran'],['tenaga','kelas_id','thn_pelajaran']]as[$table,$sid,$year])foreach($m->table($table)->get()as$r){$s=$school($r->{$sid});$yr=$this->year($r->{$year});if(!$s||!$yr)continue;if($table==='data_tenaga_pendidik'){$vals=[(int)$r->kepala_guru_asn_sertifikasi,(int)$r->kepala_guru_asn_non_sertifikasi,(int)$r->kepala_guru_yayasan_sertifikasi_inpassing,(int)$r->kepala_guru_yayasan_non_sertifikasi];}else{$vals=[(int)$r->jml_pns,0,(int)$r->jml_gtysertifikasiinpassing,(int)$r->jml_gtynonsertifikasi+(int)$r->jml_pty+(int)$r->jml_gtysertifikasinoninpassing];}$out['educator_recaps'][]=['school_id'=>$s->id,'academic_year'=>$yr,'asn_certified'=>$vals[0],'asn_uncertified'=>$vals[1],'foundation_certified_inpassing'=>$vals[2],'foundation_uncertified'=>$vals[3],'total'=>array_sum($vals),'legacy_snapshot'=>json_encode(['source'=>$table,'row'=>(array)$r],JSON_UNESCAPED_SLASHES),'created_at'=>$r->created_at??$now,'updated_at'=>$r->updated_at??$now];}
         $out['educator_recaps']=$this->dedupe($out['educator_recaps']??[]);$srcCount=$m->table('data_tenaga_pendidik')->count()+$m->table('tenaga')->count();$ex=$p->table('educator_recaps')->get()->keyBy(fn($r)=>$r->school_id.'|'.$r->academic_year);$out['educator_recaps']=array_values(array_filter($out['educator_recaps'],fn($r)=>!$ex->has($r['school_id'].'|'.$r['academic_year'])));$this->stat('Rekap pendidik',$srcCount,count($out['educator_recaps']),$srcCount-count($out['educator_recaps']),0);
+    }
+
+    private function migrateSipinterOnly(array &$out, $m, $p, $school): void
+    {
+        $src = $m->table('updatesipinter')->get();
+        $existing = $p->table('sipinter_updates')->whereNotNull('legacy_update_id')->pluck('legacy_update_id')->flip();
+        $new = [];
+        $skip = 0;
+        foreach ($src as $row) {
+            $schoolRecord = $school($row->kelas);
+            if (! $schoolRecord) { $skip++; continue; }
+            if ($existing->has($row->id) || $p->table('sipinter_updates')->where('school_id', $schoolRecord->id)->exists()) continue;
+            $new[] = [
+                'legacy_update_id' => $row->id,
+                'school_id' => $schoolRecord->id,
+                'request_file_path' => $row->updatesipinter ?: '-',
+                'asset_file_path' => $this->null($row->akta),
+                'recommendation_file_path' => $this->null($row->pcnu) ?? $this->null($row->pwnu),
+                'npsn' => SidikmaSchoolData::validNpsn($row->npsn),
+                'school_address' => $this->null($row->alamat),
+                'land_ownership' => $this->null($row->tanah),
+                'land_status' => $this->null($row->status_tanah),
+                'management_authority' => $this->null($row->pengelolaakta),
+                'uses_notarial_deed' => SidikmaSchoolData::yesNo($row->akta),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => $row->created_at,
+                'updated_at' => $row->updated_at,
+            ];
+        }
+        $out['sipinter_updates'] = $new;
+        $this->stat('Update SIPINTER', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
     }
 
     private function supporting(array &$out,$m,$p,$school,$employees,$users,$foundation,$now):void

@@ -10,7 +10,7 @@ use Throwable;
 
 class MigrateSidikmaRemainingData extends Command
 {
-    protected $signature = 'sidikma:migrate-remaining {--dry-run} {--force}';
+    protected $signature = 'sidikma:migrate-remaining {--dry-run} {--force} {--target-connection= : Koneksi database target, misalnya mysql atau pgsql}';
     protected $description = 'Migrasi modul SIDIKMA tersisa secara idempoten';
 
     private array $counts = [];
@@ -28,7 +28,8 @@ class MigrateSidikmaRemainingData extends Command
         if ($this->option('dry-run')) { $this->info('DRY RUN SELESAI — PostgreSQL tidak diubah.'); return self::SUCCESS; }
         if (! $this->option('force') && ! $this->confirm('Migrasikan seluruh data eligible?')) return self::SUCCESS;
         try {
-            DB::connection('pgsql')->transaction(fn () => $this->insert($rows));
+            $targetConnection = $this->option('target-connection') ?: env('SIDIKMA_TARGET_CONNECTION', 'pgsql');
+            DB::connection($targetConnection)->transaction(fn () => $this->insert($rows, $targetConnection));
         } catch (Throwable $e) {
             report($e); $this->error('Gagal; transaksi di-rollback: '.$e->getMessage()); return self::FAILURE;
         }
@@ -39,7 +40,7 @@ class MigrateSidikmaRemainingData extends Command
 
     private function build(): array
     {
-        $m = DB::connection('mysql_sidikma'); $p = DB::connection('pgsql');
+        $m = DB::connection('mysql_sidikma'); $targetConnection = $this->option('target-connection') ?: env('SIDIKMA_TARGET_CONNECTION', 'pgsql'); $p = DB::connection($targetConnection);
         $foundation = $p->table('foundations')->whereNull('deleted_at')->sole();
         $classNames = $m->table('kelas')->pluck('nama_kelas', 'id');
         $schools = $p->table('schools')->whereNull('deleted_at')->get()->keyBy(fn ($s) => SidikmaMasterData::normalized($s->name));
@@ -93,7 +94,7 @@ class MigrateSidikmaRemainingData extends Command
         foreach([['agenda_kesekretariatans','secretariat_agendas','legacy_agenda_id'],['modul','learning_modules','legacy_module_id']]as[$table,$target,$key]){$src=$m->table($table)->get();$ex=$p->table($target)->whereNotNull($key)->pluck($key)->flip();$new=[];foreach($src as$r){if($ex->has($r->id))continue;$new[]=$table==='modul'?[$key=>$r->id,'foundation_id'=>$foundation->id,'class_name'=>$r->kelas,'module_type'=>$r->jenis_modul,'semester'=>(int)$r->semester,'subject'=>$r->mapel,'chapter'=>$r->bab,'file_path'=>$r->file_path,'original_name'=>basename(str_replace('\\','/',$r->file_path)),'uploaded_at'=>$r->created_at,'legacy_snapshot'=>json_encode((array)$r,JSON_UNESCAPED_SLASHES),'created_at'=>$r->created_at,'updated_at'=>$r->created_at]:[$key=>$r->id,'foundation_id'=>$foundation->id,'activity'=>$r->kegiatan,'implementation_date'=>$r->tanggal_pelaksanaan,'officer'=>$r->petugas,'status'=>$r->keterangan?:'planned','notes'=>$this->null($r->catatan),'legacy_snapshot'=>json_encode((array)$r,JSON_UNESCAPED_SLASHES),'created_at'=>$r->created_at,'updated_at'=>$r->updated_at];}$out[$target]=$new;$this->stat($table==='modul'?'Modul belajar':'Agenda sekretariat',$src->count(),count($new),$src->count()-count($new),0);}
     }
 
-    private function insert(array $rows):void { foreach($rows as$table=>$items){if($table==='_batik_product_updates'){foreach($items as$item)DB::connection('pgsql')->table('batik_products')->where('id',$item['id'])->update(array_map(fn($v)=>is_string($v)&&str_starts_with($v,'0000-00-00')?null:$v,$item['payload']));continue;}foreach(array_chunk($items,100)as$chunk) if($chunk) DB::connection('pgsql')->table($table)->insert(array_map(fn($row)=>array_map(fn($value)=>is_string($value)&&str_starts_with($value,'0000-00-00')?null:$value,$row),$chunk));} }
+    private function insert(array $rows, string $targetConnection):void { foreach($rows as$table=>$items){if($table==='_batik_product_updates'){foreach($items as$item)DB::connection($targetConnection)->table('batik_products')->where('id',$item['id'])->update(array_map(fn($v)=>is_string($v)&&str_starts_with($v,'0000-00-00')?null:$v,$item['payload']));continue;}foreach(array_chunk($items,100)as$chunk) if($chunk) DB::connection($targetConnection)->table($table)->insert(array_map(fn($row)=>array_map(fn($value)=>is_string($value)&&str_starts_with($value,'0000-00-00')?null:$value,$row),$chunk));} }
     private function stat($name,$source,$new,$existing,$skip):void {$this->counts[$name]=[$source,$new,max(0,$existing),$skip];}
     private function null($v):?string {$v=trim((string)$v);return $v===''||$v==='-'?null:$v;}
     private function status($v):string {$v=SidikmaMasterData::normalized((string)$v);return match(true){str_contains($v,'tolak')||str_contains($v,'tidak disetujui')=>'rejected',str_contains($v,'setuju')||str_contains($v,'approve')||str_contains($v,'acc')||str_contains($v,'selesai')=>'approved',default=>'submitted'};}

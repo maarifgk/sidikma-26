@@ -9,7 +9,7 @@ use Throwable;
 
 class MigrateSidikmaWorkflows extends Command
 {
-    protected $signature = 'sidikma:migrate-workflows {--dry-run} {--force} {--target-connection= : Koneksi database target, misalnya mysql atau pgsql}';
+    protected $signature = 'sidikma:migrate-workflows {--dry-run} {--force} {--only= : Batasi modul, misalnya proposals} {--target-connection= : Koneksi database target, misalnya mysql atau pgsql}';
 
     protected $description = 'Migrasi usulan SK dan mutasi SIDIKMA';
 
@@ -69,6 +69,9 @@ class MigrateSidikmaWorkflows extends Command
             }$state = SidikmaMasterData::normalized($u->s_pengajuan);
             $proposalStatus = str_contains($state, 'selesai') ? 'approved' : (str_contains($state, 'tinjau') ? 'under_review' : (trim($state) === '' ? 'submitted' : 'revision'));
             $proposals[] = ['status' => $status, 'payload' => ['legacy_proposal_id' => (int) $u->id, 'employee_id' => $employee?->id, 'candidate_name' => trim($u->nama), 'candidate_email' => $this->nullable($u->email), 'candidate_phone' => $this->nullable($u->no_telepon), 'candidate_school' => $this->nullable($u->kelas), 'partner_admin_number' => $this->nullable($u->no_mitra), 'status' => $proposalStatus, 'notes' => $proposalStatus === 'revision' ? $u->s_pengajuan : null, 'photo_path' => $this->nullable($u->foto), 'diploma_path' => $this->nullable($u->ijazah), 'application_letter_path' => $this->nullable($u->permohonan), 'service_statement_path' => $this->nullable($u->pernyataan), 'mwc_recommendation_request_path' => $this->nullable($u->s_pengajuan), 'submitted_by' => $employee?->user_id, 'legacy_snapshot' => json_encode((array) $u, JSON_UNESCAPED_SLASHES)]];
+        }
+        if ($this->option('only') === 'proposals') {
+            return $a + compact('proposals') + ['mutations' => []];
         }
         $mutations = [];
         foreach ($m->table('mutasi')->orderBy('id')->get() as $u) {

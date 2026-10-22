@@ -10,7 +10,7 @@ use Throwable;
 
 class MigrateSidikmaFinance extends Command
 {
-    protected $signature = 'sidikma:migrate-finance {--dry-run} {--force}';
+    protected $signature = 'sidikma:migrate-finance {--dry-run} {--force} {--target-connection= : Koneksi database target, misalnya mysql atau pgsql}';
 
     protected $description = 'Migrasi tagihan, histori pembayaran, dan kas SIDIKMA';
 
@@ -56,7 +56,8 @@ class MigrateSidikmaFinance extends Command
     private function analyze(): array
     {
         $m = DB::connection('mysql_sidikma');
-        $p = DB::connection('pgsql');
+        $targetConnection = $this->option('target-connection') ?: env('SIDIKMA_TARGET_CONNECTION', 'pgsql');
+        $p = DB::connection($targetConnection);
         $foundation = $p->table('foundations')->whereNull('deleted_at')->sole();
         $users = $p->table('users')->pluck('id')->flip();
         $employees = $p->table('employees')->whereNull('deleted_at')->whereNotNull('user_id')->pluck('id', 'user_id');

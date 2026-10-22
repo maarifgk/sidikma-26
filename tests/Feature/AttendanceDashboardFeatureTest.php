@@ -57,16 +57,20 @@ class AttendanceDashboardFeatureTest extends TestCase
     {
         $this->actingAs($this->admin);
         AttendanceRecord::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-01', 'status' => 'late', 'check_in_at' => '2026-09-01 01:00:00', 'check_out_at' => '2026-09-01 07:00:00', 'check_out_reason' => 'Keperluan dinas']);
+        AttendanceLeaveRequest::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'leave_type' => AttendanceLeaveRequest::TYPE_PERMIT, 'start_date' => '2026-09-02', 'end_date' => '2026-09-02', 'reason' => 'Keperluan keluarga', 'status' => AttendanceLeaveRequest::STATUS_APPROVED]);
+        AttendanceLeaveRequest::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'leave_type' => AttendanceLeaveRequest::TYPE_LEAVE, 'start_date' => '2026-09-03', 'end_date' => '2026-09-03', 'reason' => 'Cuti tahunan', 'status' => AttendanceLeaveRequest::STATUS_APPROVED]);
         AttendanceEvent::create(['user_id' => $this->admin->id, 'employee_id' => $this->employee->id, 'school_id' => $this->one->id, 'attendance_date' => '2026-09-03', 'event_type' => 'check_in', 'event_status' => 'rejected', 'rejection_code' => 'fake_gps', 'rejection_reason' => 'Lokasi palsu', 'is_mock_location' => true, 'checked_at' => '2026-09-03 01:00:00']);
         $data = $this->dashboardData();
         $metrics = collect($data['metrics'])->keyBy('label');
         $this->assertSame(1, $metrics['Pegawai Aktif']['value']);
         $this->assertSame(1, $metrics['Presensi Tercatat']['value']);
         $this->assertSame(1, $metrics['Terlambat']['value']);
+        $this->assertSame(1, $metrics['Izin']['value']);
+        $this->assertSame(1, $metrics['Cuti']['value']);
         $this->assertSame(1, $metrics['Percobaan Ditolak']['value']);
         $this->assertSame(1, $metrics['Fake GPS']['value']);
         $this->assertSame(1, $metrics['Pulang Awal']['value']);
-        $this->assertSame('100.0%', $metrics['Tingkat Kehadiran']['value']);
+        $this->assertSame('100.0%', $metrics['Persentase']['value']);
         $this->assertCount(3, $data['dailyCharts']);
         $this->assertSame(0, $data['dailyCharts'][1]['present']);
     }

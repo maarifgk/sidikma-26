@@ -8,13 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('sipinter_updates')) return;
         Schema::create('sipinter_updates', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('school_id')->unique()->constrained()->restrictOnDelete();
+            $table->unsignedBigInteger('school_id')->unique();
             $table->string('request_file_path');
             $table->string('asset_file_path');
             $table->string('recommendation_file_path');
-            $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('uploaded_by')->nullable()->index();
             $table->timestamps();
         });
     }

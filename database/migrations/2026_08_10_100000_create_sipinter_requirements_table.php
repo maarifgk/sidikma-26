@@ -9,14 +9,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('sipinter_requirements')) return;
         Schema::create('sipinter_requirements', function (Blueprint $table): void {
             $table->id();
             $table->unsignedSmallInteger('position')->default(0)->index();
             $table->string('number', 20)->nullable();
             $table->text('description');
             $table->boolean('is_active')->default(true)->index();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable()->index();
+            $table->unsignedBigInteger('updated_by')->nullable()->index();
             $table->timestamps();
         });
 

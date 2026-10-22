@@ -9,7 +9,7 @@ use Throwable;
 
 class MigrateSidikmaWorkflows extends Command
 {
-    protected $signature = 'sidikma:migrate-workflows {--dry-run} {--force}';
+    protected $signature = 'sidikma:migrate-workflows {--dry-run} {--force} {--target-connection= : Koneksi database target, misalnya mysql atau pgsql}';
 
     protected $description = 'Migrasi usulan SK dan mutasi SIDIKMA';
 
@@ -45,7 +45,8 @@ class MigrateSidikmaWorkflows extends Command
     private function analyze(): array
     {
         $m = DB::connection('mysql_sidikma');
-        $p = DB::connection('pgsql');
+        $targetConnection = $this->option('target-connection') ?: env('SIDIKMA_TARGET_CONNECTION', 'pgsql');
+        $p = DB::connection($targetConnection);
         $employees = $p->table('employees')->whereNull('deleted_at')->get();
         $byEmail = $employees->whereNotNull('email')->groupBy(fn ($e) => SidikmaMasterData::normalized($e->email));
         $byName = $employees->groupBy(fn ($e) => SidikmaMasterData::normalized($e->name));
@@ -95,8 +96,9 @@ class MigrateSidikmaWorkflows extends Command
 
     private function migrate(array $a): void
     {
-        DB::connection('pgsql')->transaction(function () use ($a) {
-            $p = DB::connection('pgsql');
+        $targetConnection = $this->option('target-connection') ?: env('SIDIKMA_TARGET_CONNECTION', 'pgsql');
+        DB::connection($targetConnection)->transaction(function () use ($a, $targetConnection) {
+            $p = DB::connection($targetConnection);
             $now = now();
             foreach ($a['proposals'] as $r) {
                 if ($r['status'] === 'ELIGIBLE') {

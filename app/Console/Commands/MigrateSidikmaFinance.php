@@ -22,10 +22,13 @@ class MigrateSidikmaFinance extends Command
         if ($dry) {
             $this->writeDryRunReports($a);
         }
-        if ($a['invalid'] || $a['conflict']) {
-            $this->error('Migrasi diblokir.');
+        if ($a['conflict']) {
+            $this->error('Migrasi diblokir karena ada conflict.');
 
             return self::FAILURE;
+        }
+        if ($a['invalid']) {
+            $this->warn("{$a['invalid']} data invalid tetap dilewati dan dicatat di laporan audit; data valid akan dimigrasikan.");
         }
         if ($dry) {
             $this->info('DRY RUN SELESAI — PostgreSQL tidak diubah.');
@@ -45,7 +48,7 @@ class MigrateSidikmaFinance extends Command
             return self::FAILURE;
         }
         $v = $this->analyze();
-        if ($v['invoice_eligible'] || $v['transaction_eligible'] || $v['treasury_eligible'] || $v['invalid'] || $v['conflict']) {
+        if ($v['invoice_eligible'] || $v['transaction_eligible'] || $v['treasury_eligible'] || $v['conflict']) {
             return self::FAILURE;
         }
         $this->info("SELESAI — {$a['invoice_eligible']} invoice, {$a['transaction_eligible']} transaksi, {$a['treasury_eligible']} kas.");

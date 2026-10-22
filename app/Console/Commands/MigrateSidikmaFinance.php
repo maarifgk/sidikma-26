@@ -233,8 +233,9 @@ class MigrateSidikmaFinance extends Command
 
     private function migrate(array $a): void
     {
-        DB::connection('pgsql')->transaction(function () use ($a) {
-            $p = DB::connection('pgsql');
+        $targetConnection = $this->option('target-connection') ?: env('SIDIKMA_TARGET_CONNECTION', 'pgsql');
+        DB::connection($targetConnection)->transaction(function () use ($a, $targetConnection) {
+            $p = DB::connection($targetConnection);
             $now = now();
             $map = $p->table('payment_invoices')->whereNotNull('legacy_invoice_id')->pluck('id', 'legacy_invoice_id')->all();
             foreach ($a['billRows'] as $r) {

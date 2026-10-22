@@ -5,15 +5,21 @@
         width: 0.48rem;
         height: 0.48rem;
         margin-inline: auto 0.3rem;
-        border-right: 2px solid #9ca3af;
-        border-bottom: 2px solid #9ca3af;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        color: rgba(255, 255, 255, 0.65);
         transform: translateY(-0.15rem) rotate(45deg);
         transition: transform 160ms ease;
     }
 
     .fi-panel-app .fi-sidebar-item.app-nav-has-children.fi-active > .fi-sidebar-item-btn::after,
     .fi-panel-app .fi-sidebar-item.app-nav-has-children.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn::after {
+        color: var(--ui-yellow-300);
         transform: translateY(0.15rem) rotate(225deg);
+    }
+
+    .fi-panel-app .fi-sidebar-item.app-nav-has-children.fi-active > .fi-sidebar-item-btn::after {
+        color: var(--ui-yellow-900);
     }
 
 </style>

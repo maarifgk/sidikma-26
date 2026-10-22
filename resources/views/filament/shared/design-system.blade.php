@@ -18,11 +18,17 @@
 
     body:not(:has(.teacher-mobile)) .fi-sidebar { border-inline-end:0;background:linear-gradient(180deg,var(--ui-green-800),#04704a 55%,#05603a);box-shadow:8px 0 24px rgba(5,96,58,.12); }
     body:not(:has(.teacher-mobile)) .fi-topbar { border-bottom:1px solid rgba(23,104,181,.1);background:rgba(255,255,255,.92);box-shadow:0 4px 18px rgba(18,59,115,.045);backdrop-filter:blur(12px); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn { border-radius:.65rem;transition:background-color .18s ease,color .18s ease,box-shadow .18s ease; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn { min-height:2.75rem;gap:.75rem;padding:.65rem .8rem;border-radius:.65rem;transition:background-color .18s ease,color .18s ease,box-shadow .18s ease; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item-label { min-width:0;font-size:.8125rem;font-weight:550;line-height:1.45; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn > .fi-icon { width:1.2rem;height:1.2rem;flex-shrink:0; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:focus-visible { outline:2px solid var(--ui-yellow-300);outline-offset:2px; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:hover { background:rgba(255,255,255,.11); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active>.fi-sidebar-item-btn { background:var(--ui-yellow-400);box-shadow:0 5px 13px rgba(113,63,18,.18); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-sidebar-item-has-active-child-items>.fi-sidebar-item-btn { background:rgba(250,204,21,.16); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-group-label { color:rgba(255,255,255,.62);font-size:.68rem;font-weight:750;letter-spacing:.08em; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-group-label { color:rgba(255,255,255,.7);font-size:.65rem;font-weight:700;letter-spacing:.1em;line-height:1.5; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-group-btn { padding-inline:.8rem; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-group-btn > .fi-icon { color:rgba(255,255,255,.7); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-group-items { gap:.25rem; }
     body:not(:has(.teacher-mobile)) .fi-sidebar :is(.fi-sidebar-item-label,.fi-sidebar-item-btn>.fi-icon) { color:rgba(255,255,255,.9); }
     body:not(:has(.teacher-mobile)) .fi-sidebar .fi-sidebar-item.fi-active>.fi-sidebar-item-btn :is(.fi-sidebar-item-label,.fi-icon) { color:var(--ui-yellow-900); }
     body:not(:has(.teacher-mobile)) .fi-sidebar .fi-sidebar-item.fi-sidebar-item-has-active-child-items>.fi-sidebar-item-btn :is(.fi-sidebar-item-label,.fi-icon) { color:var(--ui-yellow-300); }
@@ -32,7 +38,9 @@
     body:not(:has(.teacher-mobile)) .fi-sidebar-header-logo-ctn a { display:flex;align-items:center;justify-content:center; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-header .fi-logo { display:block;width:150px;max-width:100%;height:auto!important;object-fit:contain;margin-inline:auto;color:var(--ui-green-800); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-header > .fi-icon-btn { position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-nav { padding-top:16px; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-nav { gap:1.5rem;padding:1.25rem .85rem;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent;scroll-padding-block:1rem;overscroll-behavior:contain; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-group { gap:.55rem; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label { font-weight:650; }
     @media (min-width:64rem) {
         /* Filament renders the desktop sidebar brand inside the existing topbar. */
         body.fi-body-has-topbar:not(:has(.teacher-mobile)) .fi-topbar { min-height:104px; }
@@ -52,7 +60,8 @@
     body:not(:has(.teacher-mobile)) .fi-sidebar-footer { border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem; }
 
     /* Submenu cukup memakai penanda titik, tanpa garis penghubung atau lengkung aktif. */
-    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border) { background:transparent;box-shadow:none; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border) { min-height:2.4rem;gap:.75rem;padding-block:.5rem;background:transparent;box-shadow:none; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border) .fi-sidebar-item-label { font-size:.775rem;font-weight:450; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border):hover { background:rgba(255,255,255,.1); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active > .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border) { background:var(--ui-yellow-400);box-shadow:0 5px 13px rgba(113,63,18,.18); }
     body:not(:has(.teacher-mobile)) :is(.fi-sidebar-item-grouped-border-part-not-first,.fi-sidebar-item-grouped-border-part-not-last) { display:none; }

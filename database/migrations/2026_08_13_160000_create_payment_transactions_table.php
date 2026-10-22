@@ -11,8 +11,11 @@ return new class extends Migration
         Schema::create('payment_transactions', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('payment_invoice_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('school_id')->nullable()->constrained()->nullOnDelete();
+            // These legacy-linked columns must remain compatible with the existing
+            // production users/schools tables, whose primary-key definitions predate
+            // this migration and are not guaranteed to be UNSIGNED BIGINT.
+            $table->unsignedBigInteger('user_id')->nullable()->index();
+            $table->unsignedBigInteger('school_id')->nullable()->index();
             $table->unsignedBigInteger('legacy_payment_id')->unique();
             $table->unsignedBigInteger('legacy_invoice_id')->nullable()->index();
             $table->string('gateway_order_id')->nullable()->index();

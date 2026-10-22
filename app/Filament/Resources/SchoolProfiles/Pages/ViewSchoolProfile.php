@@ -11,6 +11,7 @@ use App\Models\School;
 use App\Models\StudentEnrollment;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 
 class ViewSchoolProfile extends ViewRecord
 {
@@ -41,9 +42,14 @@ class ViewSchoolProfile extends ViewRecord
     {
         /** @var School $school */
         $school = $this->getRecord();
-        $studentEnrollment = $school->studentEnrollments()
-            ->orderByDesc('academic_year')
-            ->first();
+        // Student recap data is optional during staged deployments. Avoid
+        // taking the entire profile page down when its migration has not run.
+        $studentEnrollment = SchemaFacade::connection($school->getConnectionName())
+            ->hasTable('student_enrollments')
+            ? $school->studentEnrollments()
+                ->orderByDesc('academic_year')
+                ->first()
+            : null;
         $educatorRecap = $school->educatorRecaps()
             ->orderByDesc('academic_year')
             ->first();

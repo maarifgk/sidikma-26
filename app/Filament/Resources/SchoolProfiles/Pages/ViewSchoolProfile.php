@@ -50,10 +50,15 @@ class ViewSchoolProfile extends ViewRecord
                 ->orderByDesc('academic_year')
                 ->first()
             : null;
-        $educatorRecap = $school->educatorRecaps()
-            ->orderByDesc('academic_year')
-            ->first();
-        $activeEmployees = $school->employees()->where('is_active', true);
+        $connection = SchemaFacade::connection($school->getConnectionName());
+        $hasEmployeeType = $connection->hasTable('employees') && $connection->hasColumn('employees', 'employee_type');
+        $hasEmploymentStatus = $connection->hasTable('employees') && $connection->hasColumn('employees', 'employment_status');
+        $educatorRecap = $connection->hasTable('educator_recaps')
+            ? $school->educatorRecaps()->orderByDesc('academic_year')->first()
+            : null;
+        $activeEmployees = $connection->hasTable('employees')
+            ? $school->employees()->where('is_active', true)
+            : null;
 
         return [
             'school' => $school,
@@ -67,16 +72,16 @@ class ViewSchoolProfile extends ViewRecord
             'foundationCertified' => (int) ($educatorRecap?->foundation_certified_inpassing ?? 0),
             'foundationUncertified' => (int) ($educatorRecap?->foundation_uncertified ?? 0),
             'educatorTotal' => (int) ($educatorRecap?->total ?? 0),
-            'masterEmployeeTotal' => (clone $activeEmployees)->count(),
-            'teacherTotal' => (clone $activeEmployees)->where('employee_type', 'guru')->count(),
-            'staffTotal' => (clone $activeEmployees)->where('employee_type', 'pegawai')->count(),
-            'gttTotal' => (clone $activeEmployees)->where('employment_status', 'GTT')->count(),
-            'permanentFoundationStaffTotal' => (clone $activeEmployees)
+            'masterEmployeeTotal' => $activeEmployees ? (clone $activeEmployees)->count() : 0,
+            'teacherTotal' => $activeEmployees && $hasEmployeeType ? (clone $activeEmployees)->where('employee_type', 'guru')->count() : 0,
+            'staffTotal' => $activeEmployees && $hasEmployeeType ? (clone $activeEmployees)->where('employee_type', 'pegawai')->count() : 0,
+            'gttTotal' => $activeEmployees && $hasEmploymentStatus ? (clone $activeEmployees)->where('employment_status', 'GTT')->count() : 0,
+            'permanentFoundationStaffTotal' => $activeEmployees && $hasEmploymentStatus ? (clone $activeEmployees)
                 ->where('employment_status', 'Pegawai Tetap Yayasan')
-                ->count(),
-            'nonPermanentStaffTotal' => (clone $activeEmployees)
+                ->count() : 0,
+            'nonPermanentStaffTotal' => $activeEmployees && $hasEmploymentStatus ? (clone $activeEmployees)
                 ->where('employment_status', 'Pegawai Tidak Tetap')
-                ->count(),
+                ->count() : 0,
         ];
     }
 
@@ -85,6 +90,11 @@ class ViewSchoolProfile extends ViewRecord
     {
         /** @var School $school */
         $school = $this->getRecord();
+
+        $connection = SchemaFacade::connection($school->getConnectionName());
+        if (! $connection->hasTable('employee_positions') || ! $connection->hasTable('employee_assignments')) {
+            return [];
+        }
 
         return EmployeePosition::query()
             ->whereHas('assignments', fn ($query) => $query

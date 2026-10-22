@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class UserResource extends Resource
@@ -37,6 +38,16 @@ class UserResource extends Resource
     public static function getGlobalSearchResultDetails(Model $record): array
     {
         return ['Email' => $record->email, 'Status' => $record->is_active ? 'Aktif' : 'Nonaktif'];
+    }
+
+    /** @return Builder<User> */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereHas('roles', fn (Builder $query): Builder => $query->whereIn('name', [
+                User::ROLE_ADMIN_INDUK,
+                User::ROLE_ADMIN_SEKOLAH_MADRASAH,
+            ]));
     }
 
     public static function form(Schema $schema): Schema

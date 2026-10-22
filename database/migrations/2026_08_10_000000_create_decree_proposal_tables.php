@@ -9,7 +9,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('decree_requirements', function (Blueprint $table): void {
+        if (! Schema::hasTable('decree_requirements')) Schema::create('decree_requirements', function (Blueprint $table): void {
             $table->id();
             $table->unsignedSmallInteger('position')->default(0)->index();
             $table->string('number', 20)->nullable();
@@ -17,17 +17,17 @@ return new class extends Migration
             $table->string('template_label', 100)->nullable();
             $table->string('template_path')->nullable();
             $table->boolean('is_active')->default(true)->index();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable()->index();
+            $table->unsignedBigInteger('updated_by')->nullable()->index();
             $table->timestamps();
         });
 
-        Schema::create('decree_proposals', function (Blueprint $table): void {
+        if (! Schema::hasTable('decree_proposals')) Schema::create('decree_proposals', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('employee_id')->constrained()->restrictOnDelete();
+            $table->unsignedBigInteger('employee_id')->index();
             $table->string('status', 30)->default('submitted')->index();
             $table->text('notes')->nullable();
-            $table->foreignId('submitted_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('submitted_by')->nullable()->index();
             $table->timestamps();
             $table->softDeletes();
 
@@ -36,7 +36,7 @@ return new class extends Migration
 
         $now = now();
 
-        DB::table('decree_requirements')->insert(array_map(
+        if (DB::table('decree_requirements')->count() === 0) DB::table('decree_requirements')->insert(array_map(
             fn (array $requirement): array => array_merge([
                 'template_label' => null,
                 'template_path' => null,

@@ -39,6 +39,39 @@ class AttendanceSetting extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    /** Normalize polygons written by the legacy SIDIKMA schema. */
+    public function getGeofencePolygonAttribute(mixed $value): ?array
+    {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+
+        if (! is_array($value)) {
+            return null;
+        }
+
+        $points = [];
+        foreach ($value as $point) {
+            if (! is_array($point)) {
+                continue;
+            }
+
+            $latitude = $point['latitude'] ?? $point['lat'] ?? null;
+            $longitude = $point['longitude'] ?? $point['lng'] ?? $point['lon'] ?? null;
+
+            if (! is_numeric($latitude) || ! is_numeric($longitude)) {
+                continue;
+            }
+
+            $points[] = [
+                'latitude' => (float) $latitude,
+                'longitude' => (float) $longitude,
+            ];
+        }
+
+        return $points;
+    }
+
     public static function forSchool(int $schoolId): self
     {
         return static::query()->firstOrCreate(

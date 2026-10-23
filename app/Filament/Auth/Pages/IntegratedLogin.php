@@ -13,6 +13,8 @@ use Filament\Schemas\Components\Component;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class IntegratedLogin extends Login
@@ -21,6 +23,8 @@ class IntegratedLogin extends Login
 
     public function authenticate(): ?LoginResponse
     {
+        $this->upgradeLegacyPasswordHash();
+
         $response = parent::authenticate();
 
         if (! $response instanceof LoginResponse) {
@@ -40,6 +44,29 @@ class IntegratedLogin extends Login
         }
 
         return $response;
+    }
+
+    private function upgradeLegacyPasswordHash(): void
+    {
+        $email = strtolower(trim((string) data_get($this->data, 'email')));
+        $password = (string) data_get($this->data, 'password');
+
+        if ($email === '' || $password === '') {
+            return;
+        }
+
+        $user = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
+
+        if (! $user || Hash::info((string) $user->password)['algoName'] !== 'unknown') {
+            return;
+        }
+
+        if (hash_equals((string) $user->password, $password)) {
+            DB::table('users')->where('id', $user->id)->update([
+                'password' => Hash::make($password),
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     protected function isUserAllowedToAccessPanel(Authenticatable $user): bool

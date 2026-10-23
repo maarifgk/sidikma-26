@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Throwable;
 
 class MigrateSidikmaUsers extends Command
@@ -454,7 +455,7 @@ class MigrateSidikmaUsers extends Command
                     'email_verified_at' => $this->nullableDate($user->email_verified_at),
                     'phone_number' => $this->nullableTrim($user->no_tlp),
                     'avatar_path' => $this->nullableTrim($user->image),
-                    'password' => $password,
+                    'password' => Hash::make($password),
                     'remember_token' => $user->remember_token,
                     'is_active' => $user->status === 'ON',
                     'created_at' => $this->nullableDate($user->created_at),

@@ -17,6 +17,7 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
@@ -52,7 +53,7 @@ class MyAttendance extends Page
     public static function canAccess(): bool
     {
         return Employee::query()
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->where('is_active', true)
             ->whereNotNull('school_id')
             ->exists();
@@ -104,7 +105,7 @@ class MyAttendance extends Page
                     throw ValidationException::withMessages(['attendance' => 'Presensi hari ini sudah tercatat.']);
                 }
                 $record = AttendanceRecord::query()->create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'employee_id' => $employee->getKey(),
             'school_id' => $employee->school_id,
             'attendance_date' => $date,
@@ -189,7 +190,7 @@ class MyAttendance extends Page
     /** @return array<string, mixed> */
     private function pageData(): array
     {
-        $employee = Employee::query()->with('school')->where('user_id', auth()->id())->where('is_active', true)->first();
+        $employee = Employee::query()->with('school')->where('user_id', Auth::id())->where('is_active', true)->first();
         $today = now(config('attendance.timezone'))->toDateString();
         $record = $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->whereDate('attendance_date', $today)->first() : null;
         $setting = $employee?->school_id ? AttendanceSetting::forSchool($employee->school_id) : null;
@@ -208,7 +209,7 @@ class MyAttendance extends Page
     /** @return array{0: Employee, 1: AttendanceSetting} */
     private function context(): array
     {
-        $employee = Employee::query()->where('user_id', auth()->id())->where('is_active', true)->first();
+        $employee = Employee::query()->where('user_id', Auth::id())->where('is_active', true)->first();
 
         if (! $employee || ! $employee->school_id) {
             throw ValidationException::withMessages(['attendance' => 'Akun belum terhubung dengan data guru/pegawai dan sekolah.']);
@@ -273,11 +274,15 @@ class MyAttendance extends Page
                 (float) $this->longitude,
             );
 
-            if (count($setting->geofence_polygon ?? []) < 3) {
-                $this->rejectCurrent($this->currentEventType(), 'feature_disabled', 'Polygon geofence sekolah belum dikonfigurasi.', $setting->geofence_version);
-                throw ValidationException::withMessages(['attendance' => 'Polygon lokasi sekolah belum dikonfigurasi. Hubungi admin sekolah.']);
-            }
-            $insideArea = $locationService->isInsidePolygon((float) $this->latitude, (float) $this->longitude, $setting->geofence_polygon);
+            // Keep the legacy SIDIKMA attendance flow working while schools are
+            // migrated to polygon geofences. Older settings only have the office
+            // point and radius; rejecting them here makes the old mobile client
+            // show "location settings could not be loaded" even though the point
+            // configuration is valid.
+            $polygon = $setting->geofence_polygon ?? [];
+            $insideArea = count($polygon) >= 3
+                ? $locationService->isInsidePolygon((float) $this->latitude, (float) $this->longitude, $polygon)
+                : $locationService->isInsideRadius($distance, (int) ($setting->radius_meters ?: 100));
 
             if (! $insideArea) {
                 $this->rejectCurrent($this->currentEventType(), 'outside_geofence', 'Anda berada di luar area presensi.', $setting->geofence_version);

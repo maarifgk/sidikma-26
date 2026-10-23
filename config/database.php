@@ -132,16 +132,20 @@ return [
         ],
 
         'sidikma_induk' => [
-            'driver' => env('SIDIKMA_DB_CONNECTION', 'mysql'),
+            // SIDIKMA can use a separate database in production, but local and
+            // test environments commonly keep all tables in the main database.
+            // Falling back to the primary DB prevents mobile pages from failing
+            // with an empty-host connection error when SIDIKMA_* is not set.
+            'driver' => env('SIDIKMA_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
             'url' => env('SIDIKMA_DB_URL'),
-            'host' => env('SIDIKMA_DB_HOST'),
-            'port' => env('SIDIKMA_DB_PORT', '3306'),
-            'database' => env('SIDIKMA_DB_DATABASE'),
-            'username' => env('SIDIKMA_DB_USERNAME'),
-            'password' => env('SIDIKMA_DB_PASSWORD'),
-            'unix_socket' => env('SIDIKMA_DB_SOCKET', ''),
-            'charset' => env('SIDIKMA_DB_CHARSET', 'utf8mb4'),
-            'collation' => env('SIDIKMA_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'host' => env('SIDIKMA_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('SIDIKMA_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('SIDIKMA_DB_DATABASE', env('DB_DATABASE')),
+            'username' => env('SIDIKMA_DB_USERNAME', env('DB_USERNAME')),
+            'password' => env('SIDIKMA_DB_PASSWORD', env('DB_PASSWORD')),
+            'unix_socket' => env('SIDIKMA_DB_SOCKET', env('DB_SOCKET', '')),
+            'charset' => env('SIDIKMA_DB_CHARSET', env('DB_CHARSET', 'utf8mb4')),
+            'collation' => env('SIDIKMA_DB_COLLATION', env('DB_COLLATION', 'utf8mb4_unicode_ci')),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,

@@ -36,7 +36,13 @@ window.attendanceGps = ({ maxAccuracy }) => ({
                     this.gpsMessage = `Memperbaiki akurasi GPS: ±${Math.ceil(best.coords.accuracy)} m (batas ${maxAccuracy} m). Mohon tunggu...`;
                 }
             }, error => {
-                if (error.code === 1) finish(null, 'Izin lokasi ditolak. Izinkan akses lokasi di browser, lalu coba lagi.');
+                if (error.code === 1) {
+                    finish(null, 'Izin lokasi ditolak. Izinkan akses lokasi di browser, lalu coba lagi.');
+                } else if (error.code === 2) {
+                    finish(null, 'Lokasi belum tersedia. Aktifkan GPS atau coba di area dengan sinyal lebih baik.');
+                } else if (error.code === 3) {
+                    finish(null, 'GPS terlalu lama merespons. Aktifkan lokasi dengan akurasi tinggi, lalu coba lagi.');
+                }
             }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
         });
     },

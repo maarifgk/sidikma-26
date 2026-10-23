@@ -93,7 +93,9 @@ window.geofenceEditor = (points, latitude, longitude, radius) => {
             resizeObserver=new ResizeObserver(()=>map?.invalidateSize({pan:false}));
             resizeObserver.observe(this.$refs.map);
         }
-        this.draw();setTimeout(()=>map?.invalidateSize({pan:false}),250);
+        this.draw();
+        if(this.points.length>=3)this.focusPolygon();else if(hasOffice)this.focusPoint();
+        setTimeout(()=>map?.invalidateSize({pan:false}),250);
     },
     addPanControl(){
         const home=map.getCenter();const PanControl=L.Control.extend({options:{position:'topleft'},onAdd(){const box=L.DomUtil.create('div','leaflet-control-pan');L.DomEvent.disableClickPropagation(box);L.DomEvent.disableScrollPropagation(box);const buttons=[['↑','pan-up',()=>map.panBy([0,-180])],['←','pan-left',()=>map.panBy([-180,0])],['⌂','pan-home',()=>map.panTo(home)],['→','pan-right',()=>map.panBy([180,0])],['↓','pan-down',()=>map.panBy([0,180])]];buttons.forEach(([label,className,action])=>{const button=L.DomUtil.create('button',className,box);button.type='button';button.textContent=label;button.setAttribute('aria-label','Geser peta');L.DomEvent.on(button,'click',action)});return box}});new PanControl().addTo(map);

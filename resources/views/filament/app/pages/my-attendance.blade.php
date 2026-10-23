@@ -1,4 +1,4 @@
-<div class="ma-page" x-data="attendanceGps({ maxAccuracy: {{ $setting?->maximum_accuracy_meters ?? 100 }} })">
+<div class="ma-page" x-data="attendanceGps({ maxAccuracy: {{ $gpsAccuracyLimit }} })">
 <p role="status" aria-live="polite" x-show="gpsMessage" x-text="gpsMessage" style="padding:12px;font-size:13px;color:#52657a"></p>
 <button type="button" x-cloak x-show="locating" x-on:click="cancel()" style="margin:0 12px 12px;color:#175cd3;font-weight:600">Batalkan pencarian GPS</button>
 <style>

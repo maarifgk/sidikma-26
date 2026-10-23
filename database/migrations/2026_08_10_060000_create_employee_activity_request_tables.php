@@ -9,35 +9,44 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('activity_requirements', function (Blueprint $table): void {
-            $table->id();
-            $table->unsignedSmallInteger('position')->default(0)->index();
-            $table->string('number', 20)->nullable();
-            $table->text('description');
-            $table->boolean('is_active')->default(true)->index();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('activity_requirements')) {
+            Schema::create('activity_requirements', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedSmallInteger('position')->default(0)->index();
+                $table->string('number', 20)->nullable();
+                $table->text('description');
+                $table->boolean('is_active')->default(true)->index();
+                $this->userIdColumn($table, 'created_by');
+                $this->userIdColumn($table, 'updated_by');
+                $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+                $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
+                $table->timestamps();
+            });
+        }
 
-        Schema::create('employee_activity_requests', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('employee_id')->constrained()->restrictOnDelete();
-            $table->string('employee_name');
-            $table->foreignId('school_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('school_name')->nullable();
-            $table->date('inactive_date')->index();
-            $table->string('request_letter_path');
-            $table->string('status', 30)->default('submitted')->index();
-            $table->foreignId('submitted_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('processed_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamp('processed_at')->nullable();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('employee_activity_requests')) {
+            Schema::create('employee_activity_requests', function (Blueprint $table): void {
+                $table->id();
+                $table->foreignId('employee_id')->constrained()->restrictOnDelete();
+                $table->string('employee_name');
+                $table->foreignId('school_id')->nullable()->constrained()->nullOnDelete();
+                $table->string('school_name')->nullable();
+                $table->date('inactive_date')->index();
+                $table->string('request_letter_path');
+                $table->string('status', 30)->default('submitted')->index();
+                $this->userIdColumn($table, 'submitted_by');
+                $this->userIdColumn($table, 'processed_by');
+                $table->foreign('submitted_by')->references('id')->on('users')->nullOnDelete();
+                $table->foreign('processed_by')->references('id')->on('users')->nullOnDelete();
+                $table->timestamp('processed_at')->nullable();
+                $table->timestamps();
+            });
+        }
 
         $now = now();
 
-        DB::table('activity_requirements')->insert([
+        if (DB::table('activity_requirements')->doesntExist()) {
+            DB::table('activity_requirements')->insert([
             ['position' => 1, 'number' => '1.', 'description' => 'Nama Guru/Pegawai', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['position' => 2, 'number' => '2.', 'description' => 'Asal Madrasah/Sekolah', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['position' => 3, 'number' => '3.', 'description' => 'TMT Non Aktif', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
@@ -50,12 +59,34 @@ return new class extends Migration
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-        ]);
+            ]);
+        }
     }
 
     public function down(): void
     {
         Schema::dropIfExists('employee_activity_requests');
         Schema::dropIfExists('activity_requirements');
+    }
+
+    /** Match user foreign-key columns to the actual users.id signedness. */
+    private function userIdColumn(Blueprint $table, string $column): void
+    {
+        $connection = DB::connection();
+
+        if ($connection->getDriverName() === 'mysql') {
+            $columnType = $connection->selectOne(
+                'SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+                ['users', 'id'],
+            )?->COLUMN_TYPE;
+
+            if (is_string($columnType) && ! str_contains(strtolower($columnType), 'unsigned')) {
+                $table->bigInteger($column)->nullable();
+
+                return;
+            }
+        }
+
+        $table->foreignId($column)->nullable();
     }
 };

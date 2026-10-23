@@ -199,6 +199,7 @@ class MyAttendance extends Page
             'employee' => $employee,
             'todayRecord' => $record,
             'setting' => $setting,
+            'gpsAccuracyLimit' => $this->gpsAccuracyLimit($setting),
             'statusOptions' => AttendanceRecord::statusOptions(),
             'recentRecords' => $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->latest('attendance_date')->limit(10)->get() : collect(),
             'leaveUrl' => MyAttendanceLeaveRequests::getUrl(panel: 'app', isAbsolute: false),
@@ -257,10 +258,10 @@ class MyAttendance extends Page
         if ($setting->require_location) {
             $locationService = app(AttendanceLocationService::class);
 
-            $accuracyLimit = max((float) $setting->maximum_accuracy_meters, (float) config('attendance.minimum_accuracy_tolerance_meters', 100));
+            $accuracyLimit = $this->gpsAccuracyLimit($setting);
             if ($this->accuracy !== null && ! $locationService->hasAcceptableAccuracy($this->accuracy, $accuracyLimit)) {
                 $this->rejectCurrent($this->currentEventType(), 'invalid_accuracy', 'Akurasi GPS belum cukup untuk memvalidasi lokasi.', $setting->geofence_version);
-                throw ValidationException::withMessages(['attendance' => 'Akurasi GPS ±'.ceil($this->accuracy).' m; batas sekolah '.$setting->maximum_accuracy_meters.' m. Ambil ulang lokasi di area terbuka atau gunakan ponsel dengan GPS aktif.']);
+                throw ValidationException::withMessages(['attendance' => 'Akurasi GPS ±'.ceil($this->accuracy).' m; batas yang diizinkan '.ceil($accuracyLimit).' m. Ambil ulang lokasi di area terbuka atau gunakan ponsel dengan GPS aktif.']);
             }
 
             if (blank($setting->office_latitude) || blank($setting->office_longitude)) {
@@ -302,6 +303,14 @@ class MyAttendance extends Page
         }
 
         return $this->selfie->store("selfies/{$employee->school_id}/{$date}/{$type}", AttendanceRecord::DISK);
+    }
+
+    private function gpsAccuracyLimit(?AttendanceSetting $setting): float
+    {
+        $schoolLimit = (float) ($setting?->maximum_accuracy_meters ?? config('attendance.maximum_accuracy_meters', 100));
+        $minimumLimit = (float) config('attendance.minimum_accuracy_tolerance_meters', 100);
+
+        return max($schoolLimit, $minimumLimit);
     }
 
     private function recordRejectedAttempt(Employee $employee, string $date, string $type, string $code, string $reason, ?string $source = null, ?int $version = null): void

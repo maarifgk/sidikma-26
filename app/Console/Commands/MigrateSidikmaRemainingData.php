@@ -75,6 +75,10 @@ class MigrateSidikmaRemainingData extends Command
             $this->migrateAgendasOnly($out, $m, $p, $foundation);
             return $out;
         }
+        if ($this->option('only') === 'batik') {
+            $this->migrateBatikOnly($out, $m, $p, $school, $foundation);
+            return $out;
+        }
         if ($this->option('only') === 'activity') {
             $this->migrateActivityOnly($out, $m, $p, $school, $employees);
             return $out;
@@ -344,6 +348,71 @@ class MigrateSidikmaRemainingData extends Command
         }
         $out['secretariat_agendas'] = $new;
         $this->stat('Agenda sekretariat', $source->count(), count($new), $source->count() - count($new), 0);
+    }
+
+    private function migrateBatikOnly(array &$out, $m, $p, $school, $foundation): void
+    {
+        $products = $p->table('batik_products')->get();
+        $byLegacy = $products->whereNotNull('legacy_product_id')->keyBy('legacy_product_id');
+        $byName = $products->keyBy(fn ($item) => SidikmaMasterData::normalized($item->name));
+        $productRows = [];
+        foreach ($m->table('stok_batik')->get() as $row) {
+            if ($byLegacy->has($row->id)) continue;
+            $payload = [
+                'legacy_product_id' => $row->id,
+                'foundation_id' => $foundation->id,
+                'name' => $this->null($row->produk) ?? 'Produk batik',
+                'audience' => 'umum',
+                'stock' => (float) ($row->stok ?? 0),
+                'price' => (float) ($row->harga ?? 0),
+                'size_label' => 'unit',
+                'sort_order' => (int) $row->id,
+                'is_active' => true,
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => $row->created_at ?? now(),
+                'updated_at' => $row->updated_at ?? now(),
+            ];
+            $existing = $byName->get(SidikmaMasterData::normalized($payload['name']));
+            if ($existing) {
+                $byLegacy->put($row->id, $existing);
+            } else {
+                $productRows[] = $payload;
+            }
+        }
+        foreach (array_chunk($productRows, 100) as $chunk) {
+            if ($chunk) $p->table('batik_products')->insert($chunk);
+        }
+        $products = $p->table('batik_products')->get();
+        $byName = $products->keyBy(fn ($item) => SidikmaMasterData::normalized($item->name));
+        $byLegacy = $products->whereNotNull('legacy_product_id')->keyBy('legacy_product_id');
+
+        $source = $m->table('batik_maarif')->get();
+        $existing = $p->table('batik_orders')->whereNotNull('legacy_order_id')->pluck('legacy_order_id')->flip();
+        $new = [];
+        $fallback = $products->first();
+        foreach ($source as $row) {
+            if ($existing->has($row->id)) continue;
+            $schoolRecord = $school($row->asal_sekolah);
+            $product = $fallback;
+            if (! $schoolRecord || ! $product) continue;
+            $quantity = (int) ($row->siswa ?? 0) + (int) ($row->guru_2m ?? 0) + (int) ($row->guru_25m ?? 0);
+            $new[] = [
+                'legacy_order_id' => $row->id,
+                'foundation_id' => $foundation->id,
+                'product_id' => $product->id,
+                'school_id' => $schoolRecord->id,
+                'ordered_at' => $row->created_at ?? now(),
+                'quantity' => $quantity,
+                'total_amount' => (float) ($row->total_tagihan ?? 0),
+                'status' => 'collected',
+                'recipient_name' => $this->null($row->penerima),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => $row->created_at ?? now(),
+                'updated_at' => $row->updated_at ?? now(),
+            ];
+        }
+        $out['batik_orders'] = $new;
+        $this->stat('Pesanan batik', $source->count(), count($new), $source->count() - count($new), 0);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

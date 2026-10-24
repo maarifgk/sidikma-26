@@ -369,8 +369,8 @@ class MigrateSidikmaRemainingData extends Command
                 'sort_order' => (int) $row->id,
                 'is_active' => true,
                 'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
-                'created_at' => $row->created_at ?? now(),
-                'updated_at' => $row->updated_at ?? now(),
+                'created_at' => (($created = $this->null($row->created_at ?? null)) && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'updated_at' => (($updated = $this->null($row->updated_at ?? null)) && ! str_starts_with($updated, '0000-00-00')) ? $updated : (($created ?? null) ?: now()),
             ];
             $existing = $byName->get(SidikmaMasterData::normalized($payload['name']));
             if ($existing) {

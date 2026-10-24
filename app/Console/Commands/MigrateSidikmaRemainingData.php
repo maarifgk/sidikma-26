@@ -342,8 +342,8 @@ class MigrateSidikmaRemainingData extends Command
                 'status' => $this->status($row->keterangan),
                 'notes' => $this->null($row->catatan),
                 'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
-                'created_at' => $row->created_at ?? now(),
-                'updated_at' => $row->updated_at ?? now(),
+                'created_at' => (($created = $this->null($row->created_at ?? null)) && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'updated_at' => (($updated = $this->null($row->updated_at ?? null)) && ! str_starts_with($updated, '0000-00-00')) ? $updated : (($created ?? null) ?: now()),
             ];
         }
         $out['secretariat_agendas'] = $new;
@@ -401,14 +401,14 @@ class MigrateSidikmaRemainingData extends Command
                 'foundation_id' => $foundation->id,
                 'product_id' => $product->id,
                 'school_id' => $schoolRecord->id,
-                'ordered_at' => $row->created_at ?? now(),
+                'ordered_at' => (($ordered = $this->null($row->created_at ?? null)) && ! str_starts_with($ordered, '0000-00-00')) ? $ordered : now(),
                 'quantity' => $quantity,
                 'total_amount' => (float) ($row->total_tagihan ?? 0),
                 'status' => 'collected',
                 'recipient_name' => $this->null($row->penerima),
                 'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
-                'created_at' => $row->created_at ?? now(),
-                'updated_at' => $row->updated_at ?? now(),
+                'created_at' => (($created = $this->null($row->created_at ?? null)) && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'updated_at' => (($updated = $this->null($row->updated_at ?? null)) && ! str_starts_with($updated, '0000-00-00')) ? $updated : (($created ?? null) ?: now()),
             ];
         }
         $out['batik_orders'] = $new;

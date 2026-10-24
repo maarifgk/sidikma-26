@@ -63,6 +63,10 @@ class MigrateSidikmaRemainingData extends Command
         if ($this->option('only') === 'attendance') {
             return $out;
         }
+        if ($this->option('only') === 'activity') {
+            $this->migrateActivityOnly($out, $m, $p, $school, $employees);
+            return $out;
+        }
         if ($this->option('only') === 'correspondence') {
             $this->migrateCorrespondenceOnly($out, $m, $p, $school);
             return $out;
@@ -130,6 +134,47 @@ class MigrateSidikmaRemainingData extends Command
 
         $out['correspondence_requests'] = $new;
         $this->stat('Persuratan', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
+    }
+
+    private function migrateActivityOnly(array &$out, $m, $p, $school, $employees): void
+    {
+        $src = $m->table('aktivasi')->get();
+        $existing = $p->table('employee_activity_requests')
+            ->whereNotNull('legacy_activity_id')
+            ->pluck('legacy_activity_id')
+            ->flip();
+        $new = [];
+        $skip = 0;
+
+        foreach ($src as $row) {
+            if ($existing->has($row->id)) {
+                continue;
+            }
+
+            $schoolRecord = $school($row->kelas);
+            $employee = $employees->first(fn ($item) => SidikmaMasterData::normalized($item->name) === SidikmaMasterData::normalized($row->nama));
+            if (! $schoolRecord && ! $employee) {
+                $skip++;
+                continue;
+            }
+
+            $new[] = [
+                'legacy_activity_id' => $row->id,
+                'employee_id' => $employee?->id,
+                'employee_name' => $this->null($row->nama) ?? 'Tidak diketahui',
+                'school_id' => $schoolRecord?->id,
+                'school_name' => $schoolRecord?->name ?? $this->null($row->kelas),
+                'inactive_date' => ($inactiveDate = $this->null($row->tmt_nonaktif)) ? substr($inactiveDate, 0, 10) : null,
+                'request_letter_path' => $this->null($row->s_permohonan) ?? '-',
+                'status' => $this->status($row->status),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => $row->created_at,
+                'updated_at' => $row->created_at,
+            ];
+        }
+
+        $out['employee_activity_requests'] = $new;
+        $this->stat('Aktivasi/nonaktif', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

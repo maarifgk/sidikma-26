@@ -71,6 +71,10 @@ class MigrateSidikmaRemainingData extends Command
             $this->migrateEducatorsOnly($out, $m, $p, $school);
             return $out;
         }
+        if ($this->option('only') === 'agendas') {
+            $this->migrateAgendasOnly($out, $m, $p, $foundation);
+            return $out;
+        }
         if ($this->option('only') === 'activity') {
             $this->migrateActivityOnly($out, $m, $p, $school, $employees);
             return $out;
@@ -316,6 +320,30 @@ class MigrateSidikmaRemainingData extends Command
         $sourceCount = $m->table('data_tenaga_pendidik')->count() + $m->table('tenaga')->count();
         $out['educator_recaps'] = $new;
         $this->stat('Rekap pendidik', $sourceCount, count($new), $sourceCount - count($new), 0);
+    }
+
+    private function migrateAgendasOnly(array &$out, $m, $p, $foundation): void
+    {
+        $source = $m->table('agenda_kesekretariatans')->get();
+        $existing = $p->table('secretariat_agendas')->whereNotNull('legacy_agenda_id')->pluck('legacy_agenda_id')->flip();
+        $new = [];
+        foreach ($source as $row) {
+            if ($existing->has($row->id)) continue;
+            $new[] = [
+                'legacy_agenda_id' => $row->id,
+                'foundation_id' => $foundation->id,
+                'activity' => $this->null($row->kegiatan) ?? '-',
+                'implementation_date' => ($date = $this->null($row->tanggal_pelaksanaan)) ? substr($date, 0, 10) : null,
+                'officer' => $this->null($row->petugas) ?? '-',
+                'status' => $this->status($row->keterangan),
+                'notes' => $this->null($row->catatan),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => $row->created_at ?? now(),
+                'updated_at' => $row->updated_at ?? now(),
+            ];
+        }
+        $out['secretariat_agendas'] = $new;
+        $this->stat('Agenda sekretariat', $source->count(), count($new), $source->count() - count($new), 0);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

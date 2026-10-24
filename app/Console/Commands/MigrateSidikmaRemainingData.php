@@ -63,6 +63,10 @@ class MigrateSidikmaRemainingData extends Command
         if ($this->option('only') === 'attendance') {
             return $out;
         }
+        if ($this->option('only') === 'correspondence') {
+            $this->migrateCorrespondenceOnly($out, $m, $p, $school);
+            return $out;
+        }
         if ($this->option('only') === 'sipinter') {
             $this->migrateSipinterOnly($out, $m, $p, $school);
             return $out;
@@ -76,12 +80,56 @@ class MigrateSidikmaRemainingData extends Command
 
     private function simpleRequests(array &$out,$m,$p,$school,$users,$now):void
     {
-        $types=$p->table('correspondence_types')->get();$src=$m->table('persuratan')->get();$ex=$p->table('correspondence_requests')->whereNotNull('legacy_correspondence_id')->pluck('legacy_correspondence_id')->flip();$new=[];$skip=0;
-        foreach($src as$r){$s=$school($r->kelas);if(!$s){$skip++;continue;}if($ex->has($r->id))continue;$type=$types->first(fn($t)=>str_contains(SidikmaMasterData::normalized($t->name),SidikmaMasterData::normalized($r->jenis)));$new[]=['legacy_correspondence_id'=>$r->id,'school_id'=>$s->id,'school_name'=>$s->name,'correspondence_type_id'=>$type?->id,'type_name'=>$r->jenis,'request_file_path'=>$r->persuratan,'response_file_path'=>$this->null($r->surat_acc),'process_status'=>$this->status($r->status),'notes'=>$this->null($r->catatan),'created_at'=>$r->created_at,'updated_at'=>$r->created_at,'legacy_snapshot'=>json_encode((array)$r,JSON_UNESCAPED_SLASHES)];}
-        $out['correspondence_requests']=$new;$this->stat('Persuratan',$src->count(),count($new),$src->count()-count($new)-$skip,$skip);
+        $this->migrateCorrespondenceOnly($out, $m, $p, $school);
         $src=$m->table('proposal')->get();$ex=$p->table('proposal_requests')->whereNotNull('legacy_proposal_id')->pluck('legacy_proposal_id')->flip();$new=[];$skip=0;
         foreach($src as$r){$s=$school($r->kelas_id);if(!$s){$skip++;continue;}if($ex->has($r->id))continue;$new[]=['legacy_proposal_id'=>$r->id,'school_id'=>$s->id,'school_name'=>$s->name,'proposal_type'=>$r->jenis_proposal,'request_file_path'=>$r->proposal,'requested_amount'=>$this->money($r->nominal),'bank_name'=>$r->nama_bank?:'-','bank_account_number'=>$r->no_rekening?:'-','bank_account_name'=>$this->null($r->an_rekening),'description'=>$this->null($r->catatan),'process_status'=>$this->status($r->status),'approval_file_path'=>$this->null($r->approve_proposal),'approved_amount'=>$this->money($r->nominal_acc,true),'notes'=>$this->null($r->keterangan_ditolak),'created_at'=>$r->created_at,'updated_at'=>$r->updated_at,'legacy_snapshot'=>json_encode((array)$r,JSON_UNESCAPED_SLASHES)];}
         $out['proposal_requests']=$new;$this->stat('Proposal',$src->count(),count($new),$src->count()-count($new)-$skip,$skip);
+    }
+
+    private function migrateCorrespondenceOnly(array &$out, $m, $p, $school): void
+    {
+        $types = $p->table('correspondence_types')->get();
+        $src = $m->table('persuratan')->get();
+        $existing = $p->table('correspondence_requests')
+            ->whereNotNull('legacy_correspondence_id')
+            ->pluck('legacy_correspondence_id')
+            ->flip();
+        $new = [];
+        $skip = 0;
+
+        foreach ($src as $row) {
+            $schoolRecord = $school($row->kelas);
+            if (! $schoolRecord) {
+                $skip++;
+                continue;
+            }
+            if ($existing->has($row->id)) {
+                continue;
+            }
+
+            $type = $types->first(fn ($item) => str_contains(
+                SidikmaMasterData::normalized($item->name),
+                SidikmaMasterData::normalized($row->jenis),
+            ));
+
+            $new[] = [
+                'legacy_correspondence_id' => $row->id,
+                'school_id' => $schoolRecord->id,
+                'school_name' => $schoolRecord->name,
+                'correspondence_type_id' => $type?->id,
+                'type_name' => $row->jenis,
+                'request_file_path' => $row->persuratan ?: '-',
+                'response_file_path' => $this->null($row->surat_acc),
+                'process_status' => $this->status($row->status),
+                'notes' => $this->null($row->catatan),
+                'created_at' => $row->created_at,
+                'updated_at' => $row->created_at,
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+            ];
+        }
+
+        $out['correspondence_requests'] = $new;
+        $this->stat('Persuratan', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

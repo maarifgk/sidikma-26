@@ -79,6 +79,10 @@ class MigrateSidikmaRemainingData extends Command
             $this->migrateBatikOnly($out, $m, $p, $school, $foundation);
             return $out;
         }
+        if ($this->option('only') === 'modules') {
+            $this->migrateModulesOnly($out, $m, $p, $foundation);
+            return $out;
+        }
         if ($this->option('only') === 'activity') {
             $this->migrateActivityOnly($out, $m, $p, $school, $employees);
             return $out;
@@ -434,6 +438,35 @@ class MigrateSidikmaRemainingData extends Command
         }
         $out['batik_orders'] = $new;
         $this->stat('Pesanan batik', $source->count(), count($new), $source->count() - count($new), 0);
+    }
+
+    private function migrateModulesOnly(array &$out, $m, $p, $foundation): void
+    {
+        $source = $m->table('modul')->get();
+        $existing = $p->table('learning_modules')->whereNotNull('legacy_module_id')->pluck('legacy_module_id')->flip();
+        $new = [];
+        foreach ($source as $row) {
+            if ($existing->has($row->id)) continue;
+            $filePath = $this->null($row->file_path) ?? '-';
+            $created = $this->null($row->created_at ?? null);
+            $new[] = [
+                'legacy_module_id' => $row->id,
+                'foundation_id' => $foundation->id,
+                'class_name' => $this->null($row->kelas) ?? '-',
+                'module_type' => $this->null($row->jenis_modul) ?? '-',
+                'semester' => max(1, (int) ($row->semester ?? 1)),
+                'subject' => $this->null($row->mapel) ?? '-',
+                'chapter' => $this->null($row->bab) ?? '-',
+                'file_path' => $filePath,
+                'original_name' => basename(str_replace('\\', '/', $filePath)),
+                'uploaded_at' => ($created && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => ($created && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'updated_at' => ($created && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+            ];
+        }
+        $out['learning_modules'] = $new;
+        $this->stat('Modul belajar', $source->count(), count($new), $source->count() - count($new), 0);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

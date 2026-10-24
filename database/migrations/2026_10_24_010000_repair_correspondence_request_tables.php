@@ -52,6 +52,15 @@ return new class extends Migration
                 Schema::table('correspondence_requests', $definition);
             }
         }
+
+        foreach ([
+            'template_label' => fn (Blueprint $table) => $table->string('template_label', 100)->nullable(),
+            'template_path' => fn (Blueprint $table) => $table->string('template_path')->nullable(),
+        ] as $column => $definition) {
+            if (! Schema::hasColumn('correspondence_types', $column)) {
+                Schema::table('correspondence_types', $definition);
+            }
+        }
     }
 
     public function down(): void

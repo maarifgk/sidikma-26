@@ -71,6 +71,10 @@ class MigrateSidikmaRemainingData extends Command
             $this->migrateCorrespondenceOnly($out, $m, $p, $school);
             return $out;
         }
+        if ($this->option('only') === 'proposal') {
+            $this->migrateProposalOnly($out, $m, $p, $school);
+            return $out;
+        }
         if ($this->option('only') === 'sipinter') {
             $this->migrateSipinterOnly($out, $m, $p, $school);
             return $out;
@@ -175,6 +179,47 @@ class MigrateSidikmaRemainingData extends Command
 
         $out['employee_activity_requests'] = $new;
         $this->stat('Aktivasi/nonaktif', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
+    }
+
+    private function migrateProposalOnly(array &$out, $m, $p, $school): void
+    {
+        $src = $m->table('proposal')->get();
+        $existing = $p->table('proposal_requests')->whereNotNull('legacy_proposal_id')->pluck('legacy_proposal_id')->flip();
+        $new = [];
+        $skip = 0;
+
+        foreach ($src as $row) {
+            if ($existing->has($row->id)) {
+                continue;
+            }
+            $schoolRecord = $school($row->kelas_id);
+            if (! $schoolRecord) {
+                $skip++;
+                continue;
+            }
+            $new[] = [
+                'legacy_proposal_id' => $row->id,
+                'school_id' => $schoolRecord->id,
+                'school_name' => $schoolRecord->name,
+                'proposal_type' => $this->null($row->jenis_proposal) ?? 'Proposal bantuan',
+                'request_file_path' => $this->null($row->proposal) ?? '-',
+                'requested_amount' => $this->money($row->nominal),
+                'bank_name' => $this->null($row->nama_bank) ?? '-',
+                'bank_account_number' => $this->null($row->no_rekening) ?? '-',
+                'bank_account_name' => $this->null($row->an_rekening),
+                'description' => $this->null($row->catatan),
+                'process_status' => $this->status($row->status),
+                'approval_file_path' => $this->null($row->approve_proposal),
+                'approved_amount' => $this->money($row->nominal_acc, true),
+                'notes' => $this->null($row->keterangan_ditolak),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => $row->created_at,
+                'updated_at' => $row->updated_at,
+            ];
+        }
+
+        $out['proposal_requests'] = $new;
+        $this->stat('Proposal', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

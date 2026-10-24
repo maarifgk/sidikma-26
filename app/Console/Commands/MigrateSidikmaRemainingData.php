@@ -63,6 +63,10 @@ class MigrateSidikmaRemainingData extends Command
         if ($this->option('only') === 'attendance') {
             return $out;
         }
+        if ($this->option('only') === 'enrollments') {
+            $this->migrateEnrollmentsOnly($out, $m, $p, $school);
+            return $out;
+        }
         if ($this->option('only') === 'activity') {
             $this->migrateActivityOnly($out, $m, $p, $school, $employees);
             return $out;
@@ -220,6 +224,44 @@ class MigrateSidikmaRemainingData extends Command
 
         $out['proposal_requests'] = $new;
         $this->stat('Proposal', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
+    }
+
+    private function migrateEnrollmentsOnly(array &$out, $m, $p, $school): void
+    {
+        $rows = [];
+        $sources = [
+            ['data_siswa', 'madrasah_id', 'tahun_pelajaran', ['k1' => 'kelas1', 'k2' => 'kelas2', 'k3' => 'kelas3', 'k4' => 'kelas4', 'k5' => 'kelas5', 'k6' => 'kelas6', 'k7' => 'kelas7', 'k8' => 'kelas8', 'k9' => 'kelas9']],
+            ['kesiswaan', 'kelas_id', 'thn_pelajaran', ['k1' => 'kelas1', 'k2' => 'kelas2', 'k3' => 'kelas3', 'k4' => 'kelas4', 'k5' => 'kelas5', 'k6' => 'kelas6', 'k7' => 'kelas7', 'k8' => 'kelas8', 'k9' => 'kelas9']],
+        ];
+
+        foreach ($sources as [$table, $schoolColumn, $yearColumn, $map]) {
+            foreach ($m->table($table)->get() as $row) {
+                $schoolRecord = $school($row->{$schoolColumn});
+                $academicYear = $this->year($row->{$yearColumn});
+                if (! $schoolRecord || ! $academicYear) {
+                    continue;
+                }
+                $payload = [
+                    'school_id' => $schoolRecord->id,
+                    'academic_year' => $academicYear,
+                    'legacy_snapshot' => json_encode(['source' => $table, 'row' => (array) $row], JSON_UNESCAPED_SLASHES),
+                    'created_at' => $row->created_at ?? now(),
+                    'updated_at' => $row->updated_at ?? now(),
+                ];
+                foreach ($map as $target => $source) {
+                    $payload[$target] = max(0, (int) ($row->{$source} ?? 0));
+                }
+                $payload['total'] = collect(range(1, 9))->sum(fn ($grade) => $payload['k'.$grade]);
+                $rows[] = $payload;
+            }
+        }
+
+        $rows = $this->dedupe($rows);
+        $existing = $p->table('student_enrollments')->get()->keyBy(fn ($row) => $row->school_id.'|'.$row->academic_year);
+        $new = array_values(array_filter($rows, fn ($row) => ! $existing->has($row['school_id'].'|'.$row['academic_year'])));
+        $sourceCount = $m->table('data_siswa')->count() + $m->table('kesiswaan')->count();
+        $out['student_enrollments'] = $new;
+        $this->stat('Rekap siswa', $sourceCount, count($new), $sourceCount - count($new), 0);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

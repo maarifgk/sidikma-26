@@ -67,6 +67,10 @@ class MigrateSidikmaRemainingData extends Command
             $this->migrateEnrollmentsOnly($out, $m, $p, $school);
             return $out;
         }
+        if ($this->option('only') === 'educators') {
+            $this->migrateEducatorsOnly($out, $m, $p, $school);
+            return $out;
+        }
         if ($this->option('only') === 'activity') {
             $this->migrateActivityOnly($out, $m, $p, $school, $employees);
             return $out;
@@ -262,6 +266,56 @@ class MigrateSidikmaRemainingData extends Command
         $sourceCount = $m->table('data_siswa')->count() + $m->table('kesiswaan')->count();
         $out['student_enrollments'] = $new;
         $this->stat('Rekap siswa', $sourceCount, count($new), $sourceCount - count($new), 0);
+    }
+
+    private function migrateEducatorsOnly(array &$out, $m, $p, $school): void
+    {
+        $rows = [];
+        foreach ([
+            ['data_tenaga_pendidik', 'madrasah_id', 'tahun_pelajaran'],
+            ['tenaga', 'kelas_id', 'thn_pelajaran'],
+        ] as [$table, $schoolColumn, $yearColumn]) {
+            foreach ($m->table($table)->get() as $row) {
+                $schoolRecord = $school($row->{$schoolColumn});
+                $academicYear = $this->year($row->{$yearColumn});
+                if (! $schoolRecord || ! $academicYear) {
+                    continue;
+                }
+                if ($table === 'data_tenaga_pendidik') {
+                    $values = [
+                        (int) ($row->kepala_guru_asn_sertifikasi ?? 0),
+                        (int) ($row->kepala_guru_asn_non_sertifikasi ?? 0),
+                        (int) ($row->kepala_guru_yayasan_sertifikasi_inpassing ?? 0),
+                        (int) ($row->kepala_guru_yayasan_non_sertifikasi ?? 0),
+                    ];
+                } else {
+                    $values = [
+                        (int) ($row->jml_pns ?? 0),
+                        0,
+                        (int) ($row->jml_gtysertifikasiinpassing ?? 0),
+                        (int) ($row->jml_gtynonsertifikasi ?? 0) + (int) ($row->jml_pty ?? 0) + (int) ($row->jml_gtysertifikasinoninpassing ?? 0),
+                    ];
+                }
+                $rows[] = [
+                    'school_id' => $schoolRecord->id,
+                    'academic_year' => $academicYear,
+                    'asn_certified' => $values[0],
+                    'asn_uncertified' => $values[1],
+                    'foundation_certified_inpassing' => $values[2],
+                    'foundation_uncertified' => $values[3],
+                    'total' => array_sum($values),
+                    'legacy_snapshot' => json_encode(['source' => $table, 'row' => (array) $row], JSON_UNESCAPED_SLASHES),
+                    'created_at' => $row->created_at ?? now(),
+                    'updated_at' => $row->updated_at ?? now(),
+                ];
+            }
+        }
+        $rows = $this->dedupe($rows);
+        $existing = $p->table('educator_recaps')->get()->keyBy(fn ($row) => $row->school_id.'|'.$row->academic_year);
+        $new = array_values(array_filter($rows, fn ($row) => ! $existing->has($row['school_id'].'|'.$row['academic_year'])));
+        $sourceCount = $m->table('data_tenaga_pendidik')->count() + $m->table('tenaga')->count();
+        $out['educator_recaps'] = $new;
+        $this->stat('Rekap pendidik', $sourceCount, count($new), $sourceCount - count($new), 0);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

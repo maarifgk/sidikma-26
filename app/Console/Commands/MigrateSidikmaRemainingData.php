@@ -356,7 +356,28 @@ class MigrateSidikmaRemainingData extends Command
         $byLegacy = $products->whereNotNull('legacy_product_id')->keyBy('legacy_product_id');
         $byName = $products->keyBy(fn ($item) => SidikmaMasterData::normalized($item->name));
         $productRows = [];
-        foreach ($m->table('stok_batik')->get() as $row) {
+        $legacyProducts = $m->table('stok_batik')->orderBy('id')->get();
+        $defaultProducts = $products->whereNull('legacy_product_id')->sortBy('sort_order')->values();
+        if ($defaultProducts->count() >= $legacyProducts->count() && $legacyProducts->count() > 0) {
+            foreach ($legacyProducts as $index => $row) {
+                $product = $defaultProducts->get($index);
+                if (! $product) continue;
+                $created = $this->null($row->created_at ?? null);
+                $updated = $this->null($row->updated_at ?? null);
+                $p->table('batik_products')->where('id', $product->id)->update([
+                    'legacy_product_id' => $row->id,
+                    'name' => $this->null($row->produk) ?? $product->name,
+                    'stock' => (float) ($row->stok ?? 0),
+                    'price' => (float) ($row->harga ?? 0),
+                    'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                    'updated_at' => ($updated && ! str_starts_with($updated, '0000-00-00')) ? $updated : (($created && ! str_starts_with($created, '0000-00-00')) ? $created : now()),
+                ]);
+            }
+            $products = $p->table('batik_products')->get();
+            $byLegacy = $products->whereNotNull('legacy_product_id')->keyBy('legacy_product_id');
+            $byName = $products->keyBy(fn ($item) => SidikmaMasterData::normalized($item->name));
+        }
+        foreach ($legacyProducts as $row) {
             if ($byLegacy->has($row->id)) continue;
             $payload = [
                 'legacy_product_id' => $row->id,

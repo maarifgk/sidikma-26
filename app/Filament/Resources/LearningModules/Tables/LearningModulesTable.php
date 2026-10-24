@@ -7,6 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class LearningModulesTable
 {
@@ -40,11 +41,11 @@ class LearningModulesTable
                     ->wrap(),
                 TextColumn::make('file_action')
                     ->label('File')
-                    ->state(fn (LearningModule $record): string => Storage::disk(LearningModule::DISK)->exists($record->file_path) ? 'Unduh' : 'Belum tersedia')
+                    ->state(fn (LearningModule $record): string => Storage::disk(LearningModule::DISK)->exists($record->file_path) ? 'Download' : 'Belum tersedia')
                     ->badge()
                     ->color(fn (LearningModule $record): string => Storage::disk(LearningModule::DISK)->exists($record->file_path) ? 'primary' : 'gray')
                     ->url(fn (LearningModule $record): ?string => Storage::disk(LearningModule::DISK)->exists($record->file_path)
-                        ? Storage::disk(LearningModule::DISK)->temporaryUrl($record->file_path, now()->addMinutes(5)) : null)
+                        ? URL::route('learning-module.download', ['learningModule' => $record]) : null)
                     ->openUrlInNewTab(),
                 TextColumn::make('uploaded_at')
                     ->label('Tanggal Upload')

@@ -11,7 +11,7 @@ use Throwable;
 
 class ImportSidikmaFiles extends Command
 {
-    protected $signature = 'sidikma:import-files {--dry-run} {--force}';
+    protected $signature = 'sidikma:import-files {--dry-run} {--force} {--only= : Batasi modul, misalnya learning-modules} {--target-connection= : Koneksi database target, misalnya mysql}';
     protected $description = 'Cocokkan dan salin berkas SIDIKMA dari arsip privat ke disk modul';
 
     public function handle(): int
@@ -33,8 +33,13 @@ class ImportSidikmaFiles extends Command
             ['attendance_leave_requests', 'legacy_permission_id', 'attendance', ['attachment_path']],
             ['attendance_records', 'id', 'attendance', ['check_in_selfie_path', 'check_out_selfie_path']],
         ];
+        if ($this->option('only') === 'learning-modules') {
+            $maps = array_values(array_filter($maps, fn (array $map): bool => $map[0] === 'learning_modules'));
+        }
+        $targetConnection = $this->option('target-connection') ?: env('SIDIKMA_TARGET_CONNECTION', 'mysql');
+        $target = DB::connection($targetConnection);
         $found=[]; $missing=[]; $ambiguous=[]; $installed=0;
-        foreach ($maps as [$table,$legacy,$disk,$columns]) foreach (DB::connection('pgsql')->table($table)->get() as $row) foreach ($columns as $column) {
+        foreach ($maps as [$table,$legacy,$disk,$columns]) foreach ($target->table($table)->get() as $row) foreach ($columns as $column) {
             $old=trim((string)($row->{$column}??'')); if($old===''||$old==='-')continue;
             if (Storage::disk($disk)->exists($old)) { $installed++; continue; }
             $name=basename(str_replace('\\','/',$old)); $matches=$index[$this->key($name)]??[];
@@ -47,7 +52,7 @@ class ImportSidikmaFiles extends Command
         $this->table(['Status','Jumlah'],[['Sudah terpasang',$installed],['Cocok unik',count($found)],['Tidak ditemukan',count($missing)],['Ambigu',count($ambiguous)]]);
         if($this->option('dry-run')){$this->writeReports($missing,$ambiguous);$this->info('DRY RUN SELESAI — file dan database tidak diubah.');return self::SUCCESS;}
         if(!$this->option('force')&&!$this->confirm('Salin berkas cocok dan perbarui path database?'))return self::SUCCESS;
-        try{DB::connection('pgsql')->transaction(function()use($found){foreach($found as$f){$data=file_get_contents($f['source']);if($data===false||!Storage::disk($f['disk'])->put($f['path'],$data))throw new \RuntimeException('Gagal menyalin '.$f['source']);DB::connection('pgsql')->table($f['table'])->where('id',$f['id'])->update([$f['column']=>$f['path']]);}});}catch(Throwable$e){report($e);$this->error($e->getMessage());return self::FAILURE;}
+        try{$target->transaction(function()use($found,$target){foreach($found as$f){$data=file_get_contents($f['source']);if($data===false||!Storage::disk($f['disk'])->put($f['path'],$data))throw new \RuntimeException('Gagal menyalin '.$f['source']);$target->table($f['table'])->where('id',$f['id'])->update([$f['column']=>$f['path']]);}});}catch(Throwable$e){report($e);$this->error($e->getMessage());return self::FAILURE;}
         $this->writeReports($missing,$ambiguous);$this->info('IMPOR BERKAS SELESAI — '.count($found).' referensi dipasang.');return self::SUCCESS;
     }
 

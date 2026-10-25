@@ -103,6 +103,40 @@ class SidikmaAuthenticationTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_login_matches_email_case_insensitively_and_trims_email(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'Admin.Sekolah@example.test',
+            'password' => 'password-benar',
+        ]);
+        $user->assignRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH);
+
+        Livewire::test(IntegratedLogin::class)
+            ->set('data.email', '  ADMIN.SEKOLAH@EXAMPLE.TEST  ')
+            ->set('data.password', 'password-benar')
+            ->call('authenticate')
+            ->assertRedirect(url('/app'));
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_legacy_plaintext_password_is_upgraded_only_when_correct(): void
+    {
+        $user = User::factory()->create(['email' => 'legacy@example.test']);
+        $user->assignRole(User::ROLE_ADMIN_INDUK);
+        \Illuminate\Support\Facades\DB::table('users')->where('id', $user->id)
+            ->update(['password' => 'password-lama']);
+
+        Livewire::test(IntegratedLogin::class)
+            ->set('data.email', $user->email)
+            ->set('data.password', 'password-lama')
+            ->call('authenticate')
+            ->assertRedirect(url('/admin'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertTrue(Hash::check('password-lama', $user->fresh()->password));
+    }
+
     public function test_forgot_password_sends_branded_notification_without_revealing_unknown_email(): void
     {
         Notification::fake();

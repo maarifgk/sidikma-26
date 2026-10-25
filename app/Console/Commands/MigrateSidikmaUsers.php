@@ -197,9 +197,7 @@ class MigrateSidikmaUsers extends Command
                 trim((string) $user->email)
             );
 
-            $password = trim(
-                (string) $user->password
-            );
+            $password = (string) $user->password;
 
             $role = (int) $user->role;
 
@@ -455,7 +453,9 @@ class MigrateSidikmaUsers extends Command
                     'email_verified_at' => $this->nullableDate($user->email_verified_at),
                     'phone_number' => $this->nullableTrim($user->no_tlp),
                     'avatar_path' => $this->nullableTrim($user->image),
-                    'password' => Hash::make($password),
+                    'password' => (Hash::info($password)['algoName'] !== 'unknown')
+                        ? $password
+                        : Hash::make($password),
                     'remember_token' => $user->remember_token,
                     'is_active' => $user->status === 'ON',
                     'created_at' => $this->nullableDate($user->created_at),

@@ -23,6 +23,11 @@ class IntegratedLogin extends Login
 
     public function authenticate(): ?LoginResponse
     {
+        // Use the stored email for the guard as PostgreSQL compares email case-sensitively.
+        $email = strtolower(trim((string) data_get($this->data, 'email')));
+        $storedEmail = User::query()->whereRaw('LOWER(email) = ?', [$email])->value('email');
+        $this->data['email'] = $storedEmail ?? $email;
+
         $this->upgradeLegacyPasswordHash();
 
         $response = parent::authenticate();

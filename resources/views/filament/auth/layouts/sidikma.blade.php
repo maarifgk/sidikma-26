@@ -1,12 +1,4 @@
-@php
-    $setting = \App\Models\ApplicationSetting::current();
-    $logoDisk = \Illuminate\Support\Facades\Storage::disk('public');
-    $logoPath = trim((string) $setting->logo_path);
-    $logoUrl = $logoPath !== '' && $logoDisk->exists($logoPath)
-        ? $logoDisk->url($logoPath)
-        : asset('images/sidikma-header-logo.png');
-    $livewire ??= null;
-@endphp
+@php($livewire ??= null)
 
 <x-filament-panels::layout.base :livewire="$livewire">
     <style>
@@ -52,7 +44,6 @@
                     <x-filament::icon icon="heroicon-o-lock-closed" class="h-4 w-4" />
                     <span>Portal Login</span>
                 </div>
-                <img class="sidikma-auth__form-logo" src="{{ $logoUrl }}" alt="Logo SIDIKMA GK">
                 <main id="fi-main-content" tabindex="-1">{{ $slot }}</main>
             </div>
         </section>

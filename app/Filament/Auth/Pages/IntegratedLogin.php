@@ -90,7 +90,7 @@ class IntegratedLogin extends Login
 
     public function getTitle(): string|Htmlable
     {
-        return 'Login SIDIKMA GK';
+        return 'Login SIDIKMA';
     }
 
     public function getHeading(): string|Htmlable|null

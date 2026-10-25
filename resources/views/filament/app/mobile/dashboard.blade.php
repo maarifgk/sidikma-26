@@ -7,8 +7,6 @@
             [\App\Filament\App\Pages\MyProfile::getUrl(panel:'app',isAbsolute:false),'heroicon-s-user-group','Informasi'],
             [\App\Filament\App\Pages\MyAttendance::getUrl(panel:'app',isAbsolute:false),'heroicon-o-map-pin','Presensi'],
             [\App\Filament\App\Pages\MyAttendanceLeaveRequests::getUrl(panel:'app',isAbsolute:false),'heroicon-s-calendar-days','Izin'],
-            [\App\Filament\App\Pages\MyPayments::getUrl(panel:'app',isAbsolute:false),'heroicon-s-credit-card','Pembayaran'],
-            [\App\Filament\App\Pages\MyDecrees::getUrl(panel:'app',isAbsolute:false),'heroicon-s-document-arrow-down','File SK'],
             [\App\Filament\App\Pages\MyProfile::getUrl(panel:'app',isAbsolute:false),'heroicon-s-user','Profil'],
         ] as [$url,$icon,$label])<a href="{{ $url }}"><span><i class="tm-menu-icon"><x-filament::icon :icon="$icon" /></i>{{ $label }}</span></a>@endforeach
     </div></section>

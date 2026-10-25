@@ -10,8 +10,6 @@ use App\Filament\App\Pages\Dashboard;
 use App\Filament\App\Pages\MyAttendance;
 use App\Filament\App\Pages\MyAttendanceLeaveRequests;
 use App\Filament\App\Pages\MyComplaints;
-use App\Filament\App\Pages\MyDecrees;
-use App\Filament\App\Pages\MyPayments;
 use App\Filament\App\Pages\MyProfile;
 use App\Filament\App\Pages\SchoolDecrees;
 use App\Filament\Auth\Pages\IntegratedLogin;
@@ -149,13 +147,6 @@ class AppPanelProvider extends PanelProvider
                     ->visible(fn (): bool => auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH) ?? false)
                     ->url(fn (): string => SchoolDecrees::getUrl(panel: 'app', isAbsolute: false))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.app.pages.sk-yayasan')),
-                NavigationItem::make('Surat Keputusan Saya')
-                    ->group('HOMES')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->sort(4)
-                    ->visible(fn (): bool => auth()->user()?->hasRole(User::ROLE_GURU_PEGAWAI) ?? false)
-                    ->url(fn (): string => MyDecrees::getUrl(panel: 'app', isAbsolute: false))
-                    ->isActiveWhen(fn (): bool => request()->routeIs('filament.app.pages.file-sk-saya')),
                 NavigationItem::make('Profil')
                     ->group('HOMES')
                     ->icon('heroicon-o-user-circle')
@@ -247,12 +238,10 @@ class AppPanelProvider extends PanelProvider
                     ->group('PAYMENT')
                     ->icon('heroicon-o-document-minus')
                     ->sort(1)
-                    ->url(fn (): string => auth()->user()?->hasRole(User::ROLE_GURU_PEGAWAI)
-                        ? MyPayments::getUrl(panel: 'app', isAbsolute: false)
-                        : BillingResource::getUrl(panel: 'app', isAbsolute: false))
+                    ->visible(fn (): bool => auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH) ?? false)
+                    ->url(fn (): string => BillingResource::getUrl(panel: 'app', isAbsolute: false))
                     ->isActiveWhen(fn (): bool => request()->routeIs(
                         'filament.app.resources.billings.*',
-                        'filament.app.pages.pembayaran-saya',
                     )),
             ])
             ->resources([
@@ -280,8 +269,6 @@ class AppPanelProvider extends PanelProvider
                 AttendanceSettings::class,
                 MyAttendance::class,
                 MyAttendanceLeaveRequests::class,
-                MyPayments::class,
-                MyDecrees::class,
                 MyProfile::class,
                 MyComplaints::class,
                 SchoolDecrees::class,

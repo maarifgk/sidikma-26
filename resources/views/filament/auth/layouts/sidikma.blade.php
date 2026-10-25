@@ -1,8 +1,10 @@
 @php
     $setting = \App\Models\ApplicationSetting::current();
-    $logoUrl = filled($setting->logo_path)
-        ? \Illuminate\Support\Facades\Storage::disk('public')->url($setting->logo_path)
-        : asset('images/default-avatar.svg');
+    $logoDisk = \Illuminate\Support\Facades\Storage::disk('public');
+    $logoPath = trim((string) $setting->logo_path);
+    $logoUrl = $logoPath !== '' && $logoDisk->exists($logoPath)
+        ? $logoDisk->url($logoPath)
+        : asset('images/sidikma-header-logo.png');
     $livewire ??= null;
 @endphp
 

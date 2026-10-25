@@ -16,6 +16,8 @@ use Illuminate\Support\Carbon;
     'check_in_at',
     'check_out_at',
     'check_out_reason',
+    'check_in_reason',
+    'check_in_reason',
     'check_in_latitude',
     'check_in_longitude',
     'check_in_accuracy',

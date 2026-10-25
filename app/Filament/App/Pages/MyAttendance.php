@@ -45,6 +45,7 @@ class MyAttendance extends Page
 
     public mixed $selfie = null;
     public string $checkOutReason = '';
+    public string $checkInReason = '';
     public bool $fakeGps = false;
     public ?string $fakeGpsSource = null;
     public ?int $clientGeofenceVersion = null;
@@ -90,6 +91,10 @@ class MyAttendance extends Page
             throw ValidationException::withMessages(['attendance' => 'Presensi masuk belum dibuka.']);
         }
 
+        if ($localNow->format('H:i:s') > $setting->late_after && blank(trim($this->checkInReason))) {
+            throw ValidationException::withMessages(['checkInReason' => 'Alasan terlambat wajib diisi.']);
+        }
+
         $date = $localNow->toDateString();
         if ($setting->detect_fake_gps && $this->fakeGps) {
             DB::transaction(fn () => $this->recordRejectedAttempt($employee, $date, 'check_in', 'fake_gps', 'Presensi ditolak karena perangkat melaporkan lokasi palsu/mock.', $this->fakeGpsSource, $setting->geofence_version));
@@ -110,6 +115,7 @@ class MyAttendance extends Page
             'school_id' => $employee->school_id,
             'attendance_date' => $date,
             'status' => $localNow->format('H:i:s') > $setting->late_after ? AttendanceRecord::STATUS_LATE : AttendanceRecord::STATUS_PRESENT,
+            'check_in_reason' => filled(trim($this->checkInReason)) ? trim($this->checkInReason) : null,
             'check_in_at' => now(),
             'check_in_latitude' => $this->latitude,
             'check_in_longitude' => $this->longitude,
@@ -128,7 +134,7 @@ class MyAttendance extends Page
             throw $exception;
         }
 
-        $this->reset('selfie');
+        $this->reset(['selfie', 'checkInReason']);
         $this->dispatch('$refresh');
         Notification::make()->success()->title('Presensi masuk berhasil')->send();
     }

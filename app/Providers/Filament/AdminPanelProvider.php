@@ -424,7 +424,7 @@ class AdminPanelProvider extends PanelProvider
             ->group($group)
             ->icon($icon)
             ->sort($sort)
-            ->url(in_array($menu, ['administrasi', 'kelembagaan'], true)
+            ->url(in_array($menu, ['administrasi', 'kelembagaan', 'setting'], true)
                 ? null
                 : fn (): string => Dashboard::getUrl(['menu' => $menu], isAbsolute: false))
             ->isActiveWhen(fn (): bool => (

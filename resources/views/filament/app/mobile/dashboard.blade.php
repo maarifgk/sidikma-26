@@ -9,7 +9,6 @@
             [\App\Filament\App\Pages\MyProfile::getUrl(panel:'app',isAbsolute:false),'heroicon-s-user','Profil'],
         ] as [$url,$icon,$label])<a href="{{ $url }}"><span><i class="tm-menu-icon"><x-filament::icon :icon="$icon" /></i>{{ $label }}</span></a>@endforeach
     </div></section>
-    <section class="tm-section tm-stats"><article class="tm-card tm-stat"><span>Rekan Satu Lembaga</span><strong>{{ $employeeCount }}</strong><small>Guru dan pegawai</small></article><article class="tm-card tm-stat"><span>Pembayaran Lunas</span><strong>Rp{{ number_format($paidAmount,0,',','.') }}</strong><small>{{ $paidInvoiceCount }} pembayaran</small></article><article class="tm-card tm-stat"><span>Pembayaran SK</span><strong>{{ $paidInvoiceCount }}</strong><small>Pembayaran SK yang sudah lunas</small></article><article class="tm-card tm-stat"><span>File SK</span><strong>{{ $documentCount }}</strong><small>Pribadi dan sekolah</small></article></section>
     <section class="tm-section"><div class="tm-section-head"><h2>Rekan Guru/Pegawai</h2><small>{{ $schoolName }}</small></div><div class="tm-card tm-list">@forelse($employees as $colleague)<div class="tm-list-row"><div><strong>{{ $colleague['name'] }}</strong><span>{{ $colleague['position'] }}</span><small>{{ $colleague['status'] }}</small></div></div>@empty<div class="tm-empty">Belum ada rekan satu lembaga.</div>@endforelse</div></section>
     @include('filament.app.mobile.bottom-nav',['active'=>'dashboard'])
 </div>

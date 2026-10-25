@@ -2,7 +2,7 @@
 @include('filament.app.mobile.styles')
 <div class="teacher-mobile">
  @include('filament.app.mobile.header',['employee'=>$employee])
- <section class="tm-hero"><img class="tm-hero-avatar" src="{{ $avatarUrl }}"><div><div class="tm-eyebrow">Profile</div><h1>{{ $employee?->name ?? $user?->name }}</h1><p>{{ $employee?->email ?? $user?->email }}</p></div></section>
+ <section class="tm-hero"><img class="tm-hero-avatar" src="{{ $avatarUrl }}" alt="Foto profil" onerror="this.onerror=null;this.src='{{ asset('images/default-avatar.svg') }}';"><div><div class="tm-eyebrow">Profile</div><h1>{{ $employee?->name ?? $user?->name }}</h1><p>{{ $employee?->email ?? $user?->email }}</p></div></section>
  <section class="tm-section"><div class="tm-section-head"><h2>Detail Akun</h2><small>{{ $invoiceCount }} pembayaran SK</small></div><div class="tm-card tm-detail">@foreach([['Nama Lengkap',$employee?->name ?? $user?->name],['Asal Madrasah/Sekolah',$employee?->school?->name ?? '-'],['Status Kepegawaian',$employee ? \App\Models\Employee::employmentStatusLabel($employee->employment_status) : '-'],['Ketugasan',$employee?->currentAssignment?->position?->name ?? '-'],['Nomor HP',$employee?->phone ?? $user?->phone_number ?? '-'],['Alamat',$employee?->address ?? '-'],['Periode SK Yayasan',$employee?->currentAssignment?->decree_period ?? '-']] as [$label,$value])<div class="tm-detail-row"><span>{{ $label }}</span><strong>{{ $value }}</strong></div>@endforeach</div></section>
  @include('filament.app.mobile.bottom-nav',['active'=>'profile'])
 </div>

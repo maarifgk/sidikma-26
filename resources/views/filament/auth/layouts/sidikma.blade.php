@@ -52,6 +52,7 @@
             <div class="sidikma-auth__brand-content">
                 <div class="sidikma-auth__welcome">WELCOME TO SIDIKMA GK</div>
                 <h1>Sistem Data dan Informasi Kelembagaan Ma'arif NU Kabupaten Gunungkidul</h1>
+                <img class="sidikma-auth__illustration" src="{{ asset('images/sidikma-login-illustration-transparent.png') }}" alt="Ilustrasi portal data pendidikan">
             </div>
         </aside>
     </div>

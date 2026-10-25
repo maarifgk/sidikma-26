@@ -84,7 +84,8 @@ class IntegratedLogin extends Login
 
     public function hasLogo(): bool
     {
-        return true;
+        // Logo ditampilkan satu kali oleh layout SIDIKMA khusus.
+        return false;
     }
 
     public function getTitle(): string|Htmlable

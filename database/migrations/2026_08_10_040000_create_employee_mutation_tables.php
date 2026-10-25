@@ -9,7 +9,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('mutation_requirements', function (Blueprint $table): void {
+        if (! Schema::hasTable('mutation_requirements')) {
+            Schema::create('mutation_requirements', function (Blueprint $table): void {
             $table->id();
             $table->unsignedSmallInteger('position')->default(0)->index();
             $table->string('number', 20)->nullable();
@@ -17,27 +18,33 @@ return new class extends Migration
             $table->string('template_label', 100)->nullable();
             $table->string('template_path')->nullable();
             $table->boolean('is_active')->default(true)->index();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            // User IDs are kept as nullable references without a database FK so
+            // this module also works with legacy users tables on production.
+            $table->unsignedBigInteger('created_by')->nullable()->index();
+            $table->unsignedBigInteger('updated_by')->nullable()->index();
             $table->timestamps();
-        });
+            });
+        }
 
-        Schema::create('employee_mutations', function (Blueprint $table): void {
+        if (! Schema::hasTable('employee_mutations')) {
+            Schema::create('employee_mutations', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('employee_id')->constrained()->restrictOnDelete();
+            $table->unsignedBigInteger('employee_id')->nullable()->index();
             $table->string('mutation_type', 30)->index();
-            $table->foreignId('origin_school_id')->constrained('schools')->restrictOnDelete();
-            $table->foreignId('destination_school_id')->constrained('schools')->restrictOnDelete();
+            $table->unsignedBigInteger('origin_school_id')->nullable()->index();
+            $table->unsignedBigInteger('destination_school_id')->nullable()->index();
             $table->string('request_letter_path');
-            $table->foreignId('submitted_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('submitted_by')->nullable()->index();
             $table->timestamps();
 
             $table->index(['origin_school_id', 'destination_school_id']);
-        });
+            });
+        }
 
         $now = now();
 
-        DB::table('mutation_requirements')->insert([
+        if (Schema::hasTable('mutation_requirements') && DB::table('mutation_requirements')->count() === 0) {
+            DB::table('mutation_requirements')->insert([
             [
                 'position' => 1,
                 'number' => '1.',
@@ -58,7 +65,8 @@ return new class extends Migration
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-        ]);
+            ]);
+        }
     }
 
     public function down(): void

@@ -63,6 +63,38 @@ class MigrateSidikmaRemainingData extends Command
         if ($this->option('only') === 'attendance') {
             return $out;
         }
+        if ($this->option('only') === 'enrollments') {
+            $this->migrateEnrollmentsOnly($out, $m, $p, $school);
+            return $out;
+        }
+        if ($this->option('only') === 'educators') {
+            $this->migrateEducatorsOnly($out, $m, $p, $school);
+            return $out;
+        }
+        if ($this->option('only') === 'agendas') {
+            $this->migrateAgendasOnly($out, $m, $p, $foundation);
+            return $out;
+        }
+        if ($this->option('only') === 'batik') {
+            $this->migrateBatikOnly($out, $m, $p, $school, $foundation);
+            return $out;
+        }
+        if ($this->option('only') === 'modules') {
+            $this->migrateModulesOnly($out, $m, $p, $foundation);
+            return $out;
+        }
+        if ($this->option('only') === 'activity') {
+            $this->migrateActivityOnly($out, $m, $p, $school, $employees);
+            return $out;
+        }
+        if ($this->option('only') === 'correspondence') {
+            $this->migrateCorrespondenceOnly($out, $m, $p, $school);
+            return $out;
+        }
+        if ($this->option('only') === 'proposal') {
+            $this->migrateProposalOnly($out, $m, $p, $school);
+            return $out;
+        }
         if ($this->option('only') === 'sipinter') {
             $this->migrateSipinterOnly($out, $m, $p, $school);
             return $out;
@@ -76,12 +108,365 @@ class MigrateSidikmaRemainingData extends Command
 
     private function simpleRequests(array &$out,$m,$p,$school,$users,$now):void
     {
-        $types=$p->table('correspondence_types')->get();$src=$m->table('persuratan')->get();$ex=$p->table('correspondence_requests')->whereNotNull('legacy_correspondence_id')->pluck('legacy_correspondence_id')->flip();$new=[];$skip=0;
-        foreach($src as$r){$s=$school($r->kelas);if(!$s){$skip++;continue;}if($ex->has($r->id))continue;$type=$types->first(fn($t)=>str_contains(SidikmaMasterData::normalized($t->name),SidikmaMasterData::normalized($r->jenis)));$new[]=['legacy_correspondence_id'=>$r->id,'school_id'=>$s->id,'school_name'=>$s->name,'correspondence_type_id'=>$type?->id,'type_name'=>$r->jenis,'request_file_path'=>$r->persuratan,'response_file_path'=>$this->null($r->surat_acc),'process_status'=>$this->status($r->status),'notes'=>$this->null($r->catatan),'created_at'=>$r->created_at,'updated_at'=>$r->created_at,'legacy_snapshot'=>json_encode((array)$r,JSON_UNESCAPED_SLASHES)];}
-        $out['correspondence_requests']=$new;$this->stat('Persuratan',$src->count(),count($new),$src->count()-count($new)-$skip,$skip);
+        $this->migrateCorrespondenceOnly($out, $m, $p, $school);
         $src=$m->table('proposal')->get();$ex=$p->table('proposal_requests')->whereNotNull('legacy_proposal_id')->pluck('legacy_proposal_id')->flip();$new=[];$skip=0;
         foreach($src as$r){$s=$school($r->kelas_id);if(!$s){$skip++;continue;}if($ex->has($r->id))continue;$new[]=['legacy_proposal_id'=>$r->id,'school_id'=>$s->id,'school_name'=>$s->name,'proposal_type'=>$r->jenis_proposal,'request_file_path'=>$r->proposal,'requested_amount'=>$this->money($r->nominal),'bank_name'=>$r->nama_bank?:'-','bank_account_number'=>$r->no_rekening?:'-','bank_account_name'=>$this->null($r->an_rekening),'description'=>$this->null($r->catatan),'process_status'=>$this->status($r->status),'approval_file_path'=>$this->null($r->approve_proposal),'approved_amount'=>$this->money($r->nominal_acc,true),'notes'=>$this->null($r->keterangan_ditolak),'created_at'=>$r->created_at,'updated_at'=>$r->updated_at,'legacy_snapshot'=>json_encode((array)$r,JSON_UNESCAPED_SLASHES)];}
         $out['proposal_requests']=$new;$this->stat('Proposal',$src->count(),count($new),$src->count()-count($new)-$skip,$skip);
+    }
+
+    private function migrateCorrespondenceOnly(array &$out, $m, $p, $school): void
+    {
+        $types = $p->table('correspondence_types')->get();
+        $src = $m->table('persuratan')->get();
+        $existing = $p->table('correspondence_requests')
+            ->whereNotNull('legacy_correspondence_id')
+            ->pluck('legacy_correspondence_id')
+            ->flip();
+        $new = [];
+        $skip = 0;
+
+        foreach ($src as $row) {
+            $schoolRecord = $school($row->kelas);
+            if (! $schoolRecord) {
+                $skip++;
+                continue;
+            }
+            if ($existing->has($row->id)) {
+                continue;
+            }
+
+            $type = $types->first(fn ($item) => str_contains(
+                SidikmaMasterData::normalized($item->name),
+                SidikmaMasterData::normalized($row->jenis),
+            ));
+
+            $new[] = [
+                'legacy_correspondence_id' => $row->id,
+                'school_id' => $schoolRecord->id,
+                'school_name' => $schoolRecord->name,
+                'correspondence_type_id' => $type?->id,
+                'type_name' => $row->jenis,
+                'request_file_path' => $row->persuratan ?: '-',
+                'response_file_path' => $this->null($row->surat_acc),
+                'process_status' => $this->status($row->status),
+                'notes' => $this->null($row->catatan),
+                'created_at' => $row->created_at,
+                'updated_at' => $row->created_at,
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+            ];
+        }
+
+        $out['correspondence_requests'] = $new;
+        $this->stat('Persuratan', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
+    }
+
+    private function migrateActivityOnly(array &$out, $m, $p, $school, $employees): void
+    {
+        $src = $m->table('aktivasi')->get();
+        $existing = $p->table('employee_activity_requests')
+            ->whereNotNull('legacy_activity_id')
+            ->pluck('legacy_activity_id')
+            ->flip();
+        $new = [];
+        $skip = 0;
+
+        foreach ($src as $row) {
+            if ($existing->has($row->id)) {
+                continue;
+            }
+
+            $schoolRecord = $school($row->kelas);
+            $employee = $employees->first(fn ($item) => SidikmaMasterData::normalized($item->name) === SidikmaMasterData::normalized($row->nama));
+            if (! $schoolRecord && ! $employee) {
+                $skip++;
+                continue;
+            }
+
+            $new[] = [
+                'legacy_activity_id' => $row->id,
+                'employee_id' => $employee?->id,
+                'employee_name' => $this->null($row->nama) ?? 'Tidak diketahui',
+                'school_id' => $schoolRecord?->id,
+                'school_name' => $schoolRecord?->name ?? $this->null($row->kelas),
+                'inactive_date' => ($inactiveDate = $this->null($row->tmt_nonaktif)) ? substr($inactiveDate, 0, 10) : null,
+                'request_letter_path' => $this->null($row->s_permohonan) ?? '-',
+                'status' => $this->status($row->status),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => $row->created_at,
+                'updated_at' => $row->created_at,
+            ];
+        }
+
+        $out['employee_activity_requests'] = $new;
+        $this->stat('Aktivasi/nonaktif', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
+    }
+
+    private function migrateProposalOnly(array &$out, $m, $p, $school): void
+    {
+        $src = $m->table('proposal')->get();
+        $existing = $p->table('proposal_requests')->whereNotNull('legacy_proposal_id')->pluck('legacy_proposal_id')->flip();
+        $new = [];
+        $skip = 0;
+
+        foreach ($src as $row) {
+            if ($existing->has($row->id)) {
+                continue;
+            }
+            $schoolRecord = $school($row->kelas_id);
+            if (! $schoolRecord) {
+                $skip++;
+                continue;
+            }
+            $new[] = [
+                'legacy_proposal_id' => $row->id,
+                'school_id' => $schoolRecord->id,
+                'school_name' => $schoolRecord->name,
+                'proposal_type' => $this->null($row->jenis_proposal) ?? 'Proposal bantuan',
+                'request_file_path' => $this->null($row->proposal) ?? '-',
+                'requested_amount' => $this->money($row->nominal),
+                'bank_name' => $this->null($row->nama_bank) ?? '-',
+                'bank_account_number' => $this->null($row->no_rekening) ?? '-',
+                'bank_account_name' => $this->null($row->an_rekening),
+                'description' => $this->null($row->catatan),
+                'process_status' => $this->status($row->status),
+                'approval_file_path' => $this->null($row->approve_proposal),
+                'approved_amount' => $this->money($row->nominal_acc, true),
+                'notes' => $this->null($row->keterangan_ditolak),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => $row->created_at,
+                'updated_at' => $row->updated_at,
+            ];
+        }
+
+        $out['proposal_requests'] = $new;
+        $this->stat('Proposal', $src->count(), count($new), $src->count() - count($new) - $skip, $skip);
+    }
+
+    private function migrateEnrollmentsOnly(array &$out, $m, $p, $school): void
+    {
+        $rows = [];
+        $sources = [
+            ['data_siswa', 'madrasah_id', 'tahun_pelajaran', ['k1' => 'kelas1', 'k2' => 'kelas2', 'k3' => 'kelas3', 'k4' => 'kelas4', 'k5' => 'kelas5', 'k6' => 'kelas6', 'k7' => 'kelas7', 'k8' => 'kelas8', 'k9' => 'kelas9']],
+            ['kesiswaan', 'kelas_id', 'thn_pelajaran', ['k1' => 'kelas1', 'k2' => 'kelas2', 'k3' => 'kelas3', 'k4' => 'kelas4', 'k5' => 'kelas5', 'k6' => 'kelas6', 'k7' => 'kelas7', 'k8' => 'kelas8', 'k9' => 'kelas9']],
+        ];
+
+        foreach ($sources as [$table, $schoolColumn, $yearColumn, $map]) {
+            foreach ($m->table($table)->get() as $row) {
+                $schoolRecord = $school($row->{$schoolColumn});
+                $academicYear = $this->year($row->{$yearColumn});
+                if (! $schoolRecord || ! $academicYear) {
+                    continue;
+                }
+                $payload = [
+                    'school_id' => $schoolRecord->id,
+                    'academic_year' => $academicYear,
+                    'legacy_snapshot' => json_encode(['source' => $table, 'row' => (array) $row], JSON_UNESCAPED_SLASHES),
+                    'created_at' => $row->created_at ?? now(),
+                    'updated_at' => $row->updated_at ?? now(),
+                ];
+                foreach ($map as $target => $source) {
+                    $payload[$target] = max(0, (int) ($row->{$source} ?? 0));
+                }
+                $payload['total'] = collect(range(1, 9))->sum(fn ($grade) => $payload['k'.$grade]);
+                $rows[] = $payload;
+            }
+        }
+
+        $rows = $this->dedupe($rows);
+        $existing = $p->table('student_enrollments')->get()->keyBy(fn ($row) => $row->school_id.'|'.$row->academic_year);
+        $new = array_values(array_filter($rows, fn ($row) => ! $existing->has($row['school_id'].'|'.$row['academic_year'])));
+        $sourceCount = $m->table('data_siswa')->count() + $m->table('kesiswaan')->count();
+        $out['student_enrollments'] = $new;
+        $this->stat('Rekap siswa', $sourceCount, count($new), $sourceCount - count($new), 0);
+    }
+
+    private function migrateEducatorsOnly(array &$out, $m, $p, $school): void
+    {
+        $rows = [];
+        foreach ([
+            ['data_tenaga_pendidik', 'madrasah_id', 'tahun_pelajaran'],
+            ['tenaga', 'kelas_id', 'thn_pelajaran'],
+        ] as [$table, $schoolColumn, $yearColumn]) {
+            foreach ($m->table($table)->get() as $row) {
+                $schoolRecord = $school($row->{$schoolColumn});
+                $academicYear = $this->year($row->{$yearColumn});
+                if (! $schoolRecord || ! $academicYear) {
+                    continue;
+                }
+                if ($table === 'data_tenaga_pendidik') {
+                    $values = [
+                        (int) ($row->kepala_guru_asn_sertifikasi ?? 0),
+                        (int) ($row->kepala_guru_asn_non_sertifikasi ?? 0),
+                        (int) ($row->kepala_guru_yayasan_sertifikasi_inpassing ?? 0),
+                        (int) ($row->kepala_guru_yayasan_non_sertifikasi ?? 0),
+                    ];
+                } else {
+                    $values = [
+                        (int) ($row->jml_pns ?? 0),
+                        0,
+                        (int) ($row->jml_gtysertifikasiinpassing ?? 0),
+                        (int) ($row->jml_gtynonsertifikasi ?? 0) + (int) ($row->jml_pty ?? 0) + (int) ($row->jml_gtysertifikasinoninpassing ?? 0),
+                    ];
+                }
+                $rows[] = [
+                    'school_id' => $schoolRecord->id,
+                    'academic_year' => $academicYear,
+                    'asn_certified' => $values[0],
+                    'asn_uncertified' => $values[1],
+                    'foundation_certified_inpassing' => $values[2],
+                    'foundation_uncertified' => $values[3],
+                    'total' => array_sum($values),
+                    'legacy_snapshot' => json_encode(['source' => $table, 'row' => (array) $row], JSON_UNESCAPED_SLASHES),
+                    'created_at' => $row->created_at ?? now(),
+                    'updated_at' => $row->updated_at ?? now(),
+                ];
+            }
+        }
+        $rows = $this->dedupe($rows);
+        $existing = $p->table('educator_recaps')->get()->keyBy(fn ($row) => $row->school_id.'|'.$row->academic_year);
+        $new = array_values(array_filter($rows, fn ($row) => ! $existing->has($row['school_id'].'|'.$row['academic_year'])));
+        $sourceCount = $m->table('data_tenaga_pendidik')->count() + $m->table('tenaga')->count();
+        $out['educator_recaps'] = $new;
+        $this->stat('Rekap pendidik', $sourceCount, count($new), $sourceCount - count($new), 0);
+    }
+
+    private function migrateAgendasOnly(array &$out, $m, $p, $foundation): void
+    {
+        $source = $m->table('agenda_kesekretariatans')->get();
+        $existing = $p->table('secretariat_agendas')->whereNotNull('legacy_agenda_id')->pluck('legacy_agenda_id')->flip();
+        $new = [];
+        foreach ($source as $row) {
+            if ($existing->has($row->id)) continue;
+            $new[] = [
+                'legacy_agenda_id' => $row->id,
+                'foundation_id' => $foundation->id,
+                'activity' => $this->null($row->kegiatan) ?? '-',
+                'implementation_date' => ($date = $this->null($row->tanggal_pelaksanaan)) ? substr($date, 0, 10) : null,
+                'officer' => $this->null($row->petugas) ?? '-',
+                'status' => $this->status($row->keterangan),
+                'notes' => $this->null($row->catatan),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => (($created = $this->null($row->created_at ?? null)) && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'updated_at' => (($updated = $this->null($row->updated_at ?? null)) && ! str_starts_with($updated, '0000-00-00')) ? $updated : (($created ?? null) ?: now()),
+            ];
+        }
+        $out['secretariat_agendas'] = $new;
+        $this->stat('Agenda sekretariat', $source->count(), count($new), $source->count() - count($new), 0);
+    }
+
+    private function migrateBatikOnly(array &$out, $m, $p, $school, $foundation): void
+    {
+        $products = $p->table('batik_products')->get();
+        $byLegacy = $products->whereNotNull('legacy_product_id')->keyBy('legacy_product_id');
+        $byName = $products->keyBy(fn ($item) => SidikmaMasterData::normalized($item->name));
+        $productRows = [];
+        $legacyProducts = $m->table('stok_batik')->orderBy('id')->get();
+        $defaultProducts = $products->whereNull('legacy_product_id')->sortBy('sort_order')->values();
+        if ($defaultProducts->count() >= $legacyProducts->count() && $legacyProducts->count() > 0) {
+            foreach ($legacyProducts as $index => $row) {
+                $product = $defaultProducts->get($index);
+                if (! $product) continue;
+                $created = $this->null($row->created_at ?? null);
+                $updated = $this->null($row->updated_at ?? null);
+                $p->table('batik_products')->where('id', $product->id)->update([
+                    'legacy_product_id' => $row->id,
+                    'name' => $this->null($row->produk) ?? $product->name,
+                    'stock' => (float) ($row->stok ?? 0),
+                    'price' => (float) ($row->harga ?? 0),
+                    'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                    'updated_at' => ($updated && ! str_starts_with($updated, '0000-00-00')) ? $updated : (($created && ! str_starts_with($created, '0000-00-00')) ? $created : now()),
+                ]);
+            }
+            $products = $p->table('batik_products')->get();
+            $byLegacy = $products->whereNotNull('legacy_product_id')->keyBy('legacy_product_id');
+            $byName = $products->keyBy(fn ($item) => SidikmaMasterData::normalized($item->name));
+        }
+        foreach ($legacyProducts as $row) {
+            if ($byLegacy->has($row->id)) continue;
+            $payload = [
+                'legacy_product_id' => $row->id,
+                'foundation_id' => $foundation->id,
+                'name' => $this->null($row->produk) ?? 'Produk batik',
+                'audience' => 'umum',
+                'stock' => (float) ($row->stok ?? 0),
+                'price' => (float) ($row->harga ?? 0),
+                'size_label' => 'unit',
+                'sort_order' => (int) $row->id,
+                'is_active' => true,
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => (($created = $this->null($row->created_at ?? null)) && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'updated_at' => (($updated = $this->null($row->updated_at ?? null)) && ! str_starts_with($updated, '0000-00-00')) ? $updated : (($created ?? null) ?: now()),
+            ];
+            $existing = $byName->get(SidikmaMasterData::normalized($payload['name']));
+            if ($existing) {
+                $byLegacy->put($row->id, $existing);
+            } else {
+                $productRows[] = $payload;
+            }
+        }
+        foreach (array_chunk($productRows, 100) as $chunk) {
+            if ($chunk) $p->table('batik_products')->insert($chunk);
+        }
+        $products = $p->table('batik_products')->get();
+        $byName = $products->keyBy(fn ($item) => SidikmaMasterData::normalized($item->name));
+        $byLegacy = $products->whereNotNull('legacy_product_id')->keyBy('legacy_product_id');
+
+        $source = $m->table('batik_maarif')->get();
+        $existing = $p->table('batik_orders')->whereNotNull('legacy_order_id')->pluck('legacy_order_id')->flip();
+        $new = [];
+        $fallback = $products->first();
+        foreach ($source as $row) {
+            if ($existing->has($row->id)) continue;
+            $schoolRecord = $school($row->asal_sekolah);
+            $product = $fallback;
+            if (! $schoolRecord || ! $product) continue;
+            $quantity = (int) ($row->siswa ?? 0) + (int) ($row->guru_2m ?? 0) + (int) ($row->guru_25m ?? 0);
+            $new[] = [
+                'legacy_order_id' => $row->id,
+                'foundation_id' => $foundation->id,
+                'product_id' => $product->id,
+                'school_id' => $schoolRecord->id,
+                'ordered_at' => (($ordered = $this->null($row->created_at ?? null)) && ! str_starts_with($ordered, '0000-00-00')) ? $ordered : now(),
+                'quantity' => $quantity,
+                'total_amount' => (float) ($row->total_tagihan ?? 0),
+                'status' => 'collected',
+                'recipient_name' => $this->null($row->penerima),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => (($created = $this->null($row->created_at ?? null)) && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'updated_at' => (($updated = $this->null($row->updated_at ?? null)) && ! str_starts_with($updated, '0000-00-00')) ? $updated : (($created ?? null) ?: now()),
+            ];
+        }
+        $out['batik_orders'] = $new;
+        $this->stat('Pesanan batik', $source->count(), count($new), $source->count() - count($new), 0);
+    }
+
+    private function migrateModulesOnly(array &$out, $m, $p, $foundation): void
+    {
+        $source = $m->table('modul')->get();
+        $existing = $p->table('learning_modules')->whereNotNull('legacy_module_id')->pluck('legacy_module_id')->flip();
+        $new = [];
+        foreach ($source as $row) {
+            if ($existing->has($row->id)) continue;
+            $filePath = $this->null($row->file_path) ?? '-';
+            $created = $this->null($row->created_at ?? null);
+            $new[] = [
+                'legacy_module_id' => $row->id,
+                'foundation_id' => $foundation->id,
+                'class_name' => $this->null($row->kelas) ?? '-',
+                'module_type' => $this->null($row->jenis_modul) ?? '-',
+                'semester' => max(1, (int) ($row->semester ?? 1)),
+                'subject' => $this->null($row->mapel) ?? '-',
+                'chapter' => $this->null($row->bab) ?? '-',
+                'file_path' => $filePath,
+                'original_name' => basename(str_replace('\\', '/', $filePath)),
+                'uploaded_at' => ($created && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'legacy_snapshot' => json_encode((array) $row, JSON_UNESCAPED_SLASHES),
+                'created_at' => ($created && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+                'updated_at' => ($created && ! str_starts_with($created, '0000-00-00')) ? $created : now(),
+            ];
+        }
+        $out['learning_modules'] = $new;
+        $this->stat('Modul belajar', $source->count(), count($new), $source->count() - count($new), 0);
     }
 
     private function recaps(array &$out,$m,$p,$school,$now):void

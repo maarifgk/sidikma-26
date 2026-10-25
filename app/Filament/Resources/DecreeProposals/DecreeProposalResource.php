@@ -45,7 +45,7 @@ class DecreeProposalResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with('employee.school');
+        $query = parent::getEloquentQuery()->with(['employee.school', 'submittedBy']);
         $user = auth()->user();
 
         if (! $user instanceof User) {
@@ -56,11 +56,16 @@ class DecreeProposalResource extends Resource
             return $query;
         }
 
-        return $query->whereHas(
-            'employee',
-            fn (Builder $employeeQuery): Builder => $employeeQuery
-                ->whereIn('school_id', $user->accessibleSchoolIds()),
-        );
+        $schoolIds = $user->accessibleSchoolIds();
+
+        return $query->where(function (Builder $proposalQuery) use ($schoolIds, $user): void {
+            $proposalQuery
+                ->whereHas(
+                    'employee',
+                    fn (Builder $employeeQuery): Builder => $employeeQuery->whereIn('school_id', $schoolIds),
+                )
+                ->orWhere('submitted_by', $user->getKey());
+        });
     }
 
     public static function getPages(): array

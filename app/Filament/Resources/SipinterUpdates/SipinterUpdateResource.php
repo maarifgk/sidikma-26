@@ -49,9 +49,19 @@ class SipinterUpdateResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $user->isAdminInduk()
-            ? $query
-            : $query->whereIn('school_id', $user->accessibleSchoolIds());
+        if ($user->isAdminInduk()) {
+            return $query;
+        }
+
+        $schoolIds = $user->accessibleSchoolIds();
+
+        // Legacy SIPINTER rows are linked to the employee's school, while
+        // some accounts only expose that school through their employee link.
+        if ($user->employee?->school_id !== null) {
+            $schoolIds->push($user->employee->school_id);
+        }
+
+        return $query->whereIn('school_id', $schoolIds->unique()->values());
     }
 
     public static function getPages(): array

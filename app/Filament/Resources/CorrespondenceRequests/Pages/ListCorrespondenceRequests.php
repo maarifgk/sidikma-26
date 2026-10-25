@@ -15,6 +15,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\EmbeddedTable;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,13 @@ class ListCorrespondenceRequests extends ListRecords
     {
         return $schema
             ->components([
+                View::make('filament.admin.resources.correspondence-requests.types-panel')
+                    ->viewData(fn (): array => [
+                        'types' => CorrespondenceType::query()
+                            ->where('is_active', true)
+                            ->ordered()
+                            ->get(),
+                    ]),
                 EmbeddedTable::make(),
             ]);
     }

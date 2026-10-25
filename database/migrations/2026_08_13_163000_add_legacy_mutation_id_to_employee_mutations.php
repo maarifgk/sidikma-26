@@ -8,9 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('employee_mutations')) {
+            return;
+        }
+
         Schema::table('employee_mutations', function (Blueprint $table): void {
-            $table->unsignedBigInteger('legacy_mutation_id')->nullable()->unique()->after('id');
-            $table->json('legacy_snapshot')->nullable();
+            if (! Schema::hasColumn('employee_mutations', 'legacy_mutation_id')) {
+                $table->unsignedBigInteger('legacy_mutation_id')->nullable()->unique()->after('id');
+            }
+            if (! Schema::hasColumn('employee_mutations', 'legacy_snapshot')) {
+                $table->json('legacy_snapshot')->nullable();
+            }
         });
     }
 

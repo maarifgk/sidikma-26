@@ -20,11 +20,43 @@ class SipinterUpdatesTable
                     ->rowIndex(),
                 TextColumn::make('school.name')
                     ->label('Asal Madrasah')
+                    ->state(fn (SipinterUpdate $record): string => $record->school?->name ?? '-')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('npsn')
+                    ->label('NPSN')
+                    ->placeholder('-')
+                    ->toggleable(),
+                TextColumn::make('school_address')
+                    ->label('Alamat')
+                    ->placeholder('-')
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('land_ownership')
+                    ->label('Kepemilikan Tanah')
+                    ->placeholder('-')
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('land_status')
+                    ->label('Status Tanah')
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('management_authority')
+                    ->label('Pengelolaan')
+                    ->placeholder('-')
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 self::fileColumn('request_file_path', 'File Permohonan'),
                 self::fileColumn('asset_file_path', 'File Aset'),
                 self::fileColumn('recommendation_file_path', 'File Rekomendasi'),
+                TextColumn::make('verification_status')
+                    ->label('Status Registrasi')
+                    ->state(fn (SipinterUpdate $record): string => collect(SipinterUpdate::FILE_FIELDS)
+                        ->every(fn (string $field): bool => filled($record->getAttribute($field)) && $record->getAttribute($field) !== '-')
+                        ? 'Dokumen sudah lengkap'
+                        : 'Belum terverifikasi')
+                    ->badge()
+                    ->color(fn (string $state): string => $state === 'Dokumen sudah lengkap' ? 'success' : 'warning'),
             ])
             ->recordActions([
                 EditAction::make()

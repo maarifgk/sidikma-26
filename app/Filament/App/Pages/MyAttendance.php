@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\AttendanceEvent;
 use App\Models\AttendanceSetting;
 use App\Models\Employee;
+use App\Models\User;
 use App\Services\AttendanceLocationService;
 use App\Services\AttendanceEventService;
 use BackedEnum;
@@ -45,6 +46,7 @@ class MyAttendance extends Page
 
     public mixed $selfie = null;
     public string $checkOutReason = '';
+    public string $checkInReason = '';
     public bool $fakeGps = false;
     public ?string $fakeGpsSource = null;
     public ?int $clientGeofenceVersion = null;
@@ -52,11 +54,9 @@ class MyAttendance extends Page
 
     public static function canAccess(): bool
     {
-        return Employee::query()
-            ->where('user_id', Auth::id())
-            ->where('is_active', true)
-            ->whereNotNull('school_id')
-            ->exists();
+        $user = Auth::user();
+
+        return $user !== null && static::employeeForUser($user) !== null;
     }
 
     public function getHeading(): string|Htmlable|null
@@ -90,6 +90,10 @@ class MyAttendance extends Page
             throw ValidationException::withMessages(['attendance' => 'Presensi masuk belum dibuka.']);
         }
 
+        if ($localNow->format('H:i:s') > $setting->late_after && blank(trim($this->checkInReason))) {
+            throw ValidationException::withMessages(['checkInReason' => 'Alasan terlambat wajib diisi.']);
+        }
+
         $date = $localNow->toDateString();
         if ($setting->detect_fake_gps && $this->fakeGps) {
             DB::transaction(fn () => $this->recordRejectedAttempt($employee, $date, 'check_in', 'fake_gps', 'Presensi ditolak karena perangkat melaporkan lokasi palsu/mock.', $this->fakeGpsSource, $setting->geofence_version));
@@ -110,6 +114,7 @@ class MyAttendance extends Page
             'school_id' => $employee->school_id,
             'attendance_date' => $date,
             'status' => $localNow->format('H:i:s') > $setting->late_after ? AttendanceRecord::STATUS_LATE : AttendanceRecord::STATUS_PRESENT,
+            'check_in_reason' => filled(trim($this->checkInReason)) ? trim($this->checkInReason) : null,
             'check_in_at' => now(),
             'check_in_latitude' => $this->latitude,
             'check_in_longitude' => $this->longitude,
@@ -128,7 +133,7 @@ class MyAttendance extends Page
             throw $exception;
         }
 
-        $this->reset('selfie');
+        $this->reset(['selfie', 'checkInReason']);
         $this->dispatch('$refresh');
         Notification::make()->success()->title('Presensi masuk berhasil')->send();
     }
@@ -190,7 +195,7 @@ class MyAttendance extends Page
     /** @return array<string, mixed> */
     private function pageData(): array
     {
-        $employee = Employee::query()->with('school')->where('user_id', Auth::id())->where('is_active', true)->first();
+        $employee = static::employeeForUser(Auth::user(), true);
         $today = now(config('attendance.timezone'))->toDateString();
         $record = $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->whereDate('attendance_date', $today)->first() : null;
         $setting = $employee?->school_id ? AttendanceSetting::forSchool($employee->school_id) : null;
@@ -210,7 +215,7 @@ class MyAttendance extends Page
     /** @return array{0: Employee, 1: AttendanceSetting} */
     private function context(): array
     {
-        $employee = Employee::query()->where('user_id', Auth::id())->where('is_active', true)->first();
+        $employee = static::employeeForUser(Auth::user());
 
         if (! $employee || ! $employee->school_id) {
             throw ValidationException::withMessages(['attendance' => 'Akun belum terhubung dengan data guru/pegawai dan sekolah.']);
@@ -223,6 +228,27 @@ class MyAttendance extends Page
         }
 
         return [$employee, $setting];
+    }
+
+    private static function employeeForUser(?User $user, bool $withSchool = false): ?Employee
+    {
+        if (! $user) {
+            return null;
+        }
+
+        $query = Employee::query()
+            ->when($withSchool, fn ($query) => $query->with('school'))
+            ->where('is_active', true)
+            ->whereNotNull('school_id')
+            ->where(function ($query) use ($user): void {
+                $query
+                    ->where('user_id', $user->getKey())
+                    ->orWhere(function ($query) use ($user): void {
+                        $query->whereNull('user_id')->where('email', $user->email);
+                    });
+            });
+
+        return $query->first();
     }
 
     private function validateAttendanceRequirements(AttendanceSetting $setting): ?float

@@ -1,10 +1,4 @@
-@php
-    $setting = \App\Models\ApplicationSetting::current();
-    $logoUrl = filled($setting->logo_path)
-        ? \Illuminate\Support\Facades\Storage::disk('public')->url($setting->logo_path)
-        : asset('images/default-avatar.svg');
-    $livewire ??= null;
-@endphp
+@php($livewire ??= null)
 
 <x-filament-panels::layout.base :livewire="$livewire">
     <style>
@@ -23,6 +17,7 @@
         .sidikma-auth__form-wrap { width: min(100%, 500px); }
         .sidikma-auth__portal { display: inline-flex; align-items: center; gap: .45rem; margin-bottom: 1rem; padding: .45rem .8rem; border: 1px solid #d9e9e2; border-radius: 999px; background: #edf8f2; color: #176742; font-size: .78rem; font-weight: 700; }
         .sidikma-auth__form-logo { display: block; width: min(100%, 320px); height: 126px; margin: .5rem auto 1rem; object-fit: contain; object-position: center; }
+        .sidikma-auth__form-mark { display: block; width: 132px; height: 132px; margin: .9rem auto 1.15rem; object-fit: contain; object-position: center; }
         .sidikma-auth .fi-simple-main-ctn, .sidikma-auth .fi-simple-main { width: 100%; padding: 0; background: transparent; }
         .sidikma-auth .fi-simple-main { max-width: none; }
         .sidikma-auth .fi-simple-page { padding: 0; box-shadow: none; background: transparent; }
@@ -50,14 +45,14 @@
                     <x-filament::icon icon="heroicon-o-lock-closed" class="h-4 w-4" />
                     <span>Portal Login</span>
                 </div>
-                <img class="sidikma-auth__form-logo" src="{{ $logoUrl }}" alt="Logo SIDIKMA">
+                <img class="sidikma-auth__form-mark" src="{{ asset('images/sidikma-header-logo.png') }}" alt="Logo SIDIKMA GK">
                 <main id="fi-main-content" tabindex="-1">{{ $slot }}</main>
             </div>
         </section>
 
-        <aside class="sidikma-auth__brand" aria-label="Informasi SIDIKMA">
+        <aside class="sidikma-auth__brand" aria-label="Informasi SIDIKMA GK">
             <div class="sidikma-auth__brand-content">
-                <div class="sidikma-auth__welcome">WELCOME TO</div>
+                <div class="sidikma-auth__welcome">WELCOME TO SIDIKMA GK</div>
                 <h1>Sistem Data dan Informasi Kelembagaan Ma'arif NU Kabupaten Gunungkidul</h1>
                 <img class="sidikma-auth__illustration" src="{{ asset('images/sidikma-login-illustration-transparent.png') }}" alt="Ilustrasi portal data pendidikan">
             </div>

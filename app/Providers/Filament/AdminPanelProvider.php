@@ -84,7 +84,7 @@ class AdminPanelProvider extends PanelProvider
             ->passwordReset(RequestPasswordReset::class, ResetPassword::class)
             ->globalSearch(NavigationSearchProvider::class)
             ->databaseNotifications()
-            ->brandName(fn (): string => ApplicationSetting::current()->short_title)
+            ->brandName('SIDIKMA GK')
             ->brandLogo(fn (): string => asset('images/sidikma-header-logo.png'))
             ->brandLogoHeight('3rem')
             ->colors([
@@ -424,7 +424,7 @@ class AdminPanelProvider extends PanelProvider
             ->group($group)
             ->icon($icon)
             ->sort($sort)
-            ->url(in_array($menu, ['administrasi', 'kelembagaan'], true)
+            ->url(in_array($menu, ['administrasi', 'kelembagaan', 'setting'], true)
                 ? null
                 : fn (): string => Dashboard::getUrl(['menu' => $menu], isAbsolute: false))
             ->isActiveWhen(fn (): bool => (

@@ -5,6 +5,7 @@ use App\Http\Controllers\AttendanceLocationSearchController;
 use App\Http\Controllers\DownloadDecreeSubmissionResultController;
 use App\Http\Controllers\DownloadDocumentController;
 use App\Http\Controllers\DownloadMutationTemplateController;
+use App\Http\Controllers\DownloadLearningModuleController;
 use App\Http\Controllers\DownloadSipinterTemplateController;
 use App\Http\Controllers\MapTileController;
 use App\Http\Controllers\MapProviderTileController;
@@ -55,6 +56,14 @@ Route::get('/sipinter/template-surat-permohonan', DownloadSipinterTemplateContro
 Route::get('/mutasi/template-surat-permohonan', DownloadMutationTemplateController::class)
     ->middleware('auth')
     ->name('mutations.template.download');
+
+Route::get('/learning-module-files/{learningModule}/download', DownloadLearningModuleController::class)
+    ->middleware('auth')
+    ->name('learning-module.download');
+
+Route::get('/learning-module-files/{learningModule}/download', DownloadLearningModuleController::class)
+    ->middleware('auth')
+    ->name('learning-module.download');
 
 Route::get('/attendance-records/{attendanceRecord}/selfie/{slot}', ViewAttendanceSelfieController::class)
     ->middleware('auth')

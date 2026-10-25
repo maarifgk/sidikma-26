@@ -20,6 +20,7 @@ class SipinterUpdatesTable
                     ->rowIndex(),
                 TextColumn::make('school.name')
                     ->label('Asal Madrasah')
+                    ->state(fn (SipinterUpdate $record): string => $record->school?->name ?? '-')
                     ->searchable()
                     ->sortable(),
                 self::fileColumn('request_file_path', 'File Permohonan'),

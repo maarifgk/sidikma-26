@@ -32,13 +32,22 @@ class MyProfile extends Page
     {
         $user = auth()->user();
         $employee = $user?->employee()->with(['school', 'currentAssignment.position'])->first();
+        $avatarPath = $employee?->avatar_path ?: $user?->avatar_path;
+
+        $avatarUrl = asset('images/default-avatar.svg');
+        if (filled($avatarPath)) {
+            $avatarUrl = str_starts_with((string) $avatarPath, 'http://')
+                || str_starts_with((string) $avatarPath, 'https://')
+                ? (string) $avatarPath
+                : (Storage::disk('public')->exists((string) $avatarPath)
+                    ? Storage::disk('public')->url((string) $avatarPath)
+                    : $avatarUrl);
+        }
 
         return [
             'user' => $user,
             'employee' => $employee,
-            'avatarUrl' => filled($employee?->avatar_path)
-                ? Storage::disk('public')->url($employee->avatar_path)
-                : asset('images/default-avatar.svg'),
+            'avatarUrl' => $avatarUrl,
             'colleagueCount' => $employee?->school_id
                 ? \App\Models\Employee::query()->where('school_id', $employee->school_id)->where('is_active', true)->count()
                 : 0,

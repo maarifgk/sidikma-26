@@ -30,15 +30,18 @@ class DecreeProposalsTable
                     ->rowIndex(),
                 TextColumn::make('employee.employee_code')
                     ->label('EWANUGK')
+                    ->state(fn (DecreeProposal $record): string => $record->employee?->employee_code ?? '-')
                     ->placeholder('-')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('employee.name')
                     ->label('Nama Lengkap')
+                    ->state(fn (DecreeProposal $record): string => $record->employee?->name ?? $record->candidate_name ?? '-')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('employee.school.name')
                     ->label('Asal Madrasah/Sekolah')
+                    ->state(fn (DecreeProposal $record): string => $record->employee?->school?->name ?? $record->candidate_school ?? '-')
                     ->placeholder('-')
                     ->searchable()
                     ->sortable(),

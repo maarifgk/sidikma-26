@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\AttendanceEvent;
 use App\Models\AttendanceSetting;
 use App\Models\Employee;
+use App\Models\User;
 use App\Services\AttendanceLocationService;
 use App\Services\AttendanceEventService;
 use BackedEnum;
@@ -53,11 +54,9 @@ class MyAttendance extends Page
 
     public static function canAccess(): bool
     {
-        return Employee::query()
-            ->where('user_id', Auth::id())
-            ->where('is_active', true)
-            ->whereNotNull('school_id')
-            ->exists();
+        $user = Auth::user();
+
+        return $user !== null && static::employeeForUser($user) !== null;
     }
 
     public function getHeading(): string|Htmlable|null
@@ -196,7 +195,7 @@ class MyAttendance extends Page
     /** @return array<string, mixed> */
     private function pageData(): array
     {
-        $employee = Employee::query()->with('school')->where('user_id', Auth::id())->where('is_active', true)->first();
+        $employee = static::employeeForUser(Auth::user(), true);
         $today = now(config('attendance.timezone'))->toDateString();
         $record = $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->whereDate('attendance_date', $today)->first() : null;
         $setting = $employee?->school_id ? AttendanceSetting::forSchool($employee->school_id) : null;
@@ -216,7 +215,7 @@ class MyAttendance extends Page
     /** @return array{0: Employee, 1: AttendanceSetting} */
     private function context(): array
     {
-        $employee = Employee::query()->where('user_id', Auth::id())->where('is_active', true)->first();
+        $employee = static::employeeForUser(Auth::user());
 
         if (! $employee || ! $employee->school_id) {
             throw ValidationException::withMessages(['attendance' => 'Akun belum terhubung dengan data guru/pegawai dan sekolah.']);
@@ -229,6 +228,27 @@ class MyAttendance extends Page
         }
 
         return [$employee, $setting];
+    }
+
+    private static function employeeForUser(?User $user, bool $withSchool = false): ?Employee
+    {
+        if (! $user) {
+            return null;
+        }
+
+        $query = Employee::query()
+            ->when($withSchool, fn ($query) => $query->with('school'))
+            ->where('is_active', true)
+            ->whereNotNull('school_id')
+            ->where(function ($query) use ($user): void {
+                $query
+                    ->where('user_id', $user->getKey())
+                    ->orWhere(function ($query) use ($user): void {
+                        $query->whereNull('user_id')->where('email', $user->email);
+                    });
+            });
+
+        return $query->first();
     }
 
     private function validateAttendanceRequirements(AttendanceSetting $setting): ?float

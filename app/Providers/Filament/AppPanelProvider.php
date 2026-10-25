@@ -68,7 +68,7 @@ class AppPanelProvider extends PanelProvider
             ->passwordReset(RequestPasswordReset::class, ResetPassword::class)
             ->globalSearch(NavigationSearchProvider::class)
             ->databaseNotifications()
-            ->brandName(fn (): string => ApplicationSetting::current()->short_title)
+            ->brandName('SIDIKMA GK')
             ->brandLogo(fn (): string => asset('images/sidikma-header-logo.png'))
             ->brandLogoHeight('3rem')
             ->colors([

@@ -52,14 +52,14 @@
                     <x-filament::icon icon="heroicon-o-lock-closed" class="h-4 w-4" />
                     <span>Portal Login</span>
                 </div>
-                <img class="sidikma-auth__form-logo" src="{{ $logoUrl }}" alt="Logo SIDIKMA">
+                <img class="sidikma-auth__form-logo" src="{{ $logoUrl }}" alt="Logo SIDIKMA GK">
                 <main id="fi-main-content" tabindex="-1">{{ $slot }}</main>
             </div>
         </section>
 
-        <aside class="sidikma-auth__brand" aria-label="Informasi SIDIKMA">
+        <aside class="sidikma-auth__brand" aria-label="Informasi SIDIKMA GK">
             <div class="sidikma-auth__brand-content">
-                <div class="sidikma-auth__welcome">WELCOME TO</div>
+                <div class="sidikma-auth__welcome">WELCOME TO SIDIKMA GK</div>
                 <h1>Sistem Data dan Informasi Kelembagaan Ma'arif NU Kabupaten Gunungkidul</h1>
                 <img class="sidikma-auth__illustration" src="{{ asset('images/sidikma-login-illustration-transparent.png') }}" alt="Ilustrasi portal data pendidikan">
             </div>

@@ -84,12 +84,12 @@ class IntegratedLogin extends Login
 
     public function hasLogo(): bool
     {
-        return false;
+        return true;
     }
 
     public function getTitle(): string|Htmlable
     {
-        return 'Login SIDIKMA';
+        return 'Login SIDIKMA GK';
     }
 
     public function getHeading(): string|Htmlable|null

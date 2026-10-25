@@ -1,10 +1,9 @@
 <div class="teacher-mobile">
     @include('filament.app.mobile.header', ['employee'=>$employee])
     <section class="tm-hero"><img class="tm-hero-avatar" src="{{ $mobileAvatarUrl }}"><div><div class="tm-eyebrow">Dashboard Guru/Pegawai</div><h1>{{ $employee?->name ?? auth()->user()->name }}</h1><p>{{ $employee?->school?->name ?? '-' }} &bull; {{ $employee ? \App\Models\Employee::employmentStatusLabel($employee->employment_status) : 'Profil belum terhubung' }}</p></div></section>
-    <section class="tm-section"><div class="tm-section-head"><h2>Menu</h2><small>7 akses</small></div><div class="tm-menu">
+    <section class="tm-section"><div class="tm-section-head"><h2>Menu</h2><small>4 akses</small></div><div class="tm-menu">
         @foreach([
             [\App\Filament\App\Pages\Dashboard::getUrl(panel:'app',isAbsolute:false),'heroicon-s-home','Dashboard'],
-            [\App\Filament\App\Pages\MyProfile::getUrl(panel:'app',isAbsolute:false),'heroicon-s-user-group','Informasi'],
             [\App\Filament\App\Pages\MyAttendance::getUrl(panel:'app',isAbsolute:false),'heroicon-o-map-pin','Presensi'],
             [\App\Filament\App\Pages\MyAttendanceLeaveRequests::getUrl(panel:'app',isAbsolute:false),'heroicon-s-calendar-days','Izin'],
             [\App\Filament\App\Pages\MyProfile::getUrl(panel:'app',isAbsolute:false),'heroicon-s-user','Profil'],

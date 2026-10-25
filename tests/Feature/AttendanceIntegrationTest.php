@@ -101,6 +101,8 @@ class AttendanceIntegrationTest extends TestCase
 
         $teacherAttendance = Livewire::test(MyAttendance::class)
             ->assertSee('Presensi Saya')
+            ->assertSee('Alasan Terlambat')
+            ->set('checkInReason', 'Kendaraan mengalami kendala di perjalanan')
             ->call('checkIn')
             ->assertHasNoErrors();
 
@@ -114,6 +116,7 @@ class AttendanceIntegrationTest extends TestCase
 
         $record = AttendanceRecord::query()->sole();
         $this->assertSame(AttendanceRecord::STATUS_LATE, $record->status);
+        $this->assertSame('Kendaraan mengalami kendala di perjalanan', $record->check_in_reason);
         $this->assertSame($this->school->getKey(), $record->school_id);
         $this->assertNotNull($record->fresh()->check_out_at);
 
@@ -130,6 +133,28 @@ class AttendanceIntegrationTest extends TestCase
             ->set('dateTo', '2026-08-11')
             ->assertSee($this->teacher->name)
             ->assertSee($this->school->name);
+    }
+
+    public function test_late_check_in_shows_reason_error_and_can_be_resubmitted(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-11 00:30:00', 'UTC'));
+        filament()->setCurrentPanel(filament()->getPanel('app'));
+        $this->actingAs($this->teacher);
+
+        Livewire::test(MyAttendance::class)
+            ->assertSee('Alasan Terlambat')
+            ->call('checkIn')
+            ->assertHasErrors(['checkInReason'])
+            ->assertSee('Alasan terlambat wajib diisi.')
+            ->set('checkInReason', 'Ban kendaraan bocor')
+            ->call('checkIn')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('attendance_records', [
+            'employee_id' => $this->employee->getKey(),
+            'status' => AttendanceRecord::STATUS_LATE,
+            'check_in_reason' => 'Ban kendaraan bocor',
+        ]);
     }
 
     public function test_invalid_coordinates_are_recorded_as_rejected_event(): void

@@ -70,10 +70,7 @@ class AttendanceLeaveRequest extends Model
     public static function statusOptions(): array
     {
         return [
-            self::STATUS_PENDING => 'Menunggu',
             self::STATUS_RECORDED => 'Tercatat',
-            self::STATUS_APPROVED => 'Disetujui',
-            self::STATUS_REJECTED => 'Ditolak',
         ];
     }
 

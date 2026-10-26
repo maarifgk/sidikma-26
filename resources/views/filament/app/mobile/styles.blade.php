@@ -53,7 +53,10 @@
     }
 /* Presensi mobile: kedua kartu jadwal harus seimbang dan jam masuk tidak terbungkus. */
 .tm-attendance-times{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:14px}
-.tm-time{min-width:0;min-height:168px;padding:18px 22px;display:flex;flex-direction:column;justify-content:center}
-.tm-time strong{font-size:clamp(20px,5.4vw,25px);line-height:1.25;letter-spacing:-.02em;white-space:nowrap}
+.tm-time{min-width:0;min-height:128px;padding:14px 18px;display:flex;flex-direction:column;justify-content:center}
+.tm-time strong{font-size:clamp(19px,4.8vw,22px);line-height:1.2;letter-spacing:-.025em;white-space:nowrap}
 .tm-attendance-times+.tm-section{margin-top:24px}
+.tm-attendance-times+.tm-section .tm-section-head h2{font-size:21px}
+.tm-attendance-times+.tm-section .tm-list{padding:10px 16px}
+.tm-attendance-times+.tm-section .tm-list-row{padding:14px 0}
 </style>

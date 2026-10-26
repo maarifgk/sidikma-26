@@ -167,6 +167,7 @@ class AttendanceSettings extends Page
         }
 
         $before = AttendanceSetting::query()->where('school_id', $validated['selectedSchoolId'])->first()?->only(['check_in_start','late_after','check_out_start','check_out_end','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']);
+        $canChangeFeatureActivation = auth()->user()?->isAdminInduk() ?? false;
         $setting = AttendanceSetting::query()->updateOrCreate(
             ['school_id' => $validated['selectedSchoolId']],
             [
@@ -181,12 +182,12 @@ class AttendanceSettings extends Page
                 'radius_meters' => $validated['maximumAccuracyMeters'],
                 'maximum_accuracy_meters' => $validated['maximumAccuracyMeters'],
                 'geofence_polygon' => $polygonPoints->count() >= 3 ? $polygonPoints->values()->all() : null,
-                'require_location' => $validated['requireLocation'],
-                'detect_fake_gps' => $validated['detectFakeGps'],
-                'require_selfie' => $validated['requireSelfie'],
-                'is_active' => $validated['isActive'],
-                'enable_check_in' => $validated['enableCheckIn'],
-                'enable_check_out' => $validated['enableCheckOut'],
+                'require_location' => $canChangeFeatureActivation ? $validated['requireLocation'] : (bool) ($before['require_location'] ?? false),
+                'detect_fake_gps' => $canChangeFeatureActivation ? $validated['detectFakeGps'] : (bool) ($before['detect_fake_gps'] ?? false),
+                'require_selfie' => $canChangeFeatureActivation ? $validated['requireSelfie'] : (bool) ($before['require_selfie'] ?? false),
+                'is_active' => $canChangeFeatureActivation ? $validated['isActive'] : (bool) ($before['is_active'] ?? true),
+                'enable_check_in' => $canChangeFeatureActivation ? $validated['enableCheckIn'] : (bool) ($before['enable_check_in'] ?? true),
+                'enable_check_out' => $canChangeFeatureActivation ? $validated['enableCheckOut'] : (bool) ($before['enable_check_out'] ?? true),
                 'updated_by' => auth()->id(),
             ],
         );

@@ -204,7 +204,7 @@
                                     -
                                 @endif
                             </td>
-                            <td><span class="ar-notes" title="{{ $record->notes }}">{{ $record->notes ?: '-' }}</span></td>
+                            <td><span class="ar-notes" title="{{ $record->check_in_reason ?: ($record->check_out_reason ?: $record->notes) }}">{{ $record->check_in_reason ?: ($record->check_out_reason ?: ($record->notes ?: '-')) }}</span></td>
                             <td>
                                 <div class="ar-selfies">
                                     @if($record->check_in_selfie_path)

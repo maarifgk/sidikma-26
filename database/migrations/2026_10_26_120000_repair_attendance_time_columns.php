@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'sidikma_induk';
+
     public function up(): void
     {
         if (! Schema::hasTable('attendance_settings')) {

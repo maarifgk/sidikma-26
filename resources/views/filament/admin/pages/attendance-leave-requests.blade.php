@@ -10,7 +10,7 @@
 @media(max-width:900px){.al-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.al-page{padding-top:.75rem}.al-header{flex-direction:column;padding:18px 20px}.al-head-actions{width:100%;justify-items:start}.al-filter-card{padding:18px 20px}.al-filter{grid-template-columns:1fr}.al-table-head{padding:18px 20px 14px}.al-table-wrap{margin:0 20px 20px}}@media(max-width:440px){.al-stats{grid-template-columns:1fr}.al-stat{min-height:108px}}
 </style>
 @php
-$pendingCount=$requests->where('status','pending')->count();
+$recordedCount=$requests->where('status','recorded')->count();
 $approvedCount=$requests->where('status','approved')->count();
 $rejectedCount=$requests->where('status','rejected')->count();
 @endphp
@@ -27,4 +27,5 @@ $rejectedCount=$requests->where('status','rejected')->count();
 <tr class="al-empty-row"><td colspan="8" class="al-empty"><div class="al-empty-content"><span class="al-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.5V6.75A2.25 2.25 0 0 1 5.25 4.5h13.5A2.25 2.25 0 0 1 21 6.75v6.75m-18 0 2.2 4.4a2.25 2.25 0 0 0 2.01 1.24h9.58a2.25 2.25 0 0 0 2.01-1.24l2.2-4.4h-5.25l-1.5 2.25h-4.5l-1.5-2.25H3Z"/></svg></span><strong>Belum ada pengajuan izin.</strong><span>Data pengajuan izin akan muncul di sini.</span></div></td></tr>
 @endforelse
 </tbody></table></div></section>
+<style>.al-actions{display:none!important}.al-table th:last-child{display:none!important}.al-table td:nth-last-child(1){display:none!important}</style>
 </div>

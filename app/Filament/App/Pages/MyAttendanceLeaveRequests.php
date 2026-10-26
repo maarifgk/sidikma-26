@@ -15,6 +15,8 @@ use Illuminate\Contracts\Support\Htmlable;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
 use UnitEnum;
 use App\Services\AuditLogService;
+use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\DB;
 
 class MyAttendanceLeaveRequests extends Page
 {
@@ -87,7 +89,7 @@ class MyAttendanceLeaveRequests extends Page
 
         $overlap = AttendanceLeaveRequest::query()
             ->where('employee_id', $employee->getKey())
-            ->whereIn('status', [AttendanceLeaveRequest::STATUS_PENDING, AttendanceLeaveRequest::STATUS_APPROVED])
+            ->whereIn('status', [AttendanceLeaveRequest::STATUS_PENDING, AttendanceLeaveRequest::STATUS_RECORDED, AttendanceLeaveRequest::STATUS_APPROVED])
             ->whereDate('start_date', '<=', $validated['endDate'])
             ->whereDate('end_date', '>=', $validated['startDate'])
             ->exists();
@@ -98,21 +100,36 @@ class MyAttendanceLeaveRequests extends Page
             return;
         }
 
-        $request = AttendanceLeaveRequest::query()->create([
-            'user_id' => auth()->id(),
-            'employee_id' => $employee->getKey(),
-            'school_id' => $employee->school_id,
-            'leave_type' => $validated['leaveType'],
-            'start_date' => $validated['startDate'],
-            'end_date' => $validated['endDate'],
-            'reason' => $validated['reason'],
-            'attachment_path' => $this->attachment?->store("leave-requests/{$employee->school_id}", AttendanceRecord::DISK),
-            'status' => AttendanceLeaveRequest::STATUS_PENDING,
-        ]);
+        $request = DB::transaction(function () use ($validated, $employee): AttendanceLeaveRequest {
+            $request = AttendanceLeaveRequest::query()->create([
+                'user_id' => auth()->id(),
+                'employee_id' => $employee->getKey(),
+                'school_id' => $employee->school_id,
+                'leave_type' => $validated['leaveType'],
+                'start_date' => $validated['startDate'],
+                'end_date' => $validated['endDate'],
+                'reason' => $validated['reason'],
+                'attachment_path' => $this->attachment?->store("leave-requests/{$employee->school_id}", AttendanceRecord::DISK),
+                'status' => AttendanceLeaveRequest::STATUS_RECORDED,
+            ]);
+
+            $attendanceStatus = $request->leave_type === AttendanceLeaveRequest::TYPE_LEAVE
+                ? AttendanceRecord::STATUS_LEAVE
+                : AttendanceRecord::STATUS_PERMIT;
+
+            foreach (CarbonPeriod::create($request->start_date, $request->end_date) as $date) {
+                AttendanceRecord::query()->firstOrCreate(
+                    ['employee_id' => $request->employee_id, 'attendance_date' => $date->toDateString()],
+                    ['user_id' => $request->user_id, 'school_id' => $request->school_id, 'status' => $attendanceStatus, 'notes' => $request->reason],
+                );
+            }
+
+            return $request;
+        });
         app(AuditLogService::class)->record('attendance_leave_submitted', $request, $request->only(['leave_type','start_date','end_date','reason','status']), [], ['target_user_id'=>auth()->id(),'employee_id'=>$employee->id,'school_id'=>$employee->school_id]);
 
         $this->reset('reason', 'attachment');
-        Notification::make()->success()->title('Pengajuan izin dikirim')->send();
+        Notification::make()->success()->title('Izin tercatat')->body('Pengajuan izin berhasil dicatat.')->send();
     }
 
     /** @return array<string, mixed> */

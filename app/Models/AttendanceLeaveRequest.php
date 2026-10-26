@@ -32,6 +32,8 @@ class AttendanceLeaveRequest extends Model
 
     public const STATUS_PENDING = 'pending';
 
+    public const STATUS_RECORDED = 'recorded';
+
     public const STATUS_APPROVED = 'approved';
 
     public const STATUS_REJECTED = 'rejected';
@@ -69,6 +71,7 @@ class AttendanceLeaveRequest extends Model
     {
         return [
             self::STATUS_PENDING => 'Menunggu',
+            self::STATUS_RECORDED => 'Tercatat',
             self::STATUS_APPROVED => 'Disetujui',
             self::STATUS_REJECTED => 'Ditolak',
         ];

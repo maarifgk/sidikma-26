@@ -57,6 +57,11 @@
 .tm-time strong{font-size:clamp(19px,4.8vw,22px);line-height:1.2;letter-spacing:-.025em;white-space:nowrap}
 .tm-attendance-times+.tm-section{margin-top:24px}
 .tm-attendance-times+.tm-section .tm-section-head h2{font-size:21px}
-.tm-attendance-times+.tm-section .tm-list{padding:10px 16px}
-.tm-attendance-times+.tm-section .tm-list-row{padding:14px 0}
+.tm-attendance-times+.tm-section .tm-section-head{margin:0 2px 12px}
+.tm-attendance-times+.tm-section .tm-list{padding:16px 20px;border-radius:22px;box-shadow:0 12px 30px rgba(49,82,133,.1)}
+.tm-attendance-times+.tm-section .tm-list-row{padding:16px 0;gap:16px}
+.tm-attendance-times+.tm-section .tm-list-row span{font-size:13px;font-weight:600}
+.tm-attendance-times+.tm-section .tm-list-row strong{font-size:16px;font-weight:800;color:#0b2e65}
+.tm-attendance-times+.tm-section .tm-badge{padding:9px 13px!important;font-size:12px!important;font-weight:800}
+.tm-attendance-times+.tm-section .tm-list input[type=file]{font-size:12px;font-weight:600;padding:12px 0}
 </style>

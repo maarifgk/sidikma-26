@@ -34,6 +34,9 @@ class AttendanceLeaveRequests extends Page
 
     public string $selectedStatus = '';
 
+    /** @var array<int, string> */
+    public array $reviewNotes = [];
+
     public static function canAccess(): bool
     {
         return static::canUseAttendanceManagement() && (auth()->user()?->can('attendance.leave.review') ?? false);

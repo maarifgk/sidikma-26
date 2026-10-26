@@ -51,4 +51,9 @@
         .tm-menu{gap:14px}.tm-menu a{min-height:106px;border-radius:18px;padding:12px 6px;font-size:12px;background:rgba(255,255,255,.94)}
         .tm-bottom{width:min(calc(100% - 36px),584px)}
     }
+/* Presensi mobile: kedua kartu jadwal harus seimbang dan jam masuk tidak terbungkus. */
+.tm-attendance-times{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:14px}
+.tm-time{min-width:0;min-height:168px;padding:18px 22px;display:flex;flex-direction:column;justify-content:center}
+.tm-time strong{font-size:clamp(20px,5.4vw,25px);line-height:1.25;letter-spacing:-.02em;white-space:nowrap}
+.tm-attendance-times+.tm-section{margin-top:24px}
 </style>

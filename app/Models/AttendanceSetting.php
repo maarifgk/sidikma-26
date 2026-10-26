@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'school_id',
     'check_in_start',
     'late_after',
+    'check_in_end',
     'check_out_start',
     'office_latitude',
     'office_longitude',
@@ -79,6 +80,7 @@ class AttendanceSetting extends Model
             [
                 'check_in_start' => '06:00:00',
                 'late_after' => '07:15:00',
+                'check_in_end' => '11:59:00',
                 'check_out_start' => '14:00:00',
                 'radius_meters' => config('attendance.default_radius_meters', 100),
                 'maximum_accuracy_meters' => config('attendance.maximum_accuracy_meters', 100),

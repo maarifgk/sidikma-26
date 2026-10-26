@@ -8,9 +8,9 @@ use App\Filament\Admin\Pages\AttendanceReport;
 use App\Filament\Admin\Pages\AttendanceSettings;
 use App\Filament\App\Pages\MyAttendance;
 use App\Filament\App\Pages\MyAttendanceLeaveRequests;
+use App\Models\AttendanceEvent;
 use App\Models\AttendanceLeaveRequest;
 use App\Models\AttendanceRecord;
-use App\Models\AttendanceEvent;
 use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Models\Foundation;
@@ -157,6 +157,23 @@ class AttendanceIntegrationTest extends TestCase
         ]);
     }
 
+    public function test_check_in_is_rejected_after_the_configured_end_time(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-11 02:00:00', 'UTC'));
+        AttendanceSetting::forSchool($this->school->id)->update(['check_in_end' => '08:30:00']);
+        filament()->setCurrentPanel(filament()->getPanel('app'));
+        $this->actingAs($this->teacher);
+
+        Livewire::test(MyAttendance::class)
+            ->assertSee('Ditutup 08:30')
+            ->set('checkInReason', 'Datang setelah kegiatan luar sekolah')
+            ->call('checkIn')
+            ->assertHasErrors(['attendance'])
+            ->assertSee('Batas waktu presensi masuk sudah berakhir pada pukul 08:30.');
+
+        $this->assertDatabaseCount('attendance_records', 0);
+    }
+
     public function test_invalid_coordinates_are_recorded_as_rejected_event(): void
     {
         AttendanceSetting::forSchool($this->school->id)->update(['require_location' => true, 'office_latitude' => -7.9, 'office_longitude' => 110.6]);
@@ -224,6 +241,7 @@ class AttendanceIntegrationTest extends TestCase
             ->set('checkOutHour', '03')
             ->set('checkOutMinute', '30')
             ->set('lateToleranceMinutes', 20)
+            ->set('checkInEnd', '11:30')
             ->set('maximumAccuracyMeters', 60)
             ->call('saveSettings')
             ->assertHasNoErrors();
@@ -232,6 +250,7 @@ class AttendanceIntegrationTest extends TestCase
             'school_id' => $this->school->getKey(),
             'check_in_start' => '07:00:00',
             'late_after' => '07:20:00',
+            'check_in_end' => '11:30:00',
             'check_out_start' => '15:30:00',
             'maximum_accuracy_meters' => 60,
         ]);
@@ -331,6 +350,7 @@ class AttendanceIntegrationTest extends TestCase
             ->set('checkInHour', '06')
             ->set('checkInMinute', '30')
             ->set('lateToleranceMinutes', 30)
+            ->set('checkInEnd', '11:30')
             ->set('checkOutHour', '01')
             ->set('checkOutMinute', '30')
             ->set('officeLatitude', '-7.9767346')
@@ -348,6 +368,7 @@ class AttendanceIntegrationTest extends TestCase
         $this->assertDatabaseHas('attendance_settings', [
             'school_id' => $this->school->getKey(),
             'late_after' => '07:00:00',
+            'check_in_end' => '11:30:00',
             'radius_meters' => 125,
             'maximum_accuracy_meters' => 75,
             'require_location' => true,
@@ -356,6 +377,68 @@ class AttendanceIntegrationTest extends TestCase
             'enable_check_out' => false,
             'require_selfie' => true,
         ]);
+    }
+
+    public function test_parent_admin_can_apply_time_settings_to_all_active_schools_without_changing_location_settings(): void
+    {
+        $otherSchool = School::query()->create([
+            'foundation_id' => $this->school->foundation_id,
+            'name' => 'MI Pengaturan Waktu Kedua',
+            'npsn' => '88776655',
+            'school_level' => 'MI',
+            'is_active' => true,
+        ]);
+        AttendanceSetting::forSchool($this->school->id)->update(['require_location' => true, 'radius_meters' => 125]);
+        AttendanceSetting::forSchool($otherSchool->id)->update(['require_location' => false, 'radius_meters' => 300]);
+        filament()->setCurrentPanel(filament()->getPanel('admin'));
+        $this->actingAs($this->admin);
+
+        Livewire::test(AttendanceSettings::class)
+            ->assertSee('Terapkan Jam ke Semua Sekolah')
+            ->set('checkInHour', '06')
+            ->set('checkInMinute', '30')
+            ->set('lateToleranceMinutes', 20)
+            ->set('checkInEnd', '10:30')
+            ->set('checkOutHour', '02')
+            ->set('checkOutMinute', '00')
+            ->call('applyTimeSettingsToAllSchools')
+            ->assertHasNoErrors();
+
+        foreach ([$this->school->id, $otherSchool->id] as $schoolId) {
+            $this->assertDatabaseHas('attendance_settings', [
+                'school_id' => $schoolId,
+                'check_in_start' => '06:30:00',
+                'late_after' => '06:50:00',
+                'check_in_end' => '10:30:00',
+                'check_out_start' => '14:00:00',
+            ]);
+        }
+        $this->assertTrue(AttendanceSetting::forSchool($this->school->id)->require_location);
+        $this->assertSame(125, AttendanceSetting::forSchool($this->school->id)->radius_meters);
+        $this->assertFalse(AttendanceSetting::forSchool($otherSchool->id)->require_location);
+        $this->assertSame(300, AttendanceSetting::forSchool($otherSchool->id)->radius_meters);
+    }
+
+    public function test_school_admin_cannot_apply_time_settings_to_all_schools(): void
+    {
+        $schoolAdmin = User::factory()->create();
+        $schoolAdmin->assignRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH);
+        Membership::create([
+            'user_id' => $schoolAdmin->id,
+            'foundation_id' => $this->school->foundation_id,
+            'school_id' => $this->school->id,
+            'status' => 'active',
+        ]);
+        filament()->setCurrentPanel(filament()->getPanel('app'));
+        $this->actingAs($schoolAdmin);
+
+        $component = Livewire::test(AttendanceSettings::class)
+            ->assertDontSee('Terapkan Jam ke Semua Sekolah')
+            ->call('applyTimeSettingsToAllSchools');
+        $reflection = new \ReflectionClass($component);
+        $state = $reflection->getProperty('lastState');
+        $state->setAccessible(true);
+        $this->assertSame(403, $state->getValue($component)->getResponse()->status());
     }
 
     public function test_attendance_location_without_polygon_survives_page_reload(): void

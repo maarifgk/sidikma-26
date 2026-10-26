@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Concerns\ScopesAttendanceToAccessibleSchools;
 use App\Models\AttendanceSetting;
 use App\Models\School;
+use App\Services\AuditLogService;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -13,10 +14,11 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Url;
 use UnitEnum;
-use App\Services\AuditLogService;
 
 class AttendanceSettings extends Page
 {
@@ -44,6 +46,8 @@ class AttendanceSettings extends Page
     public string $lateAfter = '07:15';
 
     public int $lateToleranceMinutes = 75;
+
+    public string $checkInEnd = '11:59';
 
     public string $checkOutStart = '14:00';
 
@@ -123,7 +127,8 @@ class AttendanceSettings extends Page
             'checkInMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
             'lateAfter' => ['required', 'date_format:H:i', 'after_or_equal:checkInStart'],
             'lateToleranceMinutes' => ['required', 'integer', 'min:0', 'max:720'],
-            'checkOutStart' => ['required', 'date_format:H:i', 'after_or_equal:12:00', 'after:lateAfter'],
+            'checkInEnd' => ['required', 'date_format:H:i', 'after:lateAfter', 'before_or_equal:checkOutStart'],
+            'checkOutStart' => ['required', 'date_format:H:i', 'after_or_equal:12:00', 'after:checkInEnd'],
             'checkOutHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
             'checkOutMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
             'officeLatitude' => ['required_if:requireLocation,true', 'required_with:officeLongitude', 'nullable', 'numeric', 'between:-90,90'],
@@ -142,7 +147,7 @@ class AttendanceSettings extends Page
 
         $polygonPoints = collect($validated['polygonPoints']);
         if ($polygonPoints->count() > 0 && $polygonPoints->count() < 3) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'polygonPoints' => 'Polygon harus kosong atau memiliki minimal 3 titik.',
             ]);
         }
@@ -151,17 +156,18 @@ class AttendanceSettings extends Page
             ->map(fn (array $point): string => round((float) $point['latitude'], 7).':'.round((float) $point['longitude'], 7))
             ->unique()
             ->count() < 3) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'polygonPoints' => 'Polygon harus memiliki minimal 3 titik yang berbeda.',
             ]);
         }
 
-        $before = AttendanceSetting::query()->where('school_id', $validated['selectedSchoolId'])->first()?->only(['check_in_start','late_after','check_out_start','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']);
+        $before = AttendanceSetting::query()->where('school_id', $validated['selectedSchoolId'])->first()?->only(['check_in_start', 'late_after', 'check_in_end', 'check_out_start', 'office_latitude', 'office_longitude', 'radius_meters', 'maximum_accuracy_meters', 'geofence_polygon', 'require_location', 'detect_fake_gps', 'require_selfie', 'is_active', 'enable_check_in', 'enable_check_out']);
         $setting = AttendanceSetting::query()->updateOrCreate(
             ['school_id' => $validated['selectedSchoolId']],
             [
                 'check_in_start' => $validated['checkInStart'].':00',
                 'late_after' => $validated['lateAfter'].':00',
+                'check_in_end' => $validated['checkInEnd'].':00',
                 'check_out_start' => $validated['checkOutStart'].':00',
                 'office_latitude' => $validated['officeLatitude'],
                 'office_longitude' => $validated['officeLongitude'],
@@ -179,9 +185,55 @@ class AttendanceSettings extends Page
             ],
         );
         $setting->increment('geofence_version');
-        app(AuditLogService::class)->record('attendance_settings_updated', $setting, $setting->fresh()->only(['check_in_start','late_after','check_out_start','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']), $before, ['school_id'=>$setting->school_id]);
+        app(AuditLogService::class)->record('attendance_settings_updated', $setting, $setting->fresh()->only(['check_in_start', 'late_after', 'check_in_end', 'check_out_start', 'office_latitude', 'office_longitude', 'radius_meters', 'maximum_accuracy_meters', 'geofence_polygon', 'require_location', 'detect_fake_gps', 'require_selfie', 'is_active', 'enable_check_in', 'enable_check_out']), $before, ['school_id' => $setting->school_id]);
 
         Notification::make()->success()->title('Pengaturan presensi disimpan')->send();
+        $this->skipRender();
+    }
+
+    public function applyTimeSettingsToAllSchools(): void
+    {
+        abort_unless(auth()->user()?->isAdminInduk(), 403);
+
+        $this->checkInStart = ($this->checkInHour === '12' ? '00' : $this->checkInHour).':'.$this->checkInMinute;
+        $this->checkOutStart = ($this->checkOutHour === '12' ? '12' : str_pad((string) ((int) $this->checkOutHour + 12), 2, '0', STR_PAD_LEFT)).':'.$this->checkOutMinute;
+        $this->lateAfter = Carbon::createFromFormat('H:i', $this->checkInStart)
+            ->addMinutes($this->lateToleranceMinutes)
+            ->format('H:i');
+
+        $validated = $this->validate([
+            'checkInStart' => ['required', 'date_format:H:i', 'before:12:00'],
+            'checkInHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
+            'checkInMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
+            'lateAfter' => ['required', 'date_format:H:i', 'after_or_equal:checkInStart'],
+            'lateToleranceMinutes' => ['required', 'integer', 'min:0', 'max:720'],
+            'checkInEnd' => ['required', 'date_format:H:i', 'after:lateAfter', 'before_or_equal:checkOutStart'],
+            'checkOutStart' => ['required', 'date_format:H:i', 'after_or_equal:12:00', 'after:checkInEnd'],
+            'checkOutHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
+            'checkOutMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
+        ]);
+
+        $schoolIds = School::query()->where('is_active', true)->pluck('id');
+        $timeSettings = [
+            'check_in_start' => $validated['checkInStart'].':00',
+            'late_after' => $validated['lateAfter'].':00',
+            'check_in_end' => $validated['checkInEnd'].':00',
+            'check_out_start' => $validated['checkOutStart'].':00',
+            'updated_by' => auth()->id(),
+        ];
+
+        DB::connection('sidikma_induk')->transaction(function () use ($schoolIds, $timeSettings): void {
+            foreach ($schoolIds as $schoolId) {
+                AttendanceSetting::query()->updateOrCreate(['school_id' => $schoolId], $timeSettings);
+            }
+        });
+
+        app(AuditLogService::class)->record('attendance_time_settings_applied_to_all_schools', AttendanceSetting::class, [
+            ...$timeSettings,
+            'school_count' => $schoolIds->count(),
+        ]);
+
+        Notification::make()->success()->title("Pengaturan waktu diterapkan ke {$schoolIds->count()} sekolah")->send();
         $this->skipRender();
     }
 
@@ -201,6 +253,9 @@ class AttendanceSettings extends Page
         $this->lateAfter = substr($setting->late_after, 0, 5);
         $this->lateToleranceMinutes = (int) max(0, Carbon::createFromFormat('H:i:s', $setting->check_in_start)
             ->diffInMinutes(Carbon::createFromFormat('H:i:s', $setting->late_after), false));
+        $this->checkInEnd = $setting->check_in_end
+            ? substr($setting->check_in_end, 0, 5)
+            : Carbon::createFromFormat('H:i:s', $setting->check_out_start)->subMinute()->format('H:i');
         $this->checkOutStart = substr($setting->check_out_start, 0, 5);
         $checkOut = Carbon::createFromFormat('H:i:s', $setting->check_out_start);
         $this->checkOutHour = $checkOut->format('h');

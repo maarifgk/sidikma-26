@@ -3,12 +3,11 @@
 namespace App\Filament\App\Pages;
 
 use App\Models\AttendanceRecord;
-use App\Models\AttendanceEvent;
 use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Models\User;
-use App\Services\AttendanceLocationService;
 use App\Services\AttendanceEventService;
+use App\Services\AttendanceLocationService;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -16,12 +15,12 @@ use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use UnitEnum;
 
 class MyAttendance extends Page
@@ -45,11 +44,17 @@ class MyAttendance extends Page
     public ?float $accuracy = null;
 
     public mixed $selfie = null;
+
     public string $checkOutReason = '';
+
     public string $checkInReason = '';
+
     public bool $fakeGps = false;
+
     public ?string $fakeGpsSource = null;
+
     public ?int $clientGeofenceVersion = null;
+
     private string $activeEventType = 'check_in';
 
     public static function canAccess(): bool
@@ -90,6 +95,11 @@ class MyAttendance extends Page
             throw ValidationException::withMessages(['attendance' => 'Presensi masuk belum dibuka.']);
         }
 
+        $checkInEnd = $setting->check_in_end ?: $setting->check_out_start;
+        if ($localNow->format('H:i:s') > $checkInEnd) {
+            throw ValidationException::withMessages(['attendance' => 'Batas waktu presensi masuk sudah berakhir pada pukul '.substr($checkInEnd, 0, 5).'.']);
+        }
+
         if ($localNow->format('H:i:s') > $setting->late_after && blank(trim($this->checkInReason))) {
             throw ValidationException::withMessages(['checkInReason' => 'Alasan terlambat wajib diisi.']);
         }
@@ -109,21 +119,21 @@ class MyAttendance extends Page
                     throw ValidationException::withMessages(['attendance' => 'Presensi hari ini sudah tercatat.']);
                 }
                 $record = AttendanceRecord::query()->create([
-            'user_id' => Auth::id(),
-            'employee_id' => $employee->getKey(),
-            'school_id' => $employee->school_id,
-            'attendance_date' => $date,
-            'status' => $localNow->format('H:i:s') > $setting->late_after ? AttendanceRecord::STATUS_LATE : AttendanceRecord::STATUS_PRESENT,
-            'check_in_reason' => filled(trim($this->checkInReason)) ? trim($this->checkInReason) : null,
-            'check_in_at' => now(),
-            'check_in_latitude' => $this->latitude,
-            'check_in_longitude' => $this->longitude,
-            'check_in_accuracy' => $this->accuracy,
-            'check_in_distance' => $distance,
-            'check_in_selfie_path' => $this->storeSelfie($employee, 'masuk', $date),
-            'check_in_fake_gps' => $this->fakeGps, 'check_in_fake_gps_source' => $this->fakeGpsSource, 'check_in_geofence_version' => $setting->geofence_version,
+                    'user_id' => Auth::id(),
+                    'employee_id' => $employee->getKey(),
+                    'school_id' => $employee->school_id,
+                    'attendance_date' => $date,
+                    'status' => $localNow->format('H:i:s') > $setting->late_after ? AttendanceRecord::STATUS_LATE : AttendanceRecord::STATUS_PRESENT,
+                    'check_in_reason' => filled(trim($this->checkInReason)) ? trim($this->checkInReason) : null,
+                    'check_in_at' => now(),
+                    'check_in_latitude' => $this->latitude,
+                    'check_in_longitude' => $this->longitude,
+                    'check_in_accuracy' => $this->accuracy,
+                    'check_in_distance' => $distance,
+                    'check_in_selfie_path' => $this->storeSelfie($employee, 'masuk', $date),
+                    'check_in_fake_gps' => $this->fakeGps, 'check_in_fake_gps_source' => $this->fakeGpsSource, 'check_in_geofence_version' => $setting->geofence_version,
                 ]);
-                app(AttendanceEventService::class)->accepted($employee, $record, 'check_in', ['latitude'=>$this->latitude,'longitude'=>$this->longitude,'gps_accuracy'=>$this->accuracy,'is_inside_geofence'=>$setting->require_location ? true : null,'is_mock_location'=>$this->fakeGps,'mock_detection_source'=>$this->fakeGpsSource,'selfie_path'=>$record->check_in_selfie_path,'geofence_version'=>$setting->geofence_version]);
+                app(AttendanceEventService::class)->accepted($employee, $record, 'check_in', ['latitude' => $this->latitude, 'longitude' => $this->longitude, 'gps_accuracy' => $this->accuracy, 'is_inside_geofence' => $setting->require_location ? true : null, 'is_mock_location' => $this->fakeGps, 'mock_detection_source' => $this->fakeGpsSource, 'selfie_path' => $record->check_in_selfie_path, 'geofence_version' => $setting->geofence_version]);
             });
         } catch (QueryException $exception) {
             if ($exception->getCode() === '23000') {
@@ -176,15 +186,15 @@ class MyAttendance extends Page
                 throw ValidationException::withMessages(['checkOutReason' => 'Alasan wajib diisi jika pulang lebih awal.']);
             }
             $record->update([
-            'check_out_at' => now(),
-            'check_out_latitude' => $this->latitude,
-            'check_out_longitude' => $this->longitude,
-            'check_out_accuracy' => $this->accuracy,
-            'check_out_distance' => $distance,
-            'check_out_selfie_path' => $this->storeSelfie($employee, 'pulang', $localNow->toDateString()),
-            'check_out_reason' => filled($this->checkOutReason) ? $this->checkOutReason : null, 'check_out_fake_gps' => $this->fakeGps, 'check_out_fake_gps_source' => $this->fakeGpsSource, 'check_out_geofence_version' => $setting->geofence_version,
+                'check_out_at' => now(),
+                'check_out_latitude' => $this->latitude,
+                'check_out_longitude' => $this->longitude,
+                'check_out_accuracy' => $this->accuracy,
+                'check_out_distance' => $distance,
+                'check_out_selfie_path' => $this->storeSelfie($employee, 'pulang', $localNow->toDateString()),
+                'check_out_reason' => filled($this->checkOutReason) ? $this->checkOutReason : null, 'check_out_fake_gps' => $this->fakeGps, 'check_out_fake_gps_source' => $this->fakeGpsSource, 'check_out_geofence_version' => $setting->geofence_version,
             ]);
-            app(AttendanceEventService::class)->accepted($employee, $record, 'check_out', ['latitude'=>$this->latitude,'longitude'=>$this->longitude,'gps_accuracy'=>$this->accuracy,'is_inside_geofence'=>$setting->require_location ? true : null,'is_mock_location'=>$this->fakeGps,'mock_detection_source'=>$this->fakeGpsSource,'selfie_path'=>$record->check_out_selfie_path,'geofence_version'=>$setting->geofence_version]);
+            app(AttendanceEventService::class)->accepted($employee, $record, 'check_out', ['latitude' => $this->latitude, 'longitude' => $this->longitude, 'gps_accuracy' => $this->accuracy, 'is_inside_geofence' => $setting->require_location ? true : null, 'is_mock_location' => $this->fakeGps, 'mock_detection_source' => $this->fakeGpsSource, 'selfie_path' => $record->check_out_selfie_path, 'geofence_version' => $setting->geofence_version]);
         });
 
         $this->reset('selfie');
@@ -199,11 +209,15 @@ class MyAttendance extends Page
         $today = now(config('attendance.timezone'))->toDateString();
         $record = $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->whereDate('attendance_date', $today)->first() : null;
         $setting = $employee?->school_id ? AttendanceSetting::forSchool($employee->school_id) : null;
+        $currentTime = now(config('attendance.timezone'))->format('H:i:s');
+        $checkInEnd = $setting ? ($setting->check_in_end ?: $setting->check_out_start) : null;
 
         return [
             'employee' => $employee,
             'todayRecord' => $record,
             'setting' => $setting,
+            'checkInEnd' => $checkInEnd,
+            'checkInClosed' => $checkInEnd !== null && $currentTime > $checkInEnd,
             'gpsAccuracyLimit' => $this->gpsAccuracyLimit($setting),
             'statusOptions' => AttendanceRecord::statusOptions(),
             'recentRecords' => $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->latest('attendance_date')->limit(10)->get() : collect(),
@@ -341,15 +355,29 @@ class MyAttendance extends Page
 
     private function recordRejectedAttempt(Employee $employee, string $date, string $type, string $code, string $reason, ?string $source = null, ?int $version = null): void
     {
-        app(AttendanceEventService::class)->record($employee, $type, 'rejected', ['attendance_date'=>$date,'rejection_code'=>$code,'rejection_reason'=>$reason,'is_mock_location'=>$this->fakeGps,'mock_detection_source'=>$source,'latitude'=>$this->latitude,'longitude'=>$this->longitude,'gps_accuracy'=>$this->accuracy,'geofence_version'=>$version]);
+        app(AttendanceEventService::class)->record($employee, $type, 'rejected', ['attendance_date' => $date, 'rejection_code' => $code, 'rejection_reason' => $reason, 'is_mock_location' => $this->fakeGps, 'mock_detection_source' => $source, 'latitude' => $this->latitude, 'longitude' => $this->longitude, 'gps_accuracy' => $this->accuracy, 'geofence_version' => $version]);
     }
-    private function currentEventType(): string { return $this->activeEventType; }
-    private function rejectionData(string $code, string $reason, ?int $version, ?string $date = null): array { return ['attendance_date'=>$date ?? now(config('attendance.timezone'))->toDateString(),'rejection_code'=>$code,'rejection_reason'=>$reason,'is_mock_location'=>$this->fakeGps,'mock_detection_source'=>$this->fakeGpsSource,'latitude'=>$this->latitude,'longitude'=>$this->longitude,'gps_accuracy'=>$this->accuracy,'geofence_version'=>$version]; }
-    private function rejectCurrent(string $type, string $code, string $reason, ?int $version = null, ?string $date = null): void { [$employee] = $this->context(); DB::transaction(fn () => app(AttendanceEventService::class)->record($employee, $type, 'rejected', $this->rejectionData($code, $reason, $version, $date))); }
+
+    private function currentEventType(): string
+    {
+        return $this->activeEventType;
+    }
+
+    private function rejectionData(string $code, string $reason, ?int $version, ?string $date = null): array
+    {
+        return ['attendance_date' => $date ?? now(config('attendance.timezone'))->toDateString(), 'rejection_code' => $code, 'rejection_reason' => $reason, 'is_mock_location' => $this->fakeGps, 'mock_detection_source' => $this->fakeGpsSource, 'latitude' => $this->latitude, 'longitude' => $this->longitude, 'gps_accuracy' => $this->accuracy, 'geofence_version' => $version];
+    }
+
+    private function rejectCurrent(string $type, string $code, string $reason, ?int $version = null, ?string $date = null): void
+    {
+        [$employee] = $this->context();
+        DB::transaction(fn () => app(AttendanceEventService::class)->record($employee, $type, 'rejected', $this->rejectionData($code, $reason, $version, $date)));
+    }
+
     private function guardGeofenceVersion(Employee $employee, AttendanceSetting $setting, string $type): void
     {
         if ($this->clientGeofenceVersion !== null && $this->clientGeofenceVersion !== (int) $setting->geofence_version) {
-            DB::transaction(fn () => app(AttendanceEventService::class)->record($employee, $type, 'rejected', $this->rejectionData('location_settings_changed', 'Konfigurasi lokasi sekolah telah berubah. Ambil ulang lokasi.', $setting->geofence_version) + ['client_geofence_version'=>$this->clientGeofenceVersion]));
+            DB::transaction(fn () => app(AttendanceEventService::class)->record($employee, $type, 'rejected', $this->rejectionData('location_settings_changed', 'Konfigurasi lokasi sekolah telah berubah. Ambil ulang lokasi.', $setting->geofence_version) + ['client_geofence_version' => $this->clientGeofenceVersion]));
             throw new HttpException(409, 'Konfigurasi lokasi berubah. Ambil ulang lokasi sebelum presensi.');
         }
     }

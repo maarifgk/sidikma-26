@@ -11,6 +11,7 @@
 </style>
 @php
 $recordedCount=$requests->where('status','recorded')->count();
+$pendingCount=$requests->where('status','pending')->count();
 $approvedCount=$requests->where('status','approved')->count();
 $rejectedCount=$requests->where('status','rejected')->count();
 @endphp

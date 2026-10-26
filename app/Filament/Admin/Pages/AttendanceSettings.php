@@ -206,6 +206,7 @@ class AttendanceSettings extends Page
             'lateAfter' => ['required', 'date_format:H:i', 'after_or_equal:checkInStart'],
             'checkInEnd' => ['required', 'date_format:H:i', 'after:lateAfter', 'before_or_equal:checkOutStart'],
             'checkOutStart' => ['required', 'date_format:H:i', 'after_or_equal:12:00', 'after:checkInEnd'],
+            'checkOutEnd' => ['required', 'date_format:H:i', 'after:checkOutStart'],
             'checkOutHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
             'checkOutMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
         ]);
@@ -216,6 +217,7 @@ class AttendanceSettings extends Page
             'late_after' => $validated['lateAfter'].':00',
             'check_in_end' => $validated['checkInEnd'].':00',
             'check_out_start' => $validated['checkOutStart'].':00',
+            'check_out_end' => $validated['checkOutEnd'].':00',
             'updated_by' => auth()->id(),
         ];
 

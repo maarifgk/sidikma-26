@@ -192,8 +192,10 @@ class MyAttendance extends Page
                 'check_out_accuracy' => $this->accuracy,
                 'check_out_distance' => $distance,
                 'check_out_selfie_path' => $this->storeSelfie($employee, 'pulang', $localNow->toDateString()),
-                'check_out_reason' => filled($this->checkOutReason) ? $this->checkOutReason : null, 'check_out_fake_gps' => $this->fakeGps, 'check_out_fake_gps_source' => $this->fakeGpsSource, 'check_out_geofence_version' => $setting->geofence_version,
-            'check_out_reason' => filled(trim($this->checkOutReason)) ? trim($this->checkOutReason) : null, 'check_out_fake_gps' => $this->fakeGps, 'check_out_fake_gps_source' => $this->fakeGpsSource, 'check_out_geofence_version' => $setting->geofence_version,
+                'check_out_reason' => filled(trim($this->checkOutReason)) ? trim($this->checkOutReason) : null,
+                'check_out_fake_gps' => $this->fakeGps,
+                'check_out_fake_gps_source' => $this->fakeGpsSource,
+                'check_out_geofence_version' => $setting->geofence_version,
             ]);
             app(AttendanceEventService::class)->accepted($employee, $record, 'check_out', ['latitude' => $this->latitude, 'longitude' => $this->longitude, 'gps_accuracy' => $this->accuracy, 'is_inside_geofence' => $setting->require_location ? true : null, 'is_mock_location' => $this->fakeGps, 'mock_detection_source' => $this->fakeGpsSource, 'selfie_path' => $record->check_out_selfie_path, 'geofence_version' => $setting->geofence_version]);
         });

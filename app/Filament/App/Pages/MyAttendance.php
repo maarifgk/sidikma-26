@@ -162,9 +162,6 @@ class MyAttendance extends Page
         $distance = $this->validateAttendanceRequirements($setting);
         $localNow = now(config('attendance.timezone'));
 
-        if ($localNow->format('H:i:s') > $setting->check_out_end) {
-            throw ValidationException::withMessages(['attendance' => 'Presensi pulang ditolak karena sudah melewati batas presensi.']);
-        }
 
         if ($setting->detect_fake_gps && $this->fakeGps) {
             DB::transaction(fn () => $this->recordRejectedAttempt($employee, $localNow->toDateString(), 'check_out', 'fake_gps', 'Presensi pulang ditolak karena perangkat melaporkan lokasi palsu/mock.', $this->fakeGpsSource, $setting->geofence_version));

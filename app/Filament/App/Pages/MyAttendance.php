@@ -162,8 +162,8 @@ class MyAttendance extends Page
         $distance = $this->validateAttendanceRequirements($setting);
         $localNow = now(config('attendance.timezone'));
 
-        if ($localNow->format('H:i:s') < $setting->check_out_start) {
-            throw ValidationException::withMessages(['attendance' => 'Presensi pulang belum dibuka.']);
+        if ($localNow->format('H:i:s') > $setting->check_out_end) {
+            throw ValidationException::withMessages(['attendance' => 'Presensi pulang ditolak karena sudah melewati batas presensi.']);
         }
 
         if ($setting->detect_fake_gps && $this->fakeGps) {
@@ -181,11 +181,12 @@ class MyAttendance extends Page
             if (! $record || $record->check_out_at) {
                 throw ValidationException::withMessages(['attendance' => 'Data presensi masuk tidak ditemukan atau presensi pulang sudah dilakukan.']);
             }
-            if ($localNow->format('H:i:s') < $setting->check_out_start && blank($this->checkOutReason)) {
+            if ($localNow->format('H:i:s') < $setting->check_out_start && blank(trim($this->checkOutReason))) {
                 app(AttendanceEventService::class)->record($employee, 'check_out', 'rejected', $this->rejectionData('early_checkout_reason_required', 'Alasan wajib diisi jika pulang lebih awal.', $setting->geofence_version, $localNow->toDateString()));
                 throw ValidationException::withMessages(['checkOutReason' => 'Alasan wajib diisi jika pulang lebih awal.']);
             }
             $record->update([
+<<<<<<< HEAD
                 'check_out_at' => now(),
                 'check_out_latitude' => $this->latitude,
                 'check_out_longitude' => $this->longitude,
@@ -193,11 +194,21 @@ class MyAttendance extends Page
                 'check_out_distance' => $distance,
                 'check_out_selfie_path' => $this->storeSelfie($employee, 'pulang', $localNow->toDateString()),
                 'check_out_reason' => filled($this->checkOutReason) ? $this->checkOutReason : null, 'check_out_fake_gps' => $this->fakeGps, 'check_out_fake_gps_source' => $this->fakeGpsSource, 'check_out_geofence_version' => $setting->geofence_version,
+=======
+            'check_out_at' => now(),
+            'check_out_latitude' => $this->latitude,
+            'check_out_longitude' => $this->longitude,
+            'check_out_accuracy' => $this->accuracy,
+            'check_out_distance' => $distance,
+            'check_out_selfie_path' => $this->storeSelfie($employee, 'pulang', $localNow->toDateString()),
+            'check_out_reason' => filled(trim($this->checkOutReason)) ? trim($this->checkOutReason) : null, 'check_out_fake_gps' => $this->fakeGps, 'check_out_fake_gps_source' => $this->fakeGpsSource, 'check_out_geofence_version' => $setting->geofence_version,
+>>>>>>> fb09629 (Tambah batas presensi pulang dan alasan pulang awal)
             ]);
             app(AttendanceEventService::class)->accepted($employee, $record, 'check_out', ['latitude' => $this->latitude, 'longitude' => $this->longitude, 'gps_accuracy' => $this->accuracy, 'is_inside_geofence' => $setting->require_location ? true : null, 'is_mock_location' => $this->fakeGps, 'mock_detection_source' => $this->fakeGpsSource, 'selfie_path' => $record->check_out_selfie_path, 'geofence_version' => $setting->geofence_version]);
         });
 
         $this->reset('selfie');
+        $this->reset('checkOutReason');
         $this->dispatch('$refresh');
         Notification::make()->success()->title('Presensi pulang berhasil')->send();
     }

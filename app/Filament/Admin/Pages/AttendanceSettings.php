@@ -53,6 +53,8 @@ class AttendanceSettings extends Page
 
     public string $checkOutMinute = '00';
 
+    public string $checkOutEnd = '17:00';
+
     public ?string $officeLatitude = null;
 
     public ?string $officeLongitude = null;
@@ -114,14 +116,28 @@ class AttendanceSettings extends Page
         $this->isActive = $this->enableCheckIn || $this->enableCheckOut;
         $this->checkInStart = ($this->checkInHour === '12' ? '00' : $this->checkInHour).':'.$this->checkInMinute;
         $this->checkOutStart = ($this->checkOutHour === '12' ? '12' : str_pad((string) ((int) $this->checkOutHour + 12), 2, '0', STR_PAD_LEFT)).':'.$this->checkOutMinute;
+<<<<<<< HEAD
+=======
+        $this->checkOutEnd = $this->checkOutEnd ?: '17:00';
+        $this->lateAfter = Carbon::createFromFormat('H:i', $this->checkInStart)
+            ->addMinutes($this->lateToleranceMinutes)
+            ->format('H:i');
+
+>>>>>>> fb09629 (Tambah batas presensi pulang dan alasan pulang awal)
         $validated = $this->validate([
             'selectedSchoolId' => ['required', 'integer', Rule::in($this->accessibleAttendanceSchoolIds())],
             'checkInStart' => ['required', 'date_format:H:i', 'before:12:00'],
             'checkInHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
             'checkInMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
             'lateAfter' => ['required', 'date_format:H:i', 'after_or_equal:checkInStart'],
+<<<<<<< HEAD
             'checkInEnd' => ['required', 'date_format:H:i', 'after:lateAfter', 'before_or_equal:checkOutStart'],
             'checkOutStart' => ['required', 'date_format:H:i', 'after_or_equal:12:00', 'after:checkInEnd'],
+=======
+            'lateToleranceMinutes' => ['required', 'integer', 'min:0', 'max:720'],
+            'checkOutStart' => ['required', 'date_format:H:i', 'after_or_equal:12:00', 'after:lateAfter'],
+            'checkOutEnd' => ['required', 'date_format:H:i', 'after:checkOutStart'],
+>>>>>>> fb09629 (Tambah batas presensi pulang dan alasan pulang awal)
             'checkOutHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
             'checkOutMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
             'officeLatitude' => ['required_if:requireLocation,true', 'required_with:officeLongitude', 'nullable', 'numeric', 'between:-90,90'],
@@ -154,7 +170,11 @@ class AttendanceSettings extends Page
             ]);
         }
 
+<<<<<<< HEAD
         $before = AttendanceSetting::query()->where('school_id', $validated['selectedSchoolId'])->first()?->only(['check_in_start', 'late_after', 'check_in_end', 'check_out_start', 'office_latitude', 'office_longitude', 'radius_meters', 'maximum_accuracy_meters', 'geofence_polygon', 'require_location', 'detect_fake_gps', 'require_selfie', 'is_active', 'enable_check_in', 'enable_check_out']);
+=======
+        $before = AttendanceSetting::query()->where('school_id', $validated['selectedSchoolId'])->first()?->only(['check_in_start','late_after','check_out_start','check_out_end','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']);
+>>>>>>> fb09629 (Tambah batas presensi pulang dan alasan pulang awal)
         $setting = AttendanceSetting::query()->updateOrCreate(
             ['school_id' => $validated['selectedSchoolId']],
             [
@@ -162,6 +182,7 @@ class AttendanceSettings extends Page
                 'late_after' => $validated['lateAfter'].':00',
                 'check_in_end' => $validated['checkInEnd'].':00',
                 'check_out_start' => $validated['checkOutStart'].':00',
+                'check_out_end' => $validated['checkOutEnd'].':00',
                 'office_latitude' => $validated['officeLatitude'],
                 'office_longitude' => $validated['officeLongitude'],
                 // The attendance boundary now follows the single GPS accuracy limit.
@@ -178,7 +199,11 @@ class AttendanceSettings extends Page
             ],
         );
         $setting->increment('geofence_version');
+<<<<<<< HEAD
         app(AuditLogService::class)->record('attendance_settings_updated', $setting, $setting->fresh()->only(['check_in_start', 'late_after', 'check_in_end', 'check_out_start', 'office_latitude', 'office_longitude', 'radius_meters', 'maximum_accuracy_meters', 'geofence_polygon', 'require_location', 'detect_fake_gps', 'require_selfie', 'is_active', 'enable_check_in', 'enable_check_out']), $before, ['school_id' => $setting->school_id]);
+=======
+        app(AuditLogService::class)->record('attendance_settings_updated', $setting, $setting->fresh()->only(['check_in_start','late_after','check_out_start','check_out_end','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']), $before, ['school_id'=>$setting->school_id]);
+>>>>>>> fb09629 (Tambah batas presensi pulang dan alasan pulang awal)
 
         Notification::make()->success()->title('Pengaturan presensi disimpan')->send();
         $this->skipRender();
@@ -246,6 +271,7 @@ class AttendanceSettings extends Page
         $checkOut = Carbon::createFromFormat('H:i:s', $setting->check_out_start);
         $this->checkOutHour = $checkOut->format('h');
         $this->checkOutMinute = str_pad((string) (intdiv((int) $checkOut->format('i'), 5) * 5), 2, '0', STR_PAD_LEFT);
+        $this->checkOutEnd = substr($setting->check_out_end ?? '17:00:00', 0, 5);
         $this->officeLatitude = $setting->office_latitude;
         $this->officeLongitude = $setting->office_longitude;
         $this->radiusMeters = $setting->radius_meters;

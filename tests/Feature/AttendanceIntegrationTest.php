@@ -157,6 +157,24 @@ class AttendanceIntegrationTest extends TestCase
         ]);
     }
 
+    public function test_check_in_at_the_exact_late_time_is_recorded_as_late(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-11 00:15:00', 'UTC'));
+        filament()->setCurrentPanel(filament()->getPanel('app'));
+        $this->actingAs($this->teacher);
+
+        Livewire::test(MyAttendance::class)
+            ->assertSee('Alasan Terlambat')
+            ->set('checkInReason', 'Tiba tepat pada batas keterlambatan')
+            ->call('checkIn')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('attendance_records', [
+            'employee_id' => $this->employee->id,
+            'status' => AttendanceRecord::STATUS_LATE,
+        ]);
+    }
+
     public function test_check_in_is_rejected_after_the_configured_end_time(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-08-11 02:00:00', 'UTC'));
@@ -240,7 +258,7 @@ class AttendanceIntegrationTest extends TestCase
             ->set('checkInMinute', '00')
             ->set('checkOutHour', '03')
             ->set('checkOutMinute', '30')
-            ->set('lateToleranceMinutes', 20)
+            ->set('lateAfter', '07:20')
             ->set('checkInEnd', '11:30')
             ->set('maximumAccuracyMeters', 60)
             ->call('saveSettings')
@@ -349,7 +367,7 @@ class AttendanceIntegrationTest extends TestCase
             ->set('selectedSchoolId', $this->school->getKey())
             ->set('checkInHour', '06')
             ->set('checkInMinute', '30')
-            ->set('lateToleranceMinutes', 30)
+            ->set('lateAfter', '07:00')
             ->set('checkInEnd', '11:30')
             ->set('checkOutHour', '01')
             ->set('checkOutMinute', '30')
@@ -397,7 +415,7 @@ class AttendanceIntegrationTest extends TestCase
             ->assertSee('Terapkan Jam ke Semua Sekolah')
             ->set('checkInHour', '06')
             ->set('checkInMinute', '30')
-            ->set('lateToleranceMinutes', 20)
+            ->set('lateAfter', '06:50')
             ->set('checkInEnd', '10:30')
             ->set('checkOutHour', '02')
             ->set('checkOutMinute', '00')

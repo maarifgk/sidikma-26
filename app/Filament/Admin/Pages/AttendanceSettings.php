@@ -45,8 +45,6 @@ class AttendanceSettings extends Page
 
     public string $lateAfter = '07:15';
 
-    public int $lateToleranceMinutes = 75;
-
     public string $checkInEnd = '11:59';
 
     public string $checkOutStart = '14:00';
@@ -116,17 +114,12 @@ class AttendanceSettings extends Page
         $this->isActive = $this->enableCheckIn || $this->enableCheckOut;
         $this->checkInStart = ($this->checkInHour === '12' ? '00' : $this->checkInHour).':'.$this->checkInMinute;
         $this->checkOutStart = ($this->checkOutHour === '12' ? '12' : str_pad((string) ((int) $this->checkOutHour + 12), 2, '0', STR_PAD_LEFT)).':'.$this->checkOutMinute;
-        $this->lateAfter = Carbon::createFromFormat('H:i', $this->checkInStart)
-            ->addMinutes($this->lateToleranceMinutes)
-            ->format('H:i');
-
         $validated = $this->validate([
             'selectedSchoolId' => ['required', 'integer', Rule::in($this->accessibleAttendanceSchoolIds())],
             'checkInStart' => ['required', 'date_format:H:i', 'before:12:00'],
             'checkInHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
             'checkInMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
             'lateAfter' => ['required', 'date_format:H:i', 'after_or_equal:checkInStart'],
-            'lateToleranceMinutes' => ['required', 'integer', 'min:0', 'max:720'],
             'checkInEnd' => ['required', 'date_format:H:i', 'after:lateAfter', 'before_or_equal:checkOutStart'],
             'checkOutStart' => ['required', 'date_format:H:i', 'after_or_equal:12:00', 'after:checkInEnd'],
             'checkOutHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
@@ -197,16 +190,11 @@ class AttendanceSettings extends Page
 
         $this->checkInStart = ($this->checkInHour === '12' ? '00' : $this->checkInHour).':'.$this->checkInMinute;
         $this->checkOutStart = ($this->checkOutHour === '12' ? '12' : str_pad((string) ((int) $this->checkOutHour + 12), 2, '0', STR_PAD_LEFT)).':'.$this->checkOutMinute;
-        $this->lateAfter = Carbon::createFromFormat('H:i', $this->checkInStart)
-            ->addMinutes($this->lateToleranceMinutes)
-            ->format('H:i');
-
         $validated = $this->validate([
             'checkInStart' => ['required', 'date_format:H:i', 'before:12:00'],
             'checkInHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
             'checkInMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
             'lateAfter' => ['required', 'date_format:H:i', 'after_or_equal:checkInStart'],
-            'lateToleranceMinutes' => ['required', 'integer', 'min:0', 'max:720'],
             'checkInEnd' => ['required', 'date_format:H:i', 'after:lateAfter', 'before_or_equal:checkOutStart'],
             'checkOutStart' => ['required', 'date_format:H:i', 'after_or_equal:12:00', 'after:checkInEnd'],
             'checkOutHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
@@ -251,8 +239,6 @@ class AttendanceSettings extends Page
         $this->checkInHour = $checkIn->format('h');
         $this->checkInMinute = str_pad((string) (intdiv((int) $checkIn->format('i'), 5) * 5), 2, '0', STR_PAD_LEFT);
         $this->lateAfter = substr($setting->late_after, 0, 5);
-        $this->lateToleranceMinutes = (int) max(0, Carbon::createFromFormat('H:i:s', $setting->check_in_start)
-            ->diffInMinutes(Carbon::createFromFormat('H:i:s', $setting->late_after), false));
         $this->checkInEnd = $setting->check_in_end
             ? substr($setting->check_in_end, 0, 5)
             : Carbon::createFromFormat('H:i:s', $setting->check_out_start)->subMinute()->format('H:i');

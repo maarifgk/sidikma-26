@@ -100,7 +100,7 @@ class MyAttendance extends Page
             throw ValidationException::withMessages(['attendance' => 'Batas waktu presensi masuk sudah berakhir pada pukul '.substr($checkInEnd, 0, 5).'.']);
         }
 
-        if ($localNow->format('H:i:s') > $setting->late_after && blank(trim($this->checkInReason))) {
+        if ($localNow->format('H:i:s') >= $setting->late_after && blank(trim($this->checkInReason))) {
             throw ValidationException::withMessages(['checkInReason' => 'Alasan terlambat wajib diisi.']);
         }
 
@@ -123,7 +123,7 @@ class MyAttendance extends Page
                     'employee_id' => $employee->getKey(),
                     'school_id' => $employee->school_id,
                     'attendance_date' => $date,
-                    'status' => $localNow->format('H:i:s') > $setting->late_after ? AttendanceRecord::STATUS_LATE : AttendanceRecord::STATUS_PRESENT,
+                    'status' => $localNow->format('H:i:s') >= $setting->late_after ? AttendanceRecord::STATUS_LATE : AttendanceRecord::STATUS_PRESENT,
                     'check_in_reason' => filled(trim($this->checkInReason)) ? trim($this->checkInReason) : null,
                     'check_in_at' => now(),
                     'check_in_latitude' => $this->latitude,

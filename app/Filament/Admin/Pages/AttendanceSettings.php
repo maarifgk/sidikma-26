@@ -247,25 +247,28 @@ class AttendanceSettings extends Page
         abort_unless($this->accessibleAttendanceSchoolIds()->contains($this->selectedSchoolId), 403);
 
         $setting = AttendanceSetting::forSchool($this->selectedSchoolId);
-        $this->checkInStart = substr($setting->check_in_start, 0, 5);
-        $checkIn = Carbon::createFromFormat('H:i:s', $setting->check_in_start);
+        $checkInStart = $setting->check_in_start ?: '06:00:00';
+        $lateAfter = $setting->late_after ?: '07:15:00';
+        $checkOutStart = $setting->check_out_start ?: '14:00:00';
+        $this->checkInStart = substr($checkInStart, 0, 5);
+        $checkIn = Carbon::createFromFormat('H:i:s', $checkInStart);
         $this->checkInHour = $checkIn->format('h');
         $this->checkInMinute = str_pad((string) (intdiv((int) $checkIn->format('i'), 5) * 5), 2, '0', STR_PAD_LEFT);
-        $this->lateAfter = substr($setting->late_after, 0, 5);
-        $this->lateToleranceMinutes = max(0, Carbon::createFromFormat('H:i:s', $setting->check_in_start)
-            ->diffInMinutes(Carbon::createFromFormat('H:i:s', $setting->late_after)));
+        $this->lateAfter = substr($lateAfter, 0, 5);
+        $this->lateToleranceMinutes = max(0, Carbon::createFromFormat('H:i:s', $checkInStart)
+            ->diffInMinutes(Carbon::createFromFormat('H:i:s', $lateAfter)));
         $this->checkInEnd = $setting->check_in_end
             ? substr($setting->check_in_end, 0, 5)
-            : Carbon::createFromFormat('H:i:s', $setting->check_out_start)->subMinute()->format('H:i');
-        $this->checkOutStart = substr($setting->check_out_start, 0, 5);
-        $checkOut = Carbon::createFromFormat('H:i:s', $setting->check_out_start);
+            : Carbon::createFromFormat('H:i:s', $checkOutStart)->subMinute()->format('H:i');
+        $this->checkOutStart = substr($checkOutStart, 0, 5);
+        $checkOut = Carbon::createFromFormat('H:i:s', $checkOutStart);
         $this->checkOutHour = $checkOut->format('h');
         $this->checkOutMinute = str_pad((string) (intdiv((int) $checkOut->format('i'), 5) * 5), 2, '0', STR_PAD_LEFT);
         $this->checkOutEnd = substr($setting->check_out_end ?? '17:00:00', 0, 5);
         $this->officeLatitude = $setting->office_latitude;
         $this->officeLongitude = $setting->office_longitude;
-        $this->radiusMeters = $setting->radius_meters;
-        $this->maximumAccuracyMeters = $setting->maximum_accuracy_meters;
+        $this->radiusMeters = (int) ($setting->radius_meters ?: 100);
+        $this->maximumAccuracyMeters = (int) ($setting->maximum_accuracy_meters ?: $this->radiusMeters);
         $this->polygonPoints = $setting->geofence_polygon ?? [];
         $this->requireLocation = $setting->require_location;
         $this->detectFakeGps = $setting->detect_fake_gps;

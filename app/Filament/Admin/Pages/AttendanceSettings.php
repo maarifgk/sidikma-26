@@ -45,6 +45,8 @@ class AttendanceSettings extends Page
 
     public string $lateAfter = '07:15';
 
+    public int $lateToleranceMinutes = 75;
+
     public string $checkInEnd = '11:59';
 
     public string $checkOutStart = '14:00';
@@ -250,6 +252,8 @@ class AttendanceSettings extends Page
         $this->checkInHour = $checkIn->format('h');
         $this->checkInMinute = str_pad((string) (intdiv((int) $checkIn->format('i'), 5) * 5), 2, '0', STR_PAD_LEFT);
         $this->lateAfter = substr($setting->late_after, 0, 5);
+        $this->lateToleranceMinutes = max(0, Carbon::createFromFormat('H:i:s', $setting->check_in_start)
+            ->diffInMinutes(Carbon::createFromFormat('H:i:s', $setting->late_after)));
         $this->checkInEnd = $setting->check_in_end
             ? substr($setting->check_in_end, 0, 5)
             : Carbon::createFromFormat('H:i:s', $setting->check_out_start)->subMinute()->format('H:i');

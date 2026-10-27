@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'payment_invoice_id', 'user_id', 'school_id', 'legacy_payment_id', 'legacy_invoice_id',
+    'midtrans_transaction_id', 'payment_invoice_id', 'user_id', 'school_id', 'legacy_payment_id', 'legacy_invoice_id',
     'gateway_order_id', 'amount', 'payment_method', 'status', 'receipt_url',
     'installment_group', 'installment_term', 'installment_sequence', 'transacted_at', 'legacy_snapshot',
 ])]

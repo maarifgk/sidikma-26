@@ -44,6 +44,7 @@ class PaymentInvoice extends Model
             self::METHOD_CASH => 'Tunai',
             self::METHOD_TRANSFER => 'Transfer Bank',
             self::METHOD_QRIS => 'QRIS',
+            'online_gateway' => 'Online (Midtrans)',
         ];
     }
 

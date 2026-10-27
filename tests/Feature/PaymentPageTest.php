@@ -116,7 +116,7 @@ class PaymentPageTest extends TestCase
             ->assertSee('INV-SELECTED')
             ->assertDontSee('INV-PAID')
             ->assertDontSee('INV-UNRELATED')
-            ->assertSee('Pembayaran online belum tersedia')
+            ->assertSee('Metode Pembayaran')
             ->call('closePayment')
             ->assertDontSee('INV-SELECTED');
 

@@ -17,11 +17,14 @@ use Illuminate\Support\Facades\Schema;
     'whatsapp_token',
     'server_key',
     'client_key',
+    'midtrans_is_production',
     'address',
 ])]
 class ApplicationSetting extends Model
 {
-    /** @return array<string, string|null> */
+    protected $hidden = ['server_key', 'client_key', 'whatsapp_token'];
+
+    /** @return array<string, string|bool|null> */
     public static function defaults(): array
     {
         return [
@@ -35,6 +38,7 @@ class ApplicationSetting extends Model
             'whatsapp_token' => null,
             'server_key' => null,
             'client_key' => null,
+            'midtrans_is_production' => false,
             'address' => 'Jl. Tentara Pelajar, Trimulyo I, Kepek, Wonosari, Gunungkidul, Yogyakarta 55813',
         ];
     }
@@ -55,6 +59,7 @@ class ApplicationSetting extends Model
             'whatsapp_token' => 'encrypted',
             'server_key' => 'encrypted',
             'client_key' => 'encrypted',
+            'midtrans_is_production' => 'boolean',
         ];
     }
 }

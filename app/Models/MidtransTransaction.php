@@ -9,13 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'payment_invoice_id', 'user_id', 'order_id', 'transaction_id', 'idempotency_key',
     'gross_amount', 'payment_type', 'transaction_status', 'fraud_status',
+    'snap_token',
     'settlement_time', 'expiry_time', 'source', 'raw_status_snapshot',
 ])]
 class MidtransTransaction extends Model
 {
+    protected $hidden = ['snap_token'];
+
     protected function casts(): array
     {
         return [
+            'snap_token' => 'encrypted',
             'gross_amount' => 'decimal:2',
             'settlement_time' => 'datetime',
             'expiry_time' => 'datetime',

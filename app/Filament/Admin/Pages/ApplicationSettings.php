@@ -43,6 +43,8 @@ class ApplicationSettings extends Page
 
     public string $clientKey = '';
 
+    public bool $midtransIsProduction = false;
+
     public string $address = '';
 
     public function mount(): void
@@ -77,6 +79,7 @@ class ApplicationSettings extends Page
             'whatsappToken' => ['nullable', 'string', 'max:2000'],
             'serverKey' => ['nullable', 'string', 'max:2000'],
             'clientKey' => ['nullable', 'string', 'max:2000'],
+            'midtransIsProduction' => ['boolean'],
             'address' => ['nullable', 'string', 'max:2000'],
         ], [], [
             'ownerName' => 'pemilik',
@@ -114,6 +117,7 @@ class ApplicationSettings extends Page
             'whatsapp_token' => $validated['whatsappToken'],
             'server_key' => $validated['serverKey'],
             'client_key' => $validated['clientKey'],
+            'midtrans_is_production' => $validated['midtransIsProduction'],
             'address' => $validated['address'],
         ]);
 
@@ -166,6 +170,7 @@ class ApplicationSettings extends Page
         $this->whatsappToken = $setting->whatsapp_token ?? '';
         $this->serverKey = $setting->server_key ?? '';
         $this->clientKey = $setting->client_key ?? '';
+        $this->midtransIsProduction = (bool) $setting->midtrans_is_production;
         $this->address = $setting->address ?? '';
     }
 }

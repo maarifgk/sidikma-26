@@ -68,6 +68,16 @@
         </div>
 
         <label style="display: grid; gap: 0.4rem;">
+            <span>MODE MIDTRANS</span>
+            <select wire:model="midtransIsProduction" class="fi-input">
+                <option value="0">Sandbox — pengujian</option>
+                <option value="1">Production — pembayaran sungguhan</option>
+            </select>
+            <small>Gunakan pasangan key sesuai mode. Notification URL: {{ route('payments.midtrans.notification') }}</small>
+            @error('midtransIsProduction') <small>{{ $message }}</small> @enderror
+        </label>
+
+        <label style="display: grid; gap: 0.4rem;">
             <span>ALAMAT</span>
             <textarea wire:model="address" rows="3" class="fi-input"></textarea>
             @error('address') <small style="color: #dc2626;">{{ $message }}</small> @enderror

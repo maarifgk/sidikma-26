@@ -5,15 +5,19 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Resources\Billings\BillingResource;
 use App\Models\Employee;
 use App\Models\Foundation;
+use App\Models\MidtransTransaction;
 use App\Models\PaymentFeeItem;
 use App\Models\PaymentInvoice;
 use App\Models\School;
 use App\Models\User;
+use App\Services\Payments\MidtransPaymentService;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 
@@ -38,6 +42,8 @@ class PaymentPage extends Page
     #[Locked]
     public ?int $paymentEmployeeId = null;
 
+    public string $paymentMethod = 'online';
+
     public static function canAccess(): bool
     {
         return auth()->user()?->can('foundation.view') ?? false;
@@ -61,6 +67,7 @@ class PaymentPage extends Page
                         'hasSearched' => $this->hasSearched,
                         'paymentEmployee' => $this->paymentEmployee(),
                         'unpaidInvoices' => $this->unpaidInvoices(),
+                        'paymentMethod' => $this->paymentMethod,
                     ]),
             ]);
     }
@@ -111,13 +118,44 @@ class PaymentPage extends Page
     public function openPayment(int $employeeId): void
     {
         abort_unless(static::canAccess(), 403);
+        $this->resetValidation();
+        $this->paymentMethod = 'online';
         $this->paymentEmployeeId = $employeeId;
         abort_unless($this->paymentEmployee() !== null, 403);
+        $this->dispatch('open-modal', id: 'payment-checkout');
     }
 
     public function closePayment(): void
     {
+        $this->dispatch('close-modal', id: 'payment-checkout');
         $this->paymentEmployeeId = null;
+    }
+
+    public function payOnline(int $invoiceId, MidtransPaymentService $service): void
+    {
+        abort_unless(static::canAccess(), 403);
+        $this->validate(['paymentMethod' => ['required', Rule::in(['online'])]]);
+        $invoice = $this->unpaidInvoices()->firstWhere('id', $invoiceId);
+        abort_unless($invoice instanceof PaymentInvoice, 403);
+        $checkout = $service->checkout($invoice);
+        $this->dispatch('close-modal', id: 'payment-checkout');
+        $this->dispatch('midtrans-checkout', ...$checkout);
+    }
+
+    public function refreshOnlinePayment(string $orderId, MidtransPaymentService $service): void
+    {
+        abort_unless(static::canAccess(), 403);
+        $transaction = MidtransTransaction::query()->where('order_id', $orderId)
+            ->whereIn('source', ['midtrans_sandbox', 'midtrans_production'])->firstOrFail();
+        Gate::authorize('view', $transaction->invoice);
+        try {
+            $transaction = $service->synchronize($orderId);
+            Notification::make()->title($transaction->transaction_status === 'paid'
+                ? 'Pembayaran terverifikasi. Tagihan sudah lunas.'
+                : 'Pembayaran belum terkonfirmasi lunas. Status akan diperbarui otomatis.')->info()->send();
+        } catch (\Throwable) {
+            Notification::make()->title('Status belum dapat diperiksa. Silakan cek kembali nanti.')->warning()->send();
+        }
     }
 
     private function paymentEmployee(): ?Employee
@@ -177,6 +215,7 @@ class PaymentPage extends Page
     {
         return Employee::query()
             ->where('foundation_id', Foundation::application()->getKey())
+            ->whereIn('school_id', array_keys($this->schoolOptions()))
             ->where('is_active', true)
             ->when($this->schoolId, fn (Builder $query, int $schoolId): Builder => $query->where('school_id', $schoolId))
             ->orderBy('name')

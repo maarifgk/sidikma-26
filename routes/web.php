@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\LocalPaymentController;
 use App\Http\Controllers\SafeLocalPaymentController;
 
+Route::post('/payments/midtrans/notification', \App\Http\Controllers\MidtransNotificationController::class)
+    ->name('payments.midtrans.notification');
+
 Route::get('/', function () {
     return redirect('/admin/login');
 });

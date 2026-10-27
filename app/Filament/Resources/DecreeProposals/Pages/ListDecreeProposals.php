@@ -90,11 +90,11 @@ class ListDecreeProposals extends ListRecords
                             ->disk('decree-proposals')
                             ->directory('templates')
                             ->acceptedFileTypes([
-                                'doc',
-                                'docx',
                                 'application/msword',
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                'application/zip',
                             ])
+                            ->rules(['file', 'mimes:doc,docx'])
                             ->maxSize(819200)
                             ->downloadable()
                             ->helperText('Format Word DOC atau DOCX, maksimal 800 MB.')

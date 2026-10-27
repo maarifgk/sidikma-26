@@ -57,15 +57,6 @@ class EmployeeForm
                     ->label('Nama Lengkap')
                     ->required()
                     ->maxLength(255),
-                TextInput::make('nik')
-                    ->label('NIK')
-                    ->length(16)
-                    ->regex('/^[0-9]{16}$/')
-                    ->unique(ignoreRecord: true)
-                    ->mutateStateForValidationUsing(
-                        fn (?string $state): ?string => self::normalizeIdentifier($state),
-                    )
-                    ->dehydrateStateUsing(fn (?string $state): ?string => self::normalizeIdentifier($state)),
                 TextInput::make('employee_code')
                     ->label('EWANUGK')
                     ->required()

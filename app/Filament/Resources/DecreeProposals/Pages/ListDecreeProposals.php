@@ -94,7 +94,6 @@ class ListDecreeProposals extends ListRecords
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                 'application/zip',
                             ])
-                            ->rules(['file', 'mimes:doc,docx'])
                             ->maxSize(819200)
                             ->downloadable()
                             ->helperText('Format Word DOC atau DOCX, maksimal 800 MB.')

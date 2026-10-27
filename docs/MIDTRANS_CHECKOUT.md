@@ -4,14 +4,18 @@ Alur `/admin/pembayaran`: cari pegawai → **Bayar** → modal tagihan → pilih
 
 ## Penerapan hosting
 
-Setelah kode ini diterapkan, jalankan migrasi melalui prosedur deployment proyek:
+Hosting dengan riwayat migrasi lama dapat memiliki tabel `users` tanpa catatan migrasi Laravel terbaru. Jangan menjalankan seluruh migrasi pada database tersebut. Setelah kode diterapkan dan backup tersedia, untuk kondisi yang sudah diperiksa (tabel `application_settings` dan `midtrans_transactions` belum ada, kolom checkout belum ada), jalankan migrasi berikut **satu per satu**. Berhenti jika ada kegagalan:
 
 ```bash
-php artisan migrate --force
+php artisan migrate --path=database/migrations/2026_08_10_260000_create_application_settings_table.php --force
+php artisan migrate --path=database/migrations/2026_09_21_030000_create_midtrans_transactions_table.php --force
+php artisan migrate --path=database/migrations/2026_10_28_060000_add_midtrans_checkout_settings.php --force
 php artisan optimize:clear
 ```
 
 Migrasi menambahkan mode Midtrans (default Sandbox), Snap token terenkripsi, dan relasi histori transaksi online. `legacy_payment_id` menjadi nullable agar histori online tidak memerlukan ID sumber palsu. Tidak ada invoice lama yang diubah oleh migrasi. Backup database mengikuti prosedur hosting sebelum migrasi produksi.
+
+Migrasi pembuatan Midtrans menyesuaikan signed/unsigned kolom `user_id` dengan `users.id` dan tetap mempertahankan foreign key. Tabel `users` tidak diubah. Migrasi awal yang sudah diterapkan di environment lain tidak perlu dijalankan ulang. Jika tabel Midtrans pernah terbentuk sebagian akibat migrasi gagal, periksa strukturnya sebelum melanjutkan; jangan menghapus tabel atau menambahkan catatan migrasi secara manual.
 
 Di **Pengaturan → Aplikasi**, simpan server key, client key, dan mode yang sesuai. Key Sandbox memiliki awalan `SB-`. Jangan mencampur key Sandbox dan Production. Jangan mengirim server key melalui chat atau menaruhnya di JavaScript.
 

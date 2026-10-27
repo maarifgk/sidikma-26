@@ -9,10 +9,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('midtrans_transactions', function (Blueprint $table): void {
+        // Legacy hosting uses signed user IDs; fresh Laravel installs use unsigned IDs.
+        $userIdUnsigned = str_contains(Schema::getColumnType('users', 'id', fullDefinition: true), 'unsigned');
+
+        Schema::create('midtrans_transactions', function (Blueprint $table) use ($userIdUnsigned): void {
             $table->id();
             $table->foreignId('payment_invoice_id')->constrained('payment_invoices')->restrictOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('user_id')->unsigned($userIdUnsigned)->nullable()->constrained('users')->nullOnDelete();
             $table->string('order_id')->unique();
             $table->string('transaction_id')->nullable()->unique();
             $table->string('idempotency_key')->unique();

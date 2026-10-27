@@ -15,7 +15,7 @@ use Filament\Tables\Table;
 
 class BillingsTable
 {
-    public static function configure(Table $table): Table
+    public static function configure(Table $table, bool $withActions = true): Table
     {
         return $table
             ->columns([
@@ -51,7 +51,7 @@ class BillingsTable
                     ->dateTime('Y-m-d H:i:s')
                     ->sortable(),
             ])
-            ->recordActions([
+            ->recordActions($withActions ? [
                 Action::make('pay')
                     ->label('Bayar')
                     ->icon('heroicon-o-credit-card')
@@ -77,7 +77,7 @@ class BillingsTable
                     ->label('Delete')
                     ->color('danger')
                     ->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false),
-            ])
+            ] : [])
             ->contentFooter(fn () => Filament::getCurrentPanel()?->getId() === 'app' ? view('filament.app.resources.billings.checkout-footer') : null)
             ->recordActionsColumnLabel(fn (): ?string => Filament::getCurrentPanel()?->getId() === 'app'
                 ? 'Action'

@@ -22,6 +22,7 @@ use App\Filament\GlobalSearch\NavigationSearchProvider;
 use App\Filament\Resources\AcademicYears\AcademicYearResource;
 use App\Filament\Resources\Activities\ActivityResource;
 use App\Filament\Resources\ApprovalRequests\ApprovalRequestResource;
+use App\Filament\Resources\Arrears\ArrearsResource;
 use App\Filament\Resources\BatikOrders\BatikOrderResource;
 use App\Filament\Resources\Billings\BillingResource;
 use App\Filament\Resources\Complaints\ComplaintResource;
@@ -340,7 +341,13 @@ class AdminPanelProvider extends PanelProvider
                     ->isActiveWhen(
                         fn (): bool => request()->routeIs('filament.admin.resources.invoices.*'),
                     ),
-                $this->plannedNavigationItem('Tunggakan', 'INFORMATION', 'heroicon-o-document-minus', 2),
+                NavigationItem::make('Tunggakan')
+                    ->group('INFORMATION')
+                    ->icon('heroicon-o-document-minus')
+                    ->sort(2)
+                    ->url(fn (): string => ArrearsResource::getUrl(panel: 'admin', isAbsolute: false))
+                    ->visible(fn (): bool => ArrearsResource::canViewAny())
+                    ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.tunggakan.*')),
                 NavigationItem::make('Laporan Keuangan')
                     ->group('INFORMATION')
                     ->icon('heroicon-o-clipboard-document-list')
@@ -626,20 +633,5 @@ class AdminPanelProvider extends PanelProvider
                 request()->routeIs('filament.admin.pages.profile-lembaga')
                 && request()->query('section', InstitutionProfile::SECTION_IDENTITY) === $section
             ));
-    }
-
-    private function plannedNavigationItem(string $label, string $group, string $icon, int $sort): NavigationItem
-    {
-        return NavigationItem::make($label)
-            ->group($group)
-            ->icon($icon)
-            ->sort($sort)
-            ->url('#')
-            ->extraAttributes([
-                'aria-disabled' => 'true',
-                'tabindex' => '-1',
-                'title' => "Modul {$label} belum tersedia",
-                'x-on:click.prevent' => '',
-            ]);
     }
 }

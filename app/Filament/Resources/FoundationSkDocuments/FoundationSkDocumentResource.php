@@ -21,6 +21,9 @@ class FoundationSkDocumentResource extends Resource
  protected static ?string $modelLabel='Dokumen SK';
  protected static ?string $pluralModelLabel='Dokumen SK';
  public static function canViewAny(): bool { return auth()->user()?->isAdminInduk() || (auth()->user()?->can('sk-yayasan.view') ?? false); }
+ public static function canCreate(): bool { return auth()->user()?->isAdminInduk() ?? false; }
+ public static function canEdit($record): bool { return auth()->user()?->isAdminInduk() ?? false; }
+ public static function canDelete($record): bool { return auth()->user()?->isAdminInduk() ?? false; }
  public static function form(Schema $schema): Schema { return FoundationSkDocumentForm::configure($schema); }
  public static function table(Table $table): Table { return FoundationSkDocumentsTable::configure($table); }
  public static function getEloquentQuery(): Builder { $user=auth()->user();$q=parent::getEloquentQuery()->with(['user.employee.school','template','uploadedBy']);return $user instanceof User && $user->isAdminInduk() ? $q : $q->whereHas('user.employee',fn($e)=>$e->whereIn('school_id',$user?->accessibleSchoolIds() ?? [])); }

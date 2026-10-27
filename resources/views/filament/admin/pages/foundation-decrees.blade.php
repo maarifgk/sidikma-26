@@ -101,6 +101,7 @@
         </div>
     </section>
 
+    @if (false)
     <section class="fd-card">
         <div class="fd-head"><div><h2 class="fd-title">{{ $editingDocumentId ? 'Edit Surat Keputusan' : 'Upload Surat Keputusan' }}</h2><p class="fd-subtitle">Pilih guru/pegawai berdasarkan data asli, lalu unggah file PDF secara privat.</p></div></div>
         <form wire:submit="{{ $editingDocumentId ? 'updateDecree' : 'uploadDecree' }}" class="fd-form">
@@ -133,6 +134,7 @@
             <div class="fd-actions"><button type="submit" class="fd-button fd-button-success" wire:loading.attr="disabled">{{ $editingDocumentId ? 'Simpan Perubahan' : 'Upload & Hubungkan ke Guru/Pegawai' }}</button>@if($editingDocumentId) <button type="button" wire:click="cancelEditDecree" class="fd-button fd-button-muted">Batal</button>@endif</div>
         </form>
     </section>
+    @endif
 
     <section class="fd-card">
         <div class="fd-head"><div><h2 class="fd-title">Import Banyak File SK</h2><p class="fd-subtitle">Sistem mencocokkan nama file ke user berdasarkan nama, EWANUGK/NIS, NIK, NIP, atau NUPTK yang ada di nama file.</p></div></div>

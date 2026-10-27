@@ -10,8 +10,6 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Select;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -65,23 +63,9 @@ class BillingsTable
                     ->disabled(fn (PaymentInvoice $record): bool => (float) $record->amount <= 0 || (int) $record->getKey() === 837)
                     ->modalHeading('Bayar Tagihan')
                     ->modalContent(fn (PaymentInvoice $record) => view('filament.app.resources.billings.pay', ['invoice' => $record]))
-                    ->schema([
-                        Select::make('payment_method')
-                            ->label('Metode Pembayaran')
-                            ->options(['online' => 'Online — Midtrans', 'manual' => 'Manual — melalui admin'])
-                            ->default('online')
-                            ->rules(['in:online,manual'])
-                            ->required(),
-                    ])
-                    ->modalSubmitActionLabel('Lanjutkan')
-                    ->action(function (PaymentInvoice $record, array $data, ListBillings $livewire): void {
-                        if ($data['payment_method'] === 'manual') {
-                            Notification::make()->title('Pembayaran manual')
-                                ->body('Hubungi admin untuk petunjuk dan pencatatan pembayaran manual.')
-                                ->info()->send();
-
-                            return;
-                        }
+                    ->requiresConfirmation()
+                    ->modalSubmitActionLabel('Lanjutkan ke Midtrans')
+                    ->action(function (PaymentInvoice $record, ListBillings $livewire): void {
                         $checkout = app(MidtransPaymentService::class)->checkout($record);
                         $livewire->dispatch('midtrans-checkout', ...$checkout);
                     }),

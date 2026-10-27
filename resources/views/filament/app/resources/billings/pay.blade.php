@@ -5,6 +5,6 @@
         <div><dt>Tahun Ajaran</dt><dd>{{ $invoice->academic_year }}</dd></div>
         <div><dt>Total Tagihan</dt><dd><strong>Rp {{ number_format($invoice->amount, 0, ',', '.') }}</strong></dd></div>
     </dl>
-    <p>Pilih Online untuk menampilkan pilihan metode pembayaran dari Midtrans.</p>
+    <p>Pembayaran diproses secara online melalui Midtrans. Klik Lanjutkan ke Midtrans untuk memilih metode pembayaran yang tersedia.</p>
     @error('payment') <p role="alert" style="color: #dc2626;">{{ $message }}</p> @enderror
 </div>

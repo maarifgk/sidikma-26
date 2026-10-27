@@ -277,7 +277,7 @@ class MidtransCheckoutTest extends TestCase
         Livewire::test(ListBillings::class)
             ->assertCanSeeTableRecords([$this->invoice])
             ->assertTableActionVisible('pay', $this->invoice)
-            ->callTableAction('pay', $this->invoice, data: ['payment_method' => 'online'])
+            ->callTableAction('pay', $this->invoice)
             ->assertHasNoErrors()
             ->assertDispatched('midtrans-checkout', token: 'user-token');
         $this->assertSame('unpaid', $this->invoice->refresh()->status);
@@ -292,15 +292,17 @@ class MidtransCheckoutTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_app_billing_manual_payment_does_not_create_online_order(): void
+    public function test_app_billing_uses_midtrans_without_manual_method_selection(): void
     {
         $this->actAsBillingUser();
+        Http::fake(['app.sandbox.midtrans.com/*' => Http::response(['token' => 'user-token'])]);
         Livewire::test(ListBillings::class)
-            ->callTableAction('pay', $this->invoice, data: ['payment_method' => 'manual'])
+            ->assertDontSee('Manual — melalui admin')
+            ->callTableAction('pay', $this->invoice)
             ->assertHasNoErrors()
-            ->assertNotDispatched('midtrans-checkout');
-        Http::assertNothingSent();
-        $this->assertDatabaseCount('midtrans_transactions', 0);
+            ->assertDispatched('midtrans-checkout', token: 'user-token');
+        Http::assertSentCount(1);
+        $this->assertDatabaseCount('midtrans_transactions', 1);
         $this->assertSame('unpaid', $this->invoice->refresh()->status);
     }
 

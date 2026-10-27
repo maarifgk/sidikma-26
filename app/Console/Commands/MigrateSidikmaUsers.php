@@ -88,7 +88,7 @@ class MigrateSidikmaUsers extends Command
         /**
          * Ambil users PostgreSQL.
          */
-        $newUsers = DB::connection('pgsql')
+        $newUsers = DB::connection('sidikma_induk')
             ->table('users')
             ->select([
                 'id',
@@ -743,13 +743,13 @@ class MigrateSidikmaUsers extends Command
      */
     private function migrateUsers(array $users): void
     {
-        DB::connection('pgsql')->transaction(function () use ($users): void {
+        DB::connection('sidikma_induk')->transaction(function () use ($users): void {
             foreach (array_chunk($users, 100) as $chunk) {
-                DB::connection('pgsql')->table('users')->insert(
+                DB::connection('sidikma_induk')->table('users')->insert(
                     array_column($chunk, 'user'),
                 );
 
-                DB::connection('pgsql')->table('model_has_roles')->insert(
+                DB::connection('sidikma_induk')->table('model_has_roles')->insert(
                     array_map(
                         fn (array $item): array => [
                             'role_id' => $item['role_id'],
@@ -761,13 +761,6 @@ class MigrateSidikmaUsers extends Command
                 );
             }
 
-            DB::connection('pgsql')->statement(<<<'SQL'
-                SELECT setval(
-                    pg_get_serial_sequence('users', 'id'),
-                    COALESCE((SELECT MAX(id) FROM users), 1),
-                    true
-                )
-                SQL);
         });
     }
 

@@ -63,7 +63,7 @@ class MigrateSidikmaEmployees extends Command
     private function analyze(): array
     {
         $mysql = DB::connection('mysql_sidikma');
-        $pgsql = DB::connection('pgsql');
+        $pgsql = DB::connection('sidikma_induk');
         $source = $mysql->table('users')->whereIn('role', [0, 2])->where('id', '<>', 518)->orderBy('id')->get();
         $duplicates = $source->groupBy(fn ($row): string => trim((string) $row->nis))->filter(fn ($rows, string $key): bool => $key !== '' && $rows->count() > 1)->keys()->all();
         $foundation = $pgsql->table('foundations')->whereNull('deleted_at')->sole();
@@ -179,7 +179,7 @@ class MigrateSidikmaEmployees extends Command
     /** @param array<string, mixed> $a */
     private function migrate(array $a): void
     {
-        DB::connection('pgsql')->transaction(function () use ($a): void {
+        $pgsql->transaction(function () use ($a, $pgsql): void {
             $now = now();
             foreach ($a['rows'] as $row) {
                 if (! in_array($row['status'], ['ELIGIBLE', 'EXISTING'], true)) {

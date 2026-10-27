@@ -35,7 +35,11 @@ class PanelAccessTest extends TestCase
 
         $this->actingAs($admin);
 
-        $this->get('/admin')->assertOk();
+        $this->get('/admin')->assertOk()
+            ->assertSee('Utama')
+            ->assertSee('Layanan')
+            ->assertSee('Pengaturan')
+            ->assertSee('Dashboard SK Yayasan');
         $this->get('/app')->assertRedirect('/admin');
     }
 
@@ -47,7 +51,10 @@ class PanelAccessTest extends TestCase
         $this->actingAs($schoolAdmin);
 
         $this->get('/admin')->assertForbidden();
-        $this->get('/app')->assertOk();
+        $this->get('/app')->assertOk()
+            ->assertSee('Utama')
+            ->assertSee('Layanan')
+            ->assertSee('Pembayaran');
     }
 
     public function test_teacher_only_accesses_operational_panel(): void

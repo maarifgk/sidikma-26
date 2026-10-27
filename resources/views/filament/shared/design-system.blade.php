@@ -18,19 +18,27 @@
 
     body:not(:has(.teacher-mobile)) .fi-sidebar { border-inline-end:0;background:linear-gradient(180deg,#045d3c 0%,#04704a 48%,#055c3a 100%);box-shadow:8px 0 24px rgba(5,96,58,.12); }
     body:not(:has(.teacher-mobile)) .fi-topbar { border-bottom:1px solid rgba(23,104,181,.1);background:rgba(255,255,255,.92);box-shadow:0 4px 18px rgba(18,59,115,.045);backdrop-filter:blur(12px); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn { position:relative;min-height:2.65rem;gap:.7rem;padding:.6rem .75rem;border:1px solid transparent;border-radius:.65rem;transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease; }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-item-label { min-width:0;font-size:.8rem;font-weight:520;line-height:1.4; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn { position:relative;min-height:2.75rem;gap:.7rem;padding:.625rem .75rem;border:1px solid transparent;border-radius:.65rem;transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item-label { min-width:0;font-size:.8125rem;font-weight:520;line-height:1.45;white-space:normal;overflow-wrap:anywhere;text-align:start; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn > .fi-icon { width:1.15rem;height:1.15rem;flex-shrink:0;opacity:.9; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:focus-visible { outline:2px solid var(--ui-yellow-300);outline-offset:2px; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:hover { border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.1); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active>.fi-sidebar-item-btn { border-color:rgba(255,255,255,.28);background:linear-gradient(110deg,#fde047,#facc15);box-shadow:0 4px 12px rgba(59,38,7,.18); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-sidebar-item-has-active-child-items>.fi-sidebar-item-btn { border-color:rgba(250,204,21,.12);background:rgba(250,204,21,.13); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-group-label { color:rgba(255,255,255,.62);font-size:.625rem;font-weight:750;letter-spacing:.115em;line-height:1.5; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-group-label { color:rgba(255,255,255,.62);font-size:.6875rem;font-weight:700;letter-spacing:.075em;line-height:1.5; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-btn { min-height:1.5rem;padding-inline:.75rem; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-btn > .fi-icon { color:rgba(255,255,255,.7); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-collapse-btn { color:rgba(255,255,255,.58); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-items { gap:.2rem; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group + .fi-sidebar-group { padding-top:1rem;border-top:1px solid rgba(255,255,255,.09); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-nav-groups { gap:1.1rem; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items { display:flex;flex-direction:column;gap:.2rem;margin-block:.25rem;margin-inline-start:1.05rem;padding-inline-start:.5rem;border-inline-start:1px solid rgba(255,255,255,.16); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-btn { min-height:2.5rem;padding-block:.5rem;gap:.5rem; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-label { font-size:.78125rem; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-grouped-border-part,
+    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-grouped-border-part-not-first,
+    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-grouped-border-part-not-last { background:rgba(255,255,255,.28); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-active > .fi-sidebar-item-btn .fi-sidebar-item-grouped-border-part { background:var(--ui-yellow-900); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-badge-ctn { margin-inline-start:auto; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-badge-ctn .fi-badge { border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.12);color:#fff;box-shadow:none; }
     body:not(:has(.teacher-mobile)) .fi-sidebar :is(.fi-sidebar-item-label,.fi-sidebar-item-btn>.fi-icon) { color:rgba(255,255,255,.9); }
@@ -60,6 +68,7 @@
         body:not(:has(.teacher-mobile)):has(.fi-sidebar:not(.fi-sidebar-open)) .fi-topbar-collapse-sidebar-btn-ctn { inset-inline-start:50%;transform:translate(-50%,-50%); }
         body:not(:has(.teacher-mobile)) .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-nav { padding-inline:.55rem; }
         body:not(:has(.teacher-mobile)) .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-btn { justify-content:center;padding-inline:.55rem; }
+        body:not(:has(.teacher-mobile)) .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-sub-group-items { margin-inline-start:0;padding-inline-start:0;border-inline-start:0; }
         body:not(:has(.teacher-mobile)) .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-group + .fi-sidebar-group { padding-top:.75rem; }
     }
     @media (max-width:63.999rem) {

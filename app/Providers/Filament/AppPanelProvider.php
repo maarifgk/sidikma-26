@@ -32,7 +32,6 @@ use App\Filament\Resources\Schools\SchoolResource;
 use App\Filament\Resources\SipinterUpdates\SipinterUpdateResource;
 use App\Filament\Resources\StudentEnrollments\StudentEnrollmentResource;
 use App\Http\Middleware\RedirectAdminIndukToAdminPanel;
-use App\Models\ApplicationSetting;
 use App\Models\Employee;
 use App\Models\User;
 use Filament\Http\Middleware\Authenticate;
@@ -52,7 +51,6 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AppPanelProvider extends PanelProvider
@@ -76,6 +74,8 @@ class AppPanelProvider extends PanelProvider
             ])
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('18rem')
+            ->collapsedSidebarWidth('4.5rem')
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => view('filament.app.navigation-chevron-styles'),
@@ -85,10 +85,10 @@ class AppPanelProvider extends PanelProvider
                 fn () => view('filament.shared.panel-polish'),
             )
             ->navigationGroups([
-                NavigationGroup::make('HOMES')
+                'HOMES' => NavigationGroup::make('Utama')
                     ->collapsible(false),
-                NavigationGroup::make('SERVICE'),
-                NavigationGroup::make('PAYMENT')
+                'SERVICE' => NavigationGroup::make('Layanan'),
+                'PAYMENT' => NavigationGroup::make('Pembayaran')
                     ->collapsible(false),
             ])
             ->navigationItems([

@@ -10,9 +10,9 @@ use App\Filament\Admin\Pages\AttendanceSettings;
 use App\Filament\Admin\Pages\AuditLogs;
 use App\Filament\Admin\Pages\Dashboard;
 use App\Filament\Admin\Pages\DecreeDashboard;
-use App\Filament\Admin\Pages\FoundationSkDashboard;
 use App\Filament\Admin\Pages\EditPaymentInfo;
 use App\Filament\Admin\Pages\FoundationDecrees;
+use App\Filament\Admin\Pages\FoundationSkDashboard;
 use App\Filament\Admin\Pages\InstitutionProfile;
 use App\Filament\Admin\Pages\PaymentPage;
 use App\Filament\Auth\Pages\IntegratedLogin;
@@ -34,6 +34,7 @@ use App\Filament\Resources\EmployeeMutations\EmployeeMutationResource;
 use App\Filament\Resources\Employees\EmployeeResource;
 use App\Filament\Resources\FinancialReports\FinancialReportResource;
 use App\Filament\Resources\FoundationAnnualReports\FoundationAnnualReportResource;
+use App\Filament\Resources\FoundationSkTemplates\FoundationSkTemplateResource;
 use App\Filament\Resources\FoundationWorkPrograms\FoundationWorkProgramResource;
 use App\Filament\Resources\InvoiceSchools\InvoiceSchoolResource;
 use App\Filament\Resources\LearningModules\LearningModuleResource;
@@ -47,9 +48,6 @@ use App\Filament\Resources\SipinterUpdates\SipinterUpdateResource;
 use App\Filament\Resources\StudentEnrollments\StudentEnrollmentResource;
 use App\Filament\Resources\TreasuryTransactions\TreasuryTransactionResource;
 use App\Filament\Resources\Users\UserResource;
-use App\Filament\Resources\FoundationSkTemplates\FoundationSkTemplateResource;
-use App\Filament\Resources\FoundationSkNumberSettings\FoundationSkNumberSettingResource;
-use App\Models\ApplicationSetting;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -67,7 +65,6 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -103,13 +100,16 @@ class AdminPanelProvider extends PanelProvider
                 fn () => view('filament.shared.panel-polish'),
             )
             ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('18rem')
+            ->collapsedSidebarWidth('4.5rem')
             ->navigationGroups([
-                NavigationGroup::make('HOMES')
+                'HOMES' => NavigationGroup::make('Utama')
                     ->collapsible(false),
-                NavigationGroup::make('SERVICE'),
-                NavigationGroup::make('PAYMENT'),
-                NavigationGroup::make('INFORMATION'),
-                NavigationGroup::make('ABOUT'),
+                'SK Yayasan' => NavigationGroup::make('SK Yayasan'),
+                'SERVICE' => NavigationGroup::make('Layanan'),
+                'PAYMENT' => NavigationGroup::make('Pembayaran'),
+                'INFORMATION' => NavigationGroup::make('Informasi'),
+                'ABOUT' => NavigationGroup::make('Pengaturan'),
             ])
             ->navigationItems([
                 NavigationItem::make('Dashboard SK Yayasan')

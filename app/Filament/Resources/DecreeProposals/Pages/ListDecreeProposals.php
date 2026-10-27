@@ -93,6 +93,7 @@ class ListDecreeProposals extends ListRecords
                                 'application/msword',
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                 'application/zip',
+                                'application/octet-stream',
                             ])
                             ->maxSize(819200)
                             ->downloadable()

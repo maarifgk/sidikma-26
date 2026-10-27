@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Admin\Pages\PaymentPage;
+use App\Filament\Resources\Billings\Pages\ListBillings;
 use App\Models\ApplicationSetting;
 use App\Models\Employee;
 use App\Models\Foundation;
@@ -267,6 +268,64 @@ class MidtransCheckoutTest extends TestCase
             ->assertForbidden();
         Http::assertNothingSent();
         $this->assertDatabaseCount('midtrans_transactions', 0);
+    }
+
+    public function test_app_billing_pay_action_opens_midtrans_for_owned_unpaid_invoice(): void
+    {
+        $this->actAsBillingUser();
+        Http::fake(['app.sandbox.midtrans.com/*' => Http::response(['token' => 'user-token'])]);
+        Livewire::test(ListBillings::class)
+            ->assertCanSeeTableRecords([$this->invoice])
+            ->assertTableActionVisible('pay', $this->invoice)
+            ->callTableAction('pay', $this->invoice, data: ['payment_method' => 'online'])
+            ->assertHasNoErrors()
+            ->assertDispatched('midtrans-checkout', token: 'user-token');
+        $this->assertSame('unpaid', $this->invoice->refresh()->status);
+        Http::assertSentCount(1);
+    }
+
+    public function test_app_billing_paid_invoice_has_no_pay_action(): void
+    {
+        $this->actAsBillingUser();
+        $this->invoice->update(['status' => 'paid']);
+        Livewire::test(ListBillings::class)->assertTableActionHidden('pay', $this->invoice);
+        Http::assertNothingSent();
+    }
+
+    public function test_app_billing_manual_payment_does_not_create_online_order(): void
+    {
+        $this->actAsBillingUser();
+        Livewire::test(ListBillings::class)
+            ->callTableAction('pay', $this->invoice, data: ['payment_method' => 'manual'])
+            ->assertHasNoErrors()
+            ->assertNotDispatched('midtrans-checkout');
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('midtrans_transactions', 0);
+        $this->assertSame('unpaid', $this->invoice->refresh()->status);
+    }
+
+    public function test_app_billing_user_cannot_read_another_users_payment_status(): void
+    {
+        $transaction = $this->transaction();
+        filament()->setCurrentPanel(filament()->getPanel('app'));
+        $user = User::factory()->create();
+        $user->assignRole(User::ROLE_GURU_PEGAWAI);
+        $this->actingAs($user);
+        Livewire::test(ListBillings::class)
+            ->assertCanNotSeeTableRecords([$this->invoice])
+            ->call('refreshOnlinePayment', $transaction->order_id)
+            ->assertForbidden();
+        Http::assertNothingSent();
+    }
+
+    private function actAsBillingUser(): void
+    {
+        filament()->setCurrentPanel(filament()->getPanel('app'));
+        $user = User::factory()->create();
+        $user->assignRole(User::ROLE_GURU_PEGAWAI);
+        $this->actingAs($user);
+        $this->employee->update(['user_id' => $user->id]);
+        $this->invoice->update(['user_id' => $user->id]);
     }
 
     private function transaction(): MidtransTransaction

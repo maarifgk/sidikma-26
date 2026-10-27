@@ -2,27 +2,27 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Concerns\InteractsWithMidtransCheckout;
 use App\Filament\Resources\Billings\BillingResource;
 use App\Models\Employee;
 use App\Models\Foundation;
-use App\Models\MidtransTransaction;
 use App\Models\PaymentFeeItem;
 use App\Models\PaymentInvoice;
 use App\Models\School;
 use App\Models\User;
 use App\Services\Payments\MidtransPaymentService;
-use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 
 class PaymentPage extends Page
 {
+    use InteractsWithMidtransCheckout;
+
     protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $slug = 'pembayaran';
@@ -140,22 +140,6 @@ class PaymentPage extends Page
         $checkout = $service->checkout($invoice);
         $this->dispatch('close-modal', id: 'payment-checkout');
         $this->dispatch('midtrans-checkout', ...$checkout);
-    }
-
-    public function refreshOnlinePayment(string $orderId, MidtransPaymentService $service): void
-    {
-        abort_unless(static::canAccess(), 403);
-        $transaction = MidtransTransaction::query()->where('order_id', $orderId)
-            ->whereIn('source', ['midtrans_sandbox', 'midtrans_production'])->firstOrFail();
-        Gate::authorize('view', $transaction->invoice);
-        try {
-            $transaction = $service->synchronize($orderId);
-            Notification::make()->title($transaction->transaction_status === 'paid'
-                ? 'Pembayaran terverifikasi. Tagihan sudah lunas.'
-                : 'Pembayaran belum terkonfirmasi lunas. Status akan diperbarui otomatis.')->info()->send();
-        } catch (\Throwable) {
-            Notification::make()->title('Status belum dapat diperiksa. Silakan cek kembali nanti.')->warning()->send();
-        }
     }
 
     private function paymentEmployee(): ?Employee

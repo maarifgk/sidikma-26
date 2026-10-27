@@ -2,6 +2,8 @@
 
 Alur `/admin/pembayaran`: cari pegawai → **Bayar** → modal tagihan → pilih **Online — Midtrans** → **Lanjutkan ke Midtrans**. Snap menampilkan kanal yang tersedia pada akun merchant. Satu checkout membayar satu invoice; nominal dibaca dari database, bukan browser. Metode manual tetap menggunakan pencatatan oleh admin yang berhak.
 
+Pada `/app/billings`, kolom **Action** menyediakan tombol **Bayar** untuk tagihan belum lunas yang dapat diakses pengguna. Modal menampilkan rincian invoice dan pilihan Online/Manual; pilihan Online menggunakan checkout Snap yang sama. Pembayaran manual diarahkan ke admin dan tidak otomatis mengubah tagihan menjadi lunas.
+
 ## Penerapan hosting
 
 Hosting dengan riwayat migrasi lama dapat memiliki tabel `users` tanpa catatan migrasi Laravel terbaru. Jangan menjalankan seluruh migrasi pada database tersebut. Setelah kode diterapkan dan backup tersedia, untuk kondisi yang sudah diperiksa (tabel `application_settings` dan `midtrans_transactions` belum ada, kolom checkout belum ada), jalankan migrasi berikut **satu per satu**. Berhenti jika ada kegagalan:

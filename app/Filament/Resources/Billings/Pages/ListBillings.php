@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Billings\Pages;
 
+use App\Filament\Concerns\InteractsWithMidtransCheckout;
 use App\Filament\Pages\ListRecords;
 use App\Filament\Resources\Billings\BillingResource;
 use App\Models\PaymentInvoice;
@@ -11,6 +12,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ListBillings extends ListRecords
 {
+    use InteractsWithMidtransCheckout;
+
     protected static string $resource = BillingResource::class;
 
     protected static ?string $title = 'Pembayaran';

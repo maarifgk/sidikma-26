@@ -2,7 +2,7 @@
 
 namespace App\Filament\App\Pages;
 
-use App\Models\DecreeTemplate;
+use App\Models\{DecreeTemplate, FoundationSkDocument, FoundationSkTemplate};
 use App\Models\Document;
 use App\Models\User;
 use BackedEnum;
@@ -58,25 +58,57 @@ class SchoolDecrees extends Page
         /** @var User $user */
         $user = auth()->user();
         $schoolIds = $user->accessibleSchoolIds();
-        $ownerIds = $this->accessibleOwnerIds($schoolIds->all());
-        $baseDocuments = Document::query()
-            ->where('document_type', 'like', self::DOCUMENT_PREFIX.'%')
-            ->where('owner_type', User::class)
-            ->whereIn('owner_id', $ownerIds)
-            ->where('status', Document::STATUS_ACTIVE);
+        $foundationDocuments = $this->foundationDocuments($schoolIds->all());
+        $legacyDocuments = $this->documents($schoolIds->all());
+        $allDocuments = $legacyDocuments->concat($foundationDocuments)->sortByDesc('uploadedAt')->values();
 
         return [
-            'totalDocuments' => (clone $baseDocuments)->count(),
-            'linkedUsers' => (clone $baseDocuments)->distinct()->count('owner_id'),
-            'yearOptions' => (clone $baseDocuments)
-                ->pluck('document_type')
-                ->map(fn (string $type): string => $this->documentYear($type))
+            'totalDocuments' => $allDocuments->count(),
+            'linkedUsers' => $allDocuments->pluck('user')->unique()->count(),
+            'yearOptions' => $allDocuments
+                ->pluck('year')
                 ->filter(fn (string $year): bool => $year !== '-')
                 ->unique()
                 ->sortDesc()
                 ->values(),
-            'documents' => $this->documents($schoolIds->all()),
+            'documents' => $allDocuments
+                ->when(filled($this->selectedYear), fn (Collection $documents): Collection => $documents->where('year', $this->selectedYear))
+                ->when(filled(trim($this->documentSearch)), fn (Collection $documents): Collection => $documents->filter(function (array $document): bool {
+                    $needle = str($this->documentSearch)->lower()->toString();
+                    return str(implode(' ', $document))->lower()->contains($needle);
+                })->values()),
         ];
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    private function foundationDocuments(array $schoolIds): Collection
+    {
+        $templates = FoundationSkTemplate::query()->pluck('name', 'id');
+
+        return FoundationSkDocument::query()
+            ->where(function (Builder $query) use ($schoolIds): void {
+                $query
+                    ->whereHas('user.employee', fn (Builder $query): Builder => $query->whereIn('school_id', $schoolIds))
+                    ->orWhereHas('user.memberships', fn (Builder $query): Builder => $query->active()->whereIn('school_id', $schoolIds));
+            })
+            ->with(['user.employee.school', 'user.memberships.school'])
+            ->latest()
+            ->get()
+            ->map(fn (FoundationSkDocument $document): array => [
+                'user' => $document->user?->name ?? 'User tidak tersedia',
+                'identifier' => $document->user?->employee?->employee_code
+                    ?? $document->user?->employee?->nip
+                    ?? $document->user?->employee?->nuptk
+                    ?? '-',
+                'school' => $document->user?->employee?->school?->name
+                    ?? $document->user?->memberships?->first(fn ($membership): bool => in_array($membership->school_id, $schoolIds, true))?->school?->name
+                    ?? '-',
+                'year' => (string) $document->tahun_sk,
+                'template' => $templates->get($document->sk_template_id, '-'),
+                'file' => $document->original_filename,
+                'uploadedAt' => $document->created_at?->format('d-m-Y H:i'),
+                'downloadUrl' => route('foundation-sk.documents.download', $document),
+            ]);
     }
 
     /**

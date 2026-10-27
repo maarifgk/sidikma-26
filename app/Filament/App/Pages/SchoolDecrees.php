@@ -36,7 +36,8 @@ class SchoolDecrees extends Page
     public static function canAccess(): bool
     {
         return auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH)
-            && auth()->user()->can('document.view');
+            && auth()->user()->can('document.view')
+            && auth()->user()->can('sk-yayasan.view');
     }
 
     public function getHeading(): string|Htmlable|null

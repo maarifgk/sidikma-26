@@ -24,7 +24,6 @@ class DocumentPolicy
     public function download(User $user, Document $document): bool
     {
         return ($user->isAdminInduk() && $user->can('document.download'))
-            || ($user->hasRole(User::ROLE_GURU_PEGAWAI) && $this->isAccessibleDecree($user, $document))
             || ($user->can('document.download') && $this->isAccessibleSchoolHeadDocument($user, $document))
             || ($user->can('document.download') && $this->isAccessibleDecree($user, $document));
     }
@@ -77,10 +76,6 @@ class DocumentPolicy
         if (! str_starts_with($document->document_type, 'foundation_decree:')
             || $document->owner_type !== User::class) {
             return false;
-        }
-
-        if ($user->hasRole(User::ROLE_GURU_PEGAWAI)) {
-            return (int) $document->owner_id === (int) $user->getKey();
         }
 
         if (! $user->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH)) {

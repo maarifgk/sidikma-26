@@ -144,7 +144,9 @@ class AppPanelProvider extends PanelProvider
                     ->group('HOMES')
                     ->icon('heroicon-o-document-text')
                     ->sort(3)
-                    ->visible(fn (): bool => auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH) ?? false)
+                    ->visible(fn (): bool => (auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH) ?? false)
+                        && (auth()->user()?->can('document.view') ?? false)
+                        && (auth()->user()?->can('sk-yayasan.view') ?? false))
                     ->url(fn (): string => SchoolDecrees::getUrl(panel: 'app', isAbsolute: false))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.app.pages.sk-yayasan')),
                 NavigationItem::make('Profil')

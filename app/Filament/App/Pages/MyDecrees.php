@@ -21,7 +21,7 @@ class MyDecrees extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasRole(User::ROLE_GURU_PEGAWAI) ?? false;
+        return false;
     }
 
     public function getHeading(): string|Htmlable|null

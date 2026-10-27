@@ -68,6 +68,9 @@ class ApplicationSettings extends Page
     {
         abort_unless(static::canAccess(), 403);
 
+        $this->serverKey = trim($this->serverKey);
+        $this->clientKey = trim($this->clientKey);
+
         $validated = $this->validate([
             'ownerName' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+\-\s().]+$/'],

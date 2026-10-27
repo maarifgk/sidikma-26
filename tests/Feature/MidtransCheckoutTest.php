@@ -151,6 +151,36 @@ class MidtransCheckoutTest extends TestCase
         $this->assertDatabaseHas('midtrans_transactions', ['source' => 'midtrans_production']);
     }
 
+    public function test_production_keys_with_copy_paste_whitespace_are_normalized(): void
+    {
+        ApplicationSetting::current()->update([
+            'server_key' => "  Mid-server-test\n",
+            'client_key' => "\tMid-client-test  ",
+            'midtrans_is_production' => true,
+        ]);
+        Http::fake(['app.midtrans.com/*' => Http::response(['token' => 'production-token'])]);
+        $checkout = app(MidtransPaymentService::class)->checkout($this->invoice);
+        $this->assertSame('Mid-client-test', $checkout['clientKey']);
+        $this->assertTrue($checkout['production']);
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Basic '.base64_encode('Mid-server-test:')));
+    }
+
+    public function test_production_keys_with_sandbox_setting_explain_saved_mode_without_sending_request(): void
+    {
+        ApplicationSetting::current()->update([
+            'server_key' => 'Mid-server-test',
+            'client_key' => 'Mid-client-test',
+            'midtrans_is_production' => false,
+        ]);
+        try {
+            app(MidtransPaymentService::class)->checkout($this->invoice);
+            $this->fail('A mismatched mode must not silently enable real payments');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('mode tersimpan Sandbox', $exception->errors()['payment'][0]);
+            Http::assertNothingSent();
+        }
+    }
+
     public function test_other_school_admin_cannot_create_checkout(): void
     {
         $user = User::factory()->create();

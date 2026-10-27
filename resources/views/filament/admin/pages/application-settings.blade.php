@@ -69,7 +69,7 @@
 
         <label style="display: grid; gap: 0.4rem;">
             <span>MODE MIDTRANS</span>
-            <select wire:model="midtransIsProduction" class="fi-input">
+            <select wire:model.boolean="midtransIsProduction" class="fi-input">
                 <option value="0">Sandbox — pengujian</option>
                 <option value="1">Production — pembayaran sungguhan</option>
             </select>

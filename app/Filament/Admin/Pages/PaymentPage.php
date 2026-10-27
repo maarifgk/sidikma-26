@@ -2,9 +2,11 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Resources\Billings\BillingResource;
 use App\Models\Employee;
 use App\Models\Foundation;
 use App\Models\PaymentFeeItem;
+use App\Models\PaymentInvoice;
 use App\Models\School;
 use App\Models\User;
 use Filament\Pages\Page;
@@ -13,6 +15,7 @@ use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Locked;
 
 class PaymentPage extends Page
 {
@@ -31,6 +34,9 @@ class PaymentPage extends Page
     public ?int $searchedEmployeeId = null;
 
     public bool $hasSearched = false;
+
+    #[Locked]
+    public ?int $paymentEmployeeId = null;
 
     public static function canAccess(): bool
     {
@@ -53,6 +59,8 @@ class PaymentPage extends Page
                         'feeSections' => $this->feeSections(),
                         'results' => $this->searchResults(),
                         'hasSearched' => $this->hasSearched,
+                        'paymentEmployee' => $this->paymentEmployee(),
+                        'unpaidInvoices' => $this->unpaidInvoices(),
                     ]),
             ]);
     }
@@ -64,6 +72,7 @@ class PaymentPage extends Page
 
     public function searchPayments(): void
     {
+        $this->paymentEmployeeId = null;
         $foundationId = Foundation::application()->getKey();
 
         $this->validate([
@@ -94,8 +103,55 @@ class PaymentPage extends Page
             'searchedSchoolId',
             'searchedEmployeeId',
             'hasSearched',
+            'paymentEmployeeId',
         ]);
         $this->resetValidation();
+    }
+
+    public function openPayment(int $employeeId): void
+    {
+        abort_unless(static::canAccess(), 403);
+        $this->paymentEmployeeId = $employeeId;
+        abort_unless($this->paymentEmployee() !== null, 403);
+    }
+
+    public function closePayment(): void
+    {
+        $this->paymentEmployeeId = null;
+    }
+
+    private function paymentEmployee(): ?Employee
+    {
+        if ($this->paymentEmployeeId === null || ! static::canAccess()) {
+            return null;
+        }
+
+        return Employee::query()
+            ->where('foundation_id', Foundation::application()->getKey())
+            ->whereIn('school_id', array_keys($this->schoolOptions()))
+            ->find($this->paymentEmployeeId);
+    }
+
+    private function unpaidInvoices(): Collection
+    {
+        $employee = $this->paymentEmployee();
+
+        if ($employee === null) {
+            return collect();
+        }
+
+        return BillingResource::getEloquentQuery()
+            ->where('foundation_id', $employee->foundation_id)
+            ->where('status', PaymentInvoice::STATUS_UNPAID)
+            ->where(function (Builder $query) use ($employee): void {
+                $query->where('employee_id', $employee->getKey());
+
+                if ($employee->user_id !== null) {
+                    $query->orWhere('user_id', $employee->user_id);
+                }
+            })
+            ->latest()
+            ->get();
     }
 
     /** @return array<int, string> */

@@ -52,15 +52,51 @@
             <header class="ui-card-head"><div><h2>Hasil Pencarian Pembayaran</h2><p>Maksimal 100 data ditampilkan pada satu pencarian.</p></div></header>
             <div class="ui-table-wrap">
                 <table class="ui-table">
-                    <thead><tr><th>No</th><th>EWANUGK</th><th>Nama</th><th>Asal Madrasah</th><th>Status</th></tr></thead>
+                    <thead><tr><th>No</th><th>EWANUGK</th><th>Nama</th><th>Asal Madrasah</th><th>Status Pegawai</th><th>Action</th></tr></thead>
                     <tbody>
                         @forelse ($results as $employee)
                             <tr>
                                 <td>{{ $loop->iteration }}</td><td>{{ $employee->employee_code ?: '-' }}</td><td>{{ $employee->name }}</td><td>{{ $employee->school?->name ?: '-' }}</td>
                                 <td><span class="ui-badge {{ $employee->is_active ? 'ui-badge-success' : 'ui-badge-muted' }}">{{ $employee->is_active ? 'Aktif' : 'Tidak Aktif' }}</span></td>
+                                <td>
+                                    <button type="button" class="ui-btn ui-btn-primary" wire:click="openPayment({{ $employee->getKey() }})" wire:loading.attr="disabled" wire:target="openPayment">Bayar</button>
+                                </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="ui-empty">Data pembayaran tidak ditemukan.</td></tr>
+                            <tr><td colspan="6" class="ui-empty">Data pembayaran tidak ditemukan.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
+
+    @if ($paymentEmployee)
+        <section class="ui-card" aria-label="Tagihan pembayaran">
+            <header class="ui-card-head">
+                <div><h2>Tagihan {{ $paymentEmployee->name }}</h2><p>Pembayaran online belum tersedia. Daftar berikut menampilkan tagihan yang belum lunas.</p></div>
+                <button type="button" class="ui-btn ui-btn-secondary" wire:click="closePayment">Tutup</button>
+            </header>
+            <div class="ui-table-wrap">
+                <table class="ui-table">
+                    <thead><tr><th>Nomor Invoice</th><th>Jenis Pembayaran</th><th>Tahun Ajaran</th><th>Nominal</th><th>Action</th></tr></thead>
+                    <tbody>
+                        @forelse ($unpaidInvoices as $invoice)
+                            <tr wire:key="payment-invoice-{{ $invoice->getKey() }}">
+                                <td>{{ $invoice->invoice_number }}</td>
+                                <td>{{ $invoice->description }}</td>
+                                <td>{{ $invoice->academic_year }}</td>
+                                <td class="ui-money">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</td>
+                                <td>
+                                    @can('update', $invoice)
+                                        <a class="ui-btn ui-btn-secondary" href="{{ \App\Filament\Resources\Billings\BillingResource::getUrl('edit', ['record' => $invoice], panel: 'admin') }}">Kelola Tagihan</a>
+                                    @else
+                                        <span>Hubungi admin untuk pembayaran</span>
+                                    @endcan
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="ui-empty">Tidak ada tagihan belum lunas yang dapat diakses untuk pegawai ini.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

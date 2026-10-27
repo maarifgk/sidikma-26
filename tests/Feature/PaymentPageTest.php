@@ -7,6 +7,7 @@ use App\Filament\Admin\Pages\PaymentPage;
 use App\Models\Employee;
 use App\Models\Foundation;
 use App\Models\PaymentFeeItem;
+use App\Models\PaymentInvoice;
 use App\Models\School;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -90,6 +91,39 @@ class PaymentPageTest extends TestCase
             ->assertSet('hasSearched', false)
             ->assertSet('schoolId', null)
             ->assertSet('employeeId', null);
+    }
+
+    public function test_pay_button_shows_only_selected_employee_unpaid_invoices(): void
+    {
+        foreach (['SELECTED' => PaymentInvoice::STATUS_UNPAID, 'PAID' => PaymentInvoice::STATUS_PAID, 'UNRELATED' => PaymentInvoice::STATUS_UNPAID] as $number => $status) {
+            PaymentInvoice::query()->create([
+                'foundation_id' => $this->school->foundation_id,
+                'school_id' => $this->school->getKey(),
+                'employee_id' => $number === 'UNRELATED' ? null : $this->employee->getKey(),
+                'academic_year' => '2026/2027',
+                'invoice_number' => 'INV-'.$number,
+                'description' => 'Tagihan '.$number,
+                'amount' => 25000,
+                'status' => $status,
+            ]);
+        }
+
+        Livewire::test(PaymentPage::class)
+            ->call('searchPayments')
+            ->assertSee('Action')
+            ->assertSee('Bayar')
+            ->call('openPayment', $this->employee->getKey())
+            ->assertSee('INV-SELECTED')
+            ->assertDontSee('INV-PAID')
+            ->assertDontSee('INV-UNRELATED')
+            ->assertSee('Pembayaran online belum tersedia')
+            ->call('closePayment')
+            ->assertDontSee('INV-SELECTED');
+
+        $this->assertDatabaseHas('payment_invoices', [
+            'invoice_number' => 'INV-SELECTED',
+            'status' => PaymentInvoice::STATUS_UNPAID,
+        ]);
     }
 
     public function test_admin_can_add_edit_and_remove_payment_information_columns(): void

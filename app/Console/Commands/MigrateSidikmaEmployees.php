@@ -179,6 +179,7 @@ class MigrateSidikmaEmployees extends Command
     /** @param array<string, mixed> $a */
     private function migrate(array $a): void
     {
+        $pgsql = DB::connection('sidikma_induk');
         $pgsql->transaction(function () use ($a, $pgsql): void {
             $now = now();
             foreach ($a['rows'] as $row) {

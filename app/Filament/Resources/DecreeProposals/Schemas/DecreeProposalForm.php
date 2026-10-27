@@ -44,6 +44,11 @@ class DecreeProposalForm
                     ->tel()
                     ->required()
                     ->maxLength(30),
+                TextInput::make('partner_admin_number')
+                    ->label('NOMOR MITRA ADMIN')
+                    ->placeholder('Masukan Nomor Mitra Admin')
+                    ->nullable()
+                    ->maxLength(50),
                 TextInput::make('email')
                     ->label('EMAIL')
                     ->placeholder('Masukan Email')

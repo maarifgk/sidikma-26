@@ -29,21 +29,30 @@ class DecreeProposalPolicy
 
     public function update(User $user, DecreeProposal $decreeProposal): bool
     {
-        return $user->can('approval.update');
+        return $user->can('approval.update')
+            && $this->canAccessProposal($user, $decreeProposal);
     }
 
     public function delete(User $user, DecreeProposal $decreeProposal): bool
     {
-        return $user->can('approval.delete');
+        return $user->can('approval.delete')
+            && $this->canAccessProposal($user, $decreeProposal);
     }
 
     public function restore(User $user, DecreeProposal $decreeProposal): bool
     {
-        return $user->can('approval.delete');
+        return $user->can('approval.delete')
+            && $this->canAccessProposal($user, $decreeProposal);
     }
 
     public function forceDelete(User $user, DecreeProposal $decreeProposal): bool
     {
         return false;
+    }
+
+    private function canAccessProposal(User $user, DecreeProposal $decreeProposal): bool
+    {
+        return $user->isAdminInduk()
+            || $user->accessibleSchoolIds()->contains($decreeProposal->employee?->school_id);
     }
 }

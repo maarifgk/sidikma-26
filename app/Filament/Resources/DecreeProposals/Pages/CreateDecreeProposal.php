@@ -90,6 +90,7 @@ class CreateDecreeProposal extends CreateRecord
 
             return DecreeProposal::query()->create([
                 'employee_id' => $employee->getKey(),
+                'partner_admin_number' => $data['partner_admin_number'] ?? null,
                 'status' => DecreeProposal::STATUS_SUBMITTED,
                 'photo_path' => $data['photo_path'],
                 'diploma_path' => $data['diploma_path'],

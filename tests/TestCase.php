@@ -32,6 +32,15 @@ abstract class TestCase extends BaseTestCase
             $app['config']->get('database.connections.sqlite'),
         );
 
+        $app['config']->set('database.connections.sqlite.journal_mode', 'WAL');
+        $app['config']->set('database.connections.sidikma_induk.journal_mode', 'WAL');
+
+        $sqlite = $app['db']->connection('sqlite');
+        $app['db']->purge('sidikma_induk');
+        $sidikma = $app['db']->connection('sidikma_induk');
+        $sidikma->setPdo($sqlite->getPdo());
+        $sidikma->setReadPdo($sqlite->getReadPdo());
+
         return $app;
     }
 }

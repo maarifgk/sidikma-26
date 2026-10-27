@@ -14,11 +14,14 @@ use App\Models\Foundation;
 use App\Models\Membership;
 use App\Models\School;
 use App\Models\User;
+use App\Policies\DecreeProposalPolicy;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class DecreeProposalResourceTest extends TestCase
@@ -246,5 +249,31 @@ class DecreeProposalResourceTest extends TestCase
 
         $this->assertTrue($proposal->submittedBy->is($schoolAdmin));
         $this->assertSame($school->getKey(), $proposal->employee->school_id);
+    }
+
+    public function test_record_actions_are_scoped_to_the_users_accessible_school(): void
+    {
+        $proposal = new DecreeProposal;
+        $proposal->setRelation('employee', (new Employee)->forceFill(['school_id' => 2]));
+        $policy = new DecreeProposalPolicy;
+
+        $schoolAdmin = Mockery::mock(User::class);
+        $schoolAdmin->shouldReceive('can')->with('approval.update')->andReturn(true);
+        $schoolAdmin->shouldReceive('can')->with('approval.delete')->andReturn(true);
+        $schoolAdmin->shouldReceive('isAdminInduk')->andReturn(false);
+        $schoolAdmin->shouldReceive('accessibleSchoolIds')->andReturn(collect([1]));
+
+        $this->assertFalse($policy->update($schoolAdmin, $proposal));
+        $this->assertFalse($policy->delete($schoolAdmin, $proposal));
+        $this->assertFalse($policy->restore($schoolAdmin, $proposal));
+        $this->assertTrue(Gate::forUser($this->admin)->allows('update', $proposal));
+        $this->assertTrue(Gate::forUser($this->admin)->allows('delete', $proposal));
+        $this->assertTrue(Gate::forUser($this->admin)->allows('restore', $proposal));
+
+        $guru = Mockery::mock(User::class);
+        $guru->shouldReceive('can')->andReturn(false);
+        $this->assertFalse($policy->view($guru, $proposal));
+        $this->assertFalse($policy->update($guru, $proposal));
+        $this->assertFalse($policy->delete($guru, $proposal));
     }
 }

@@ -1,33 +1,25 @@
-﻿# ATURAN CODEX - SIDIKMA 26
+Lakukan audit kualitas kode pada proyek Laravel ini untuk mengurangi AI Slop dan risiko kerusakan fitur.
 
-## 1. Analisis Sebelum Coding
-- Pelajari struktur proyek Laravel terlebih dahulu.
-- Pahami kode yang sudah berjalan.
-- Cari penyebab masalah sebelum melakukan perubahan.
-- Jangan membuat fungsi baru jika sudah tersedia.
+**Tahap 1 — Analisis**
+1. Pelajari arsitektur dan struktur proyek.
+2. Periksa kesesuaian kode dengan standar dan konvensi Laravel yang digunakan proyek.
+3. Identifikasi duplikasi kode, fungsi tidak terpakai, logika berlebihan, serta potensi bug.
+4. Periksa risiko pada autentikasi, hak akses pengguna, database, presensi, pembayaran, dan modul lainnya.
+5. Periksa apakah ada implementasi baru yang sebenarnya sudah tersedia dalam proyek.
 
-## 2. Pencegahan AI Slop
-- Hindari duplikasi kode.
-- Hindari penambahan file dan dependency tidak perlu.
-- Gunakan solusi sederhana dan mudah dipelihara.
-- Ikuti arsitektur dan konvensi proyek.
-- Jangan mengubah fitur di luar permintaan.
-- Jangan menghapus perubahan pengguna yang tidak terkait.
+**Tahap 2 — Laporan**
 
-## 3. Keamanan Aplikasi
-- Pertahankan data dan fungsi yang sudah berjalan.
-- Periksa validasi dan hak akses setiap role.
-- Jangan mengubah database atau migration tanpa izin.
-- Jangan mengubah konfigurasi server tanpa izin.
+Tampilkan:
+- Temuan masalah dan lokasi file.
+- Bukti masalah yang ditemukan.
+- Tingkat risiko: tinggi, sedang, atau rendah.
+- Rekomendasi perbaikan paling sederhana.
+- Potensi dampak terhadap fitur yang sudah berjalan.
 
-## 4. Pengujian
-- Periksa dampak perubahan pada fitur terkait.
-- Jalankan pengujian yang relevan jika tersedia.
-- Jangan mengklaim berhasil tanpa hasil pengujian.
-- Periksa git diff sebelum menyelesaikan pekerjaan.
+**ATURAN PENTING:**
+- Jangan langsung memperbaiki kode.
+- Jangan mengubah, membuat, atau menghapus file.
+- Jangan melakukan commit atau push GitHub.
+- Jangan mengubah database maupun konfigurasi server.
 
-## 5. Laporan Pekerjaan
-- Jelaskan masalah yang ditemukan.
-- Sebutkan file yang diubah dan alasannya.
-- Laporkan hasil pengujian dan risiko tersisa.
-- Jangan commit, push, merge, atau deploy tanpa izin.
+Saya ingin memeriksa laporan audit terlebih dahulu sebelum memutuskan perubahan yang akan dilakukan.

@@ -93,7 +93,6 @@ class AppPanelProvider extends PanelProvider
             ])
             ->navigationItems([
                 NavigationItem::make('Presensi')
-                    ->extraAttributes(['class' => 'app-nav-has-children'])
                     ->group('HOMES')
                     ->icon('heroicon-o-finger-print')
                     ->sort(1)
@@ -111,7 +110,6 @@ class AppPanelProvider extends PanelProvider
                             ->url(fn (): string => AttendanceSettings::getUrl(panel: 'app', isAbsolute: false)),
                     ]),
                 NavigationItem::make('Presensi Saya')
-                    ->extraAttributes(['class' => 'app-nav-has-children'])
                     ->group('HOMES')
                     ->icon('heroicon-o-finger-print')
                     ->sort(1)
@@ -164,7 +162,6 @@ class AppPanelProvider extends PanelProvider
                     ->url(fn (): string => MyComplaints::getUrl(panel: 'app', isAbsolute: false))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.app.pages.pengaduan-saya')),
                 NavigationItem::make('Administrasi')
-                    ->extraAttributes(['class' => 'app-nav-has-children'])
                     ->group('SERVICE')
                     ->icon('heroicon-o-folder-open')
                     ->sort(1)
@@ -208,7 +205,6 @@ class AppPanelProvider extends PanelProvider
                     ->url(fn (): string => SchoolHeadResource::getUrl(panel: 'app', isAbsolute: false))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.app.resources.school-heads.*')),
                 NavigationItem::make('Kelembagaan')
-                    ->extraAttributes(['class' => 'app-nav-has-children'])
                     ->group('SERVICE')
                     ->icon('heroicon-o-list-bullet')
                     ->sort(2)

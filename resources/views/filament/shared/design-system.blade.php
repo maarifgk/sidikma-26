@@ -23,14 +23,25 @@
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn > .fi-icon { width:1.15rem;height:1.15rem;flex-shrink:0;opacity:.9; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:focus-visible { outline:2px solid var(--ui-yellow-300);outline-offset:2px; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:hover { border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.1); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active>.fi-sidebar-item-btn { border-color:rgba(255,255,255,.28);background:linear-gradient(110deg,#fde047,#facc15);box-shadow:0 4px 12px rgba(59,38,7,.18); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-sidebar-item-has-active-child-items>.fi-sidebar-item-btn { border-color:rgba(250,204,21,.12);background:rgba(250,204,21,.13); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active > .sidikma-sidebar-item-row > .fi-sidebar-item-btn { border-color:rgba(255,255,255,.28);background:linear-gradient(110deg,#fde047,#facc15);box-shadow:0 4px 12px rgba(59,38,7,.18); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-sidebar-item-has-active-child-items > .sidikma-sidebar-item-row > .fi-sidebar-item-btn { border-color:rgba(250,204,21,.12);background:rgba(250,204,21,.13); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-label { color:rgba(255,255,255,.62);font-size:.6875rem;font-weight:700;letter-spacing:.075em;line-height:1.5; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-btn { min-height:1.5rem;padding-inline:.75rem; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-btn > .fi-icon { color:rgba(255,255,255,.7); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-collapse-btn { color:rgba(255,255,255,.58); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group-items { gap:.2rem; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group + .fi-sidebar-group { padding-top:1rem;border-top:1px solid rgba(255,255,255,.09); }
+    .sidikma-sidebar-item-row { position:relative;display:flex;align-items:center;min-width:0;color:rgba(255,255,255,.9); }
+    .sidikma-sidebar-item-row > .fi-sidebar-item-btn { width:100%;min-width:0;text-align:start; }
+    .sidikma-sidebar-item-row > button.fi-sidebar-item-btn { cursor:pointer; }
+    .sidikma-sidebar-parent-link { padding-inline-end:3rem!important; }
+    .sidikma-submenu-toggle { position:absolute;inset-inline-end:.25rem;display:flex;align-items:center;justify-content:center;width:2.5rem;height:2.5rem;border:0;border-radius:.5rem;background:transparent;color:rgba(255,255,255,.8);cursor:pointer; }
+    .sidikma-submenu-toggle:hover { background:rgba(255,255,255,.12); }
+    .fi-sidebar-item.fi-active > .sidikma-sidebar-item-row :is(.sidikma-submenu-toggle,.sidikma-submenu-chevron) { color:var(--ui-yellow-900); }
+    .sidikma-submenu-toggle:focus-visible { outline:2px solid var(--ui-yellow-300);outline-offset:1px; }
+    .sidikma-submenu-chevron { display:block;flex:none;width:.45rem;height:.45rem;margin-inline:auto .2rem;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-.1rem);transition:transform .16s ease; }
+    .sidikma-submenu-toggle .sidikma-submenu-chevron { margin:0; }
+    .sidikma-submenu-open > .sidikma-sidebar-item-row .sidikma-submenu-chevron { transform:rotate(225deg) translateY(-.1rem); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-nav-groups { gap:1.1rem; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items { display:flex;flex-direction:column;gap:.2rem;margin-block:.25rem;margin-inline-start:1.05rem;padding-inline-start:.5rem;border-inline-start:1px solid rgba(255,255,255,.16); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-btn { min-height:2.5rem;padding-block:.5rem;gap:.5rem; }
@@ -38,12 +49,12 @@
     body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-grouped-border-part,
     body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-grouped-border-part-not-first,
     body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-sidebar-item-grouped-border-part-not-last { background:rgba(255,255,255,.28); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-active > .fi-sidebar-item-btn .fi-sidebar-item-grouped-border-part { background:var(--ui-yellow-900); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-sub-group-items .fi-active > .sidikma-sidebar-item-row > .fi-sidebar-item-btn .fi-sidebar-item-grouped-border-part { background:var(--ui-yellow-900); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-badge-ctn { margin-inline-start:auto; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-badge-ctn .fi-badge { border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.12);color:#fff;box-shadow:none; }
     body:not(:has(.teacher-mobile)) .fi-sidebar :is(.fi-sidebar-item-label,.fi-sidebar-item-btn>.fi-icon) { color:rgba(255,255,255,.9); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar .fi-sidebar-item.fi-active>.fi-sidebar-item-btn :is(.fi-sidebar-item-label,.fi-icon) { color:var(--ui-yellow-900); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar .fi-sidebar-item.fi-sidebar-item-has-active-child-items>.fi-sidebar-item-btn :is(.fi-sidebar-item-label,.fi-icon) { color:var(--ui-yellow-300); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar .fi-sidebar-item.fi-active > .sidikma-sidebar-item-row > .fi-sidebar-item-btn :is(.fi-sidebar-item-label,.fi-icon) { color:var(--ui-yellow-900); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar .fi-sidebar-item.fi-sidebar-item-has-active-child-items > .sidikma-sidebar-item-row > .fi-sidebar-item-btn :is(.fi-sidebar-item-label,.fi-icon) { color:var(--ui-yellow-300); }
     /* The original 3:2 logo includes vertical breathing room in its canvas. */
     body:not(:has(.teacher-mobile)) .fi-sidebar-header { position:relative;height:104px;min-height:104px;justify-content:center;padding:2px 16px;border-bottom:1px solid var(--ui-border);background:#fff; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-header-logo-ctn { flex:0 1 80%;min-width:0; }
@@ -54,7 +65,7 @@
     body:not(:has(.teacher-mobile)) .fi-sidebar-nav::-webkit-scrollbar { width:5px; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-nav::-webkit-scrollbar-thumb { border-radius:999px;background:rgba(255,255,255,.22); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-group { gap:.45rem; }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label { font-weight:650; }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active > .sidikma-sidebar-item-row > .fi-sidebar-item-btn .fi-sidebar-item-label { font-weight:650; }
     @media (min-width:64rem) {
         /* Filament renders the desktop sidebar brand inside the existing topbar. */
         body.fi-body-has-topbar:not(:has(.teacher-mobile)) .fi-topbar { min-height:104px; }
@@ -68,6 +79,7 @@
         body:not(:has(.teacher-mobile)):has(.fi-sidebar:not(.fi-sidebar-open)) .fi-topbar-collapse-sidebar-btn-ctn { inset-inline-start:50%;transform:translate(-50%,-50%); }
         body:not(:has(.teacher-mobile)) .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-nav { padding-inline:.55rem; }
         body:not(:has(.teacher-mobile)) .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-btn { justify-content:center;padding-inline:.55rem; }
+        .fi-sidebar:not(.fi-sidebar-open) .sidikma-sidebar-parent-link { padding-inline:.55rem!important; }
         body:not(:has(.teacher-mobile)) .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-sub-group-items { margin-inline-start:0;padding-inline-start:0;border-inline-start:0; }
         body:not(:has(.teacher-mobile)) .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-group + .fi-sidebar-group { padding-top:.75rem; }
     }
@@ -81,7 +93,7 @@
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border) { min-height:2.25rem;gap:.65rem;margin-inline-start:.35rem;padding:.42rem .65rem;background:transparent;box-shadow:none; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border) .fi-sidebar-item-label { font-size:.75rem;font-weight:450;line-height:1.35; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border):hover { background:rgba(255,255,255,.1); }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active > .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border) { background:var(--ui-yellow-400);box-shadow:0 5px 13px rgba(113,63,18,.18); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active > .sidikma-sidebar-item-row > .fi-sidebar-item-btn:has(> .fi-sidebar-item-grouped-border) { background:var(--ui-yellow-400);box-shadow:0 5px 13px rgba(113,63,18,.18); }
     body:not(:has(.teacher-mobile)) :is(.fi-sidebar-item-grouped-border-part-not-first,.fi-sidebar-item-grouped-border-part-not-last) { display:none; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item-grouped-border-part { width:.35rem;height:.35rem;border-radius:999px;background:rgba(255,255,255,.48); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-item.fi-active .fi-sidebar-item-grouped-border-part { background:var(--ui-yellow-900); }

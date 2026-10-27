@@ -18,6 +18,7 @@ class MidtransTransactionSchemaTest extends TestCase
         $connection->useDefaultSchemaGrammar();
         Schema::shouldReceive('getColumnType')->with('users', 'id', true)->twice()
             ->andReturn('bigint(20)', 'bigint(20) unsigned');
+        Schema::shouldReceive('hasTable')->with('midtrans_transactions')->twice()->andReturn(false);
         Schema::shouldReceive('create')->twice()->with('midtrans_transactions', Mockery::on(
             function ($definition) use ($connection, &$statements): bool {
                 $blueprint = new Blueprint($connection, 'midtrans_transactions');

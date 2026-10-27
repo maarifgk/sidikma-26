@@ -17,6 +17,19 @@ Migrasi menambahkan mode Midtrans (default Sandbox), Snap token terenkripsi, dan
 
 Migrasi pembuatan Midtrans menyesuaikan signed/unsigned kolom `user_id` dengan `users.id` dan tetap mempertahankan foreign key. Tabel `users` tidak diubah. Migrasi awal yang sudah diterapkan di environment lain tidak perlu dijalankan ulang. Jika tabel Midtrans pernah terbentuk sebagian akibat migrasi gagal, periksa strukturnya sebelum melanjutkan; jangan menghapus tabel atau menambahkan catatan migrasi secara manual.
 
+## Pemulihan migrasi Midtrans yang terbentuk sebagian
+
+Jika pembuatan Midtrans gagal pada foreign key pengguna, tetapi tabelnya sudah ada dan migrasi checkout sudah berhasil, jangan hapus tabel atau mengulang migrasi checkout. Perbarui file `2026_09_21_030000_create_midtrans_transactions_table.php` ke versi yang memiliki method `resumeEmptyTable` terlebih dahulu.
+
+Untuk tabel Midtrans **kosong** yang telah diperiksa, jalankan kembali hanya:
+
+```bash
+php artisan migrate --path=database/migrations/2026_09_21_030000_create_midtrans_transactions_table.php --force
+php artisan optimize:clear
+```
+
+Migrasi melanjutkan signed/unsigned referensi pengguna, foreign key, indeks unik, dan CHECK nominal yang belum selesai. Kolom `snap_token` serta relasi yang ditambahkan migrasi checkout dipertahankan. Laravel akan mencatat migrasi pembuatan setelah proses berhasil; jangan menambahkan catatan tersebut secara manual. Jika tabel sudah memiliki transaksi atau struktur inti berbeda, pemulihan berhenti untuk pemeriksaan lebih lanjut tanpa menghapus transaksi.
+
 Di **Pengaturan → Aplikasi**, simpan server key, client key, dan mode yang sesuai. Key Sandbox memiliki awalan `SB-`. Jangan mencampur key Sandbox dan Production. Jangan mengirim server key melalui chat atau menaruhnya di JavaScript.
 
 Di dashboard Midtrans untuk mode yang sama, atur **Payment Notification URL**:

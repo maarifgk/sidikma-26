@@ -50,7 +50,10 @@ class CreateDecreeProposal extends CreateRecord
             ];
 
             // Hosting masih memakai kolom legacy yang wajib diisi.
-            if (Schema::hasColumn((new User)->getTable(), 'nama_lengkap')) {
+            $userModel = new User;
+            $userSchema = Schema::connection($userModel->getConnectionName() ?: config('database.default'));
+
+            if ($userSchema->hasColumn($userModel->getTable(), 'nama_lengkap')) {
                 $userData['nama_lengkap'] = $data['name'];
             }
 

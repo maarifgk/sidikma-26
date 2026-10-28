@@ -39,76 +39,7 @@ class CreateDecreeProposal extends CreateRecord
                 ->findOrFail($data['school_id']);
             $position = EmployeePosition::query()->findOrFail($data['position_id']);
 
-            $userData = [
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'phone_number' => $data['phone'],
-                'password' => $data['application_password'],
-                'is_active' => true,
-                'created_by' => $actor->getKey(),
-                'updated_by' => $actor->getKey(),
-            ];
-
-            // Hosting masih memakai kolom legacy yang wajib diisi.
-            $userModel = new User;
-            $userSchema = Schema::connection($userModel->getConnectionName() ?: config('database.default'));
-
-            $legacyUserData = [
-                'nama_lengkap' => $data['name'],
-                'nuptk' => filled($data['nuptk'] ?? null) ? $data['nuptk'] : '0',
-                'ptt_lulus' => $data['employment_status'] ?? '',
-                'p_studi' => mb_substr($data['program_study'] ?? '', 0, 50),
-                'nama_kelas' => '',
-                'nama_jurusan' => '',
-                'tempat_lahir' => $data['birth_place'] ?? '',
-                'skbfr2025' => '',
-                'role' => 2,
-                'thn_pelajaran' => (string) now()->year,
-                'kelas1' => 0,
-                'kelas2' => 0,
-                'kelas3' => 0,
-                'kelas4' => 0,
-                'kelas5' => 0,
-                'kelas6' => 0,
-                'kelas7' => 0,
-                'kelas8' => 0,
-                'kelas9' => 0,
-                'jumlahsiswa' => 0,
-                'akreditasi' => '',
-                'masaakreditasi' => '',
-                'statustanah' => '',
-                'luastanah' => '',
-                'sertifikat' => '',
-                'atasnama' => '',
-                'phbnu' => '',
-            ];
-
-            foreach ($legacyUserData as $column => $value) {
-                if ($userSchema->hasColumn($userModel->getTable(), $column)) {
-                    $userData[$column] = $value;
-                }
-            }
-
-            foreach (['no_tlp', 'status', 'image'] as $column) {
-                if ($userSchema->hasColumn($userModel->getTable(), $column)) {
-                    $userData[$column] = match ($column) {
-                        'no_tlp' => $data['phone'],
-                        'status' => 'ON',
-                        'image' => null,
-                    };
-                }
-            }
-
-            $generatedColumns = collect($userSchema->getColumns($userModel->getTable()))
-                ->filter(fn (array $column): bool => ($column['generation'] ?? null) !== null)
-                ->pluck('name')
-                ->all();
-
-            foreach ($generatedColumns as $column) {
-                unset($userData[$column]);
-            }
-
-            $account = User::query()->create($userData);
+            $account = $this->createUserAccount($data, $actor);
             $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
 
             $employeeData = [
@@ -196,5 +127,76 @@ class CreateDecreeProposal extends CreateRecord
         }
 
         return Employee::TYPE_PEGAWAI;
+    }
+
+    /**
+     * Create the account while supporting both the current and legacy users table.
+     *
+     * Legacy hosting databases contain required columns that are not part of the
+     * current User model, and some deployments expose generated columns. Sending
+     * the model a fixed payload makes the save dependent on one exact schema.
+     */
+    private function createUserAccount(array $data, User $actor): User
+    {
+        $account = new User;
+        $schema = Schema::connection($account->getConnectionName() ?: config('database.default'));
+        $table = $account->getTable();
+        $columns = collect($schema->getColumns($table))->keyBy('name');
+
+        $userData = [
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone_number' => $data['phone'],
+            'password' => $data['application_password'],
+            'is_active' => true,
+            'created_by' => $actor->getKey(),
+            'updated_by' => $actor->getKey(),
+            'nama_lengkap' => $data['name'],
+            'nuptk' => filled($data['nuptk'] ?? null) ? $data['nuptk'] : '0',
+            'ptt_lulus' => $data['employment_status'] ?? '',
+            'p_studi' => mb_substr($data['program_study'] ?? '', 0, 50),
+            'nama_kelas' => '',
+            'nama_jurusan' => '',
+            'tempat_lahir' => $data['birth_place'] ?? '',
+            'skbfr2025' => '',
+            'role' => 2,
+            'thn_pelajaran' => (string) now()->year,
+            'kelas1' => 0,
+            'kelas2' => 0,
+            'kelas3' => 0,
+            'kelas4' => 0,
+            'kelas5' => 0,
+            'kelas6' => 0,
+            'kelas7' => 0,
+            'kelas8' => 0,
+            'kelas9' => 0,
+            'jumlahsiswa' => 0,
+            'akreditasi' => '',
+            'masaakreditasi' => '',
+            'statustanah' => '',
+            'luastanah' => '',
+            'sertifikat' => '',
+            'atasnama' => '',
+            'phbnu' => '',
+            'no_tlp' => $data['phone'],
+            'status' => 'ON',
+            'image' => null,
+        ];
+
+        $generatedColumns = $columns
+            ->filter(fn (array $column): bool => ($column['generation'] ?? null) !== null
+                || str_contains(strtoupper((string) ($column['extra'] ?? '')), 'GENERATED'))
+            ->keys()
+            ->all();
+
+        $userData = collect($userData)
+            ->reject(fn (mixed $value, string $column): bool => in_array($column, $generatedColumns, true))
+            ->filter(fn (mixed $value, string $column): bool => $columns->has($column))
+            ->all();
+
+        $account->forceFill($userData);
+        $account->save();
+
+        return $account;
     }
 }

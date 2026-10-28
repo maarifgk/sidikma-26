@@ -89,6 +89,25 @@ class CreateDecreeProposal extends CreateRecord
                 }
             }
 
+            foreach (['no_tlp', 'status', 'image'] as $column) {
+                if ($userSchema->hasColumn($userModel->getTable(), $column)) {
+                    $userData[$column] = match ($column) {
+                        'no_tlp' => $data['phone'],
+                        'status' => 'ON',
+                        'image' => null,
+                    };
+                }
+            }
+
+            $generatedColumns = collect($userSchema->getColumns($userModel->getTable()))
+                ->filter(fn (array $column): bool => str_contains(strtoupper((string) ($column['extra'] ?? '')), 'GENERATED'))
+                ->pluck('name')
+                ->all();
+
+            foreach ($generatedColumns as $column) {
+                unset($userData[$column]);
+            }
+
             $account = User::query()->create($userData);
             $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
 

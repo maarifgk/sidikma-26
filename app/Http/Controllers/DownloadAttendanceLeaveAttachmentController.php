@@ -24,13 +24,30 @@ class DownloadAttendanceLeaveAttachmentController extends Controller
 
         abort_unless(filled($leaveRequest->attachment_path), 404);
 
-        $disk = Storage::disk(AttendanceRecord::DISK);
-        abort_unless($disk->exists($leaveRequest->attachment_path), 404);
+        $path = ltrim(str_replace('\\', '/', $leaveRequest->attachment_path), '/');
+        $candidates = [
+            [AttendanceRecord::DISK, $path],
+            ['local', $path],
+        ];
 
-        return $disk->download(
-            $leaveRequest->attachment_path,
-            basename($leaveRequest->attachment_path),
-            ['X-Content-Type-Options' => 'nosniff'],
-        );
+        if (str_starts_with($path, 'attendance/')) {
+            $candidates[] = [AttendanceRecord::DISK, substr($path, strlen('attendance/'))];
+        }
+
+        foreach ($candidates as [$diskName, $candidatePath]) {
+            $disk = Storage::disk($diskName);
+
+            if ($disk->exists($candidatePath)) {
+                return $disk->download(
+                    $candidatePath,
+                    basename($candidatePath),
+                    ['X-Content-Type-Options' => 'nosniff'],
+                );
+            }
+        }
+
+        abort(404);
+
+        return response()->noContent();
     }
 }

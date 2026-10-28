@@ -32,7 +32,6 @@ use App\Filament\Resources\Schools\SchoolResource;
 use App\Filament\Resources\SipinterUpdates\SipinterUpdateResource;
 use App\Filament\Resources\StudentEnrollments\StudentEnrollmentResource;
 use App\Http\Middleware\RedirectAdminIndukToAdminPanel;
-use App\Models\Employee;
 use App\Models\User;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -113,11 +112,7 @@ class AppPanelProvider extends PanelProvider
                     ->group('HOMES')
                     ->icon('heroicon-o-finger-print')
                     ->sort(1)
-                    ->visible(fn (): bool => Employee::query()
-                        ->where('user_id', auth()->id())
-                        ->where('is_active', true)
-                        ->whereNotNull('school_id')
-                        ->exists())
+                    ->visible(fn (): bool => MyAttendance::canAccess())
                     ->url(fn (): string => MyAttendance::getUrl(panel: 'app', isAbsolute: false))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.app.pages.presensi-saya*'))
                     ->childItems([

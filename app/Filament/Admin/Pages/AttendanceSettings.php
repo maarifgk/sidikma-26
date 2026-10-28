@@ -120,10 +120,6 @@ class AttendanceSettings extends Page
         $this->checkInStart = ($this->checkInHour === '12' ? '00' : $this->checkInHour).':'.$this->checkInMinute;
         $this->checkOutStart = ($this->checkOutHour === '12' ? '12' : str_pad((string) ((int) $this->checkOutHour + 12), 2, '0', STR_PAD_LEFT)).':'.$this->checkOutMinute;
         $this->checkOutEnd = $this->checkOutEnd ?: '17:00';
-        $this->lateAfter = Carbon::createFromFormat('H:i', $this->checkInStart)
-            ->addMinutes($this->lateToleranceMinutes)
-            ->format('H:i');
-
         $validated = $this->validate([
             'selectedSchoolId' => ['required', 'integer', Rule::in($this->accessibleAttendanceSchoolIds())],
             'checkInStart' => ['required', 'date_format:H:i', 'before:12:00'],

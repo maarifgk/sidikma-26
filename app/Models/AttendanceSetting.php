@@ -75,27 +75,36 @@ class AttendanceSetting extends Model
         return $points;
     }
 
-    public static function forSchool(int $schoolId): self
+    public static function forSchool(int $schoolId, bool $createIfMissing = true): self
     {
-        return static::query()->firstOrCreate(
-            ['school_id' => $schoolId],
-            [
-                'check_in_start' => '06:00:00',
-                'late_after' => '07:15:00',
-                'check_in_end' => '11:59:00',
-                'check_out_start' => '14:00:00',
-                'check_out_end' => '17:00:00',
-                'check_out_end' => '17:00:00',
-                'radius_meters' => config('attendance.default_radius_meters', 100),
-                'maximum_accuracy_meters' => config('attendance.maximum_accuracy_meters', 100),
-                'require_location' => false,
-                'detect_fake_gps' => false,
-                'require_selfie' => false,
-                'is_active' => true,
-                'enable_check_in' => true,
-                'enable_check_out' => true,
-            ],
-        );
+        $defaults = [
+            'school_id' => $schoolId,
+            'check_in_start' => '06:00:00',
+            'late_after' => '07:15:00',
+            'check_in_end' => '11:59:00',
+            'check_out_start' => '14:00:00',
+            'check_out_end' => '17:00:00',
+            'radius_meters' => config('attendance.default_radius_meters', 100),
+            'maximum_accuracy_meters' => config('attendance.maximum_accuracy_meters', 100),
+            'require_location' => false,
+            'detect_fake_gps' => false,
+            'require_selfie' => false,
+            'is_active' => true,
+            'enable_check_in' => true,
+            'enable_check_out' => true,
+        ];
+
+        $setting = static::query()->where('school_id', $schoolId)->first();
+
+        if ($setting) {
+            return $setting;
+        }
+
+        if (! $createIfMissing) {
+            return (new static)->forceFill($defaults);
+        }
+
+        return static::query()->create($defaults);
     }
 
     protected function casts(): array

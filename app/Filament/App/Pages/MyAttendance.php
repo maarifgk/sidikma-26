@@ -212,7 +212,7 @@ class MyAttendance extends Page
         $employee = static::employeeForUser(Auth::user(), true);
         $today = now(config('attendance.timezone'))->toDateString();
         $record = $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->whereDate('attendance_date', $today)->first() : null;
-        $setting = $employee?->school_id ? AttendanceSetting::forSchool($employee->school_id) : null;
+        $setting = $employee?->school_id ? AttendanceSetting::forSchool($employee->school_id, false) : null;
         $currentTime = now(config('attendance.timezone'))->format('H:i:s');
         $checkInEnd = $setting ? ($setting->check_in_end ?: $setting->check_out_start) : null;
 
@@ -239,7 +239,7 @@ class MyAttendance extends Page
             throw ValidationException::withMessages(['attendance' => 'Akun belum terhubung dengan data guru/pegawai dan sekolah.']);
         }
 
-        $setting = AttendanceSetting::forSchool($employee->school_id);
+        $setting = AttendanceSetting::forSchool($employee->school_id, false);
 
         if (! $setting->is_active) {
             throw ValidationException::withMessages(['attendance' => 'Presensi sekolah sedang dinonaktifkan.']);

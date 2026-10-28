@@ -12,6 +12,7 @@ use App\Http\Controllers\MapProviderTileController;
 use App\Http\Controllers\ViewAttendanceSelfieController;
 use App\Http\Controllers\ViewComplaintAttachmentController;
 use App\Http\Controllers\DownloadAttendanceLeaveAttachmentController;
+use App\Http\Controllers\ViewAttendanceLeaveAttachmentController;
 use App\Models\DecreeCorrectionRequest;
 use App\Http\Controllers\FoundationSkDocumentDownloadController;
 use App\Http\Controllers\FoundationSkTemplateController;
@@ -92,6 +93,9 @@ Route::get('/complaints/{complaint}/attachments/{attachment}', ViewComplaintAtta
 Route::get('/attendance/leave-requests/{leaveRequest}/attachment', DownloadAttendanceLeaveAttachmentController::class)
     ->middleware('auth')
     ->name('attendance.leave-requests.attachment.download');
+Route::get('/attendance/leave-requests/{leaveRequest}/attachment/view', ViewAttendanceLeaveAttachmentController::class)
+    ->middleware('auth')
+    ->name('attendance.leave-requests.attachment.view');
 Route::get('/decree-corrections/{record}/download/{type}', function (DecreeCorrectionRequest $record, string $type) {
     abort_unless(auth()->user()?->can('view', $record), 403);
     $path = match ($type) {

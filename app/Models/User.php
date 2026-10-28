@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Concerns\AddsAuditContext;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -62,7 +64,7 @@ use Spatie\Permission\Traits\HasRoles;
     'updated_by',
 ])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     public const ROLE_ADMIN_INDUK = 'admin-induk';
 
@@ -229,6 +231,17 @@ class User extends Authenticatable implements FilamentUser
             ]),
             default => false,
         };
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        $path = $this->getAttribute('avatar_path') ?: $this->getAttribute('image');
+
+        if (filled($path) && Storage::disk('public')->exists((string) $path)) {
+            return Storage::disk('public')->url((string) $path);
+        }
+
+        return asset('images/default-avatar.svg');
     }
 
     /**

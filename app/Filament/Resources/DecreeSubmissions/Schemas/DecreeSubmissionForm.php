@@ -27,7 +27,7 @@ class DecreeSubmissionForm
             Textarea::make('purpose')->label('Keterangan / Keperluan')->rows(4)->maxLength(3000)->disabled(fn (): bool => auth()->user()?->isAdminInduk() ?? false)->columnSpanFull(),
             Select::make('status')->label('Status Pengajuan')->options(DecreeSubmission::statusOptions())->default(DecreeSubmission::STATUS_UNDER_REVIEW)->required()->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)->native(false),
             Textarea::make('admin_notes')->label('Catatan Admin Induk')->rows(4)->maxLength(3000)->required(fn (Get $get): bool => in_array($get('status'), [DecreeSubmission::STATUS_REJECTED, DecreeSubmission::STATUS_REVISION_REQUIRED], true))->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)->columnSpanFull(),
-            FileUpload::make('result_file_path')->label('File SK Hasil')->disk('documents')->visibility('private')->directory('decree-submission-results')->acceptedFileTypes(['application/pdf'])->maxSize(1024000)->required(fn (Get $get): bool => $get('status') === DecreeSubmission::STATUS_COMPLETED)->downloadable(false)->openable(false)->previewable(false)->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)->helperText('PDF maksimal 1000 MB.'),
+            FileUpload::make('result_file_path')->label('File SK Hasil')->disk('documents')->visibility('private')->directory('decree-submission-results')->acceptedFileTypes(['application/pdf'])->maxSize(614400)->required(fn (Get $get): bool => $get('status') === DecreeSubmission::STATUS_COMPLETED)->downloadable(false)->openable(false)->previewable(false)->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)->helperText('PDF maksimal 600 MB.'),
         ])->columns(2);
     }
 }

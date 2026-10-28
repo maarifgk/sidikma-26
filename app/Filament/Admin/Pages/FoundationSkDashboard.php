@@ -6,7 +6,7 @@ use Filament\Pages\Page; use Filament\Schemas\Components\View; use Filament\Sche
 class FoundationSkDashboard extends Page
 {
  use WithFileUploads;
- private const MAX_FILE_KB=819200;
+ private const MAX_FILE_KB=614400;
  protected static ?string $slug='foundation-sk-dashboard'; protected static ?string $title='Dashboard SK Yayasan'; protected static bool $shouldRegisterNavigation=false;
  public int $tahunSk; public ?int $skTemplateId=null; public ?int $uploadAdminId=null; public ?int $schoolId=null; public array $files=[]; public $uploadFile=null; public array $result=[];
  public static function canAccess():bool{return auth()->user()?->isAdminInduk()||(auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH)&&auth()->user()->can('sk-yayasan.view'));}

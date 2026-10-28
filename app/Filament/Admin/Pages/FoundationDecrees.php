@@ -142,7 +142,7 @@ class FoundationDecrees extends Page
             'decreeDate' => ['required', 'date'],
             'decreeNotes' => ['nullable', 'string', 'max:2000'],
             'decreeTemplateId' => ['nullable', 'integer', 'exists:decree_templates,id'],
-            'decreeFile' => ['required', 'file', 'mimes:pdf', 'max:1024000'],
+            'decreeFile' => ['required', 'file', 'mimes:pdf', 'max:614400'],
         ], [
             'selectedUserId.required' => 'Cari dan pilih user terlebih dahulu.',
             'decreeFile.required' => 'Pilih file SK berformat PDF.',
@@ -235,7 +235,7 @@ class FoundationDecrees extends Page
             'decreeDate' => ['required', 'date'],
             'decreeNotes' => ['nullable', 'string', 'max:2000'],
             'decreeTemplateId' => ['nullable', 'integer', 'exists:decree_templates,id'],
-            'decreeFile' => ['nullable', 'file', 'mimes:pdf', 'max:1024000'],
+            'decreeFile' => ['nullable', 'file', 'mimes:pdf', 'max:614400'],
         ]);
 
         $year = date('Y', strtotime($validated['decreeDate']));
@@ -323,7 +323,7 @@ class FoundationDecrees extends Page
             'templatePaperSize' => ['required', 'in:'.implode(',', DecreeTemplate::PAPER_SIZES)],
             'templateOrientation' => ['required', 'in:'.implode(',', DecreeTemplate::ORIENTATIONS)],
             'templateIsActive' => ['boolean'],
-            'decreeTemplateFile' => [$fileRule, 'file', 'mimes:pdf,doc,docx', 'max:1024000'],
+            'decreeTemplateFile' => [$fileRule, 'file', 'mimes:pdf,doc,docx', 'max:614400'],
         ], [
             'decreeTemplateFile.required' => 'Pilih file template PDF, DOC, atau DOCX.',
         ]);
@@ -456,7 +456,7 @@ class FoundationDecrees extends Page
             'bulkTemplateId' => ['nullable', 'integer', 'exists:decree_templates,id'],
             'bulkSchoolId' => ['nullable', 'integer', 'exists:schools,id'],
             'bulkFiles' => ['required', 'array', 'min:1', 'max:100'],
-            'bulkFiles.*' => ['required', 'file', 'mimes:pdf', 'max:1024000'],
+            'bulkFiles.*' => ['required', 'file', 'mimes:pdf', 'max:614400'],
         ], [
             'bulkFiles.required' => 'Pilih minimal satu file SK berformat PDF.',
         ]);

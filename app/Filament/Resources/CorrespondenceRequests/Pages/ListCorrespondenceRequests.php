@@ -94,9 +94,9 @@ class ListCorrespondenceRequests extends ListRecords
                                 'application/msword',
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                             ])
-                            ->maxSize(819200)
+                            ->maxSize(614400)
                             ->downloadable()
-                            ->helperText('Format DOC atau DOCX, maksimal 800 MB.')
+                            ->helperText('Format DOC atau DOCX, maksimal 600 MB.')
                             ->columnSpan(5),
                         Toggle::make('is_selectable')
                             ->label('Dapat dipilih')

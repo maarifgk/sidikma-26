@@ -95,9 +95,9 @@ class ListDecreeProposals extends ListRecords
                                 'application/zip',
                                 'application/octet-stream',
                             ])
-                            ->maxSize(819200)
+                            ->maxSize(614400)
                             ->downloadable()
-                            ->helperText('Format Word DOC atau DOCX, maksimal 800 MB.')
+                            ->helperText('Format Word DOC atau DOCX, maksimal 600 MB.')
                             ->columnSpan(5),
                         Toggle::make('is_active')
                             ->label('Ditampilkan')

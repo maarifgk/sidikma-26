@@ -24,6 +24,7 @@ use Spatie\Permission\Traits\HasRoles;
 #[Fillable([
     'name',
     'nama_lengkap',
+    'nuptk',
     'email',
     'phone_number',
     'avatar_path',

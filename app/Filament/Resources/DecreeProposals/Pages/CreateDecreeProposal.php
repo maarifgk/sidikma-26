@@ -57,6 +57,10 @@ class CreateDecreeProposal extends CreateRecord
                 $userData['nama_lengkap'] = $data['name'];
             }
 
+            if ($userSchema->hasColumn($userModel->getTable(), 'nuptk')) {
+                $userData['nuptk'] = $data['nuptk'] ?? null;
+            }
+
             $account = User::query()->create($userData);
             $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
 

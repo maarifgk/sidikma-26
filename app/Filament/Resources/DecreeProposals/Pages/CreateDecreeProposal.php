@@ -53,12 +53,40 @@ class CreateDecreeProposal extends CreateRecord
             $userModel = new User;
             $userSchema = Schema::connection($userModel->getConnectionName() ?: config('database.default'));
 
-            if ($userSchema->hasColumn($userModel->getTable(), 'nama_lengkap')) {
-                $userData['nama_lengkap'] = $data['name'];
-            }
+            $legacyUserData = [
+                'nama_lengkap' => $data['name'],
+                'nuptk' => filled($data['nuptk'] ?? null) ? $data['nuptk'] : '0',
+                'ptt_lulus' => $data['employment_status'] ?? '',
+                'p_studi' => mb_substr($data['program_study'] ?? '', 0, 50),
+                'nama_kelas' => '',
+                'nama_jurusan' => '',
+                'tempat_lahir' => $data['birth_place'] ?? '',
+                'skbfr2025' => '',
+                'role' => 2,
+                'thn_pelajaran' => (string) now()->year,
+                'kelas1' => 0,
+                'kelas2' => 0,
+                'kelas3' => 0,
+                'kelas4' => 0,
+                'kelas5' => 0,
+                'kelas6' => 0,
+                'kelas7' => 0,
+                'kelas8' => 0,
+                'kelas9' => 0,
+                'jumlahsiswa' => 0,
+                'akreditasi' => '',
+                'masaakreditasi' => '',
+                'statustanah' => '',
+                'luastanah' => '',
+                'sertifikat' => '',
+                'atasnama' => '',
+                'phbnu' => '',
+            ];
 
-            if ($userSchema->hasColumn($userModel->getTable(), 'nuptk')) {
-                $userData['nuptk'] = $data['nuptk'] ?? null;
+            foreach ($legacyUserData as $column => $value) {
+                if ($userSchema->hasColumn($userModel->getTable(), $column)) {
+                    $userData[$column] = $value;
+                }
             }
 
             $account = User::query()->create($userData);

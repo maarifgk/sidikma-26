@@ -15,6 +15,7 @@ use App\Models\User;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CreateDecreeProposal extends CreateRecord
 {
@@ -38,7 +39,7 @@ class CreateDecreeProposal extends CreateRecord
                 ->findOrFail($data['school_id']);
             $position = EmployeePosition::query()->findOrFail($data['position_id']);
 
-            $account = User::query()->create([
+            $userData = [
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone_number' => $data['phone'],
@@ -46,7 +47,14 @@ class CreateDecreeProposal extends CreateRecord
                 'is_active' => true,
                 'created_by' => $actor->getKey(),
                 'updated_by' => $actor->getKey(),
-            ]);
+            ];
+
+            // Hosting masih memakai kolom legacy yang wajib diisi.
+            if (Schema::hasColumn((new User)->getTable(), 'nama_lengkap')) {
+                $userData['nama_lengkap'] = $data['name'];
+            }
+
+            $account = User::query()->create($userData);
             $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
 
             $employee = Employee::query()->create([

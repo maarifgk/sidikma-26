@@ -17,7 +17,11 @@ use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use League\Flysystem\UnableToRetrieveMetadata;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Throwable;
 
 class CreateDecreeProposal extends CreateRecord
 {
@@ -57,73 +61,85 @@ class CreateDecreeProposal extends CreateRecord
 
         abort_unless($actor instanceof User, 403);
 
-        return DB::transaction(function () use ($data, $actor): DecreeProposal {
-            $school = School::query()
-                ->accessibleTo($actor)
-                ->findOrFail($data['school_id']);
-            $position = EmployeePosition::query()->findOrFail($data['position_id']);
+        $storedPaths = [];
+        $temporaryFiles = $this->temporaryFilesFrom($data);
 
-            $account = $this->createUserAccount($data, $actor);
-            $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
+        try {
+            $proposal = DB::transaction(function () use ($data, $actor, &$storedPaths): DecreeProposal {
+                $school = School::query()
+                    ->accessibleTo($actor)
+                    ->findOrFail($data['school_id']);
+                $position = EmployeePosition::query()->findOrFail($data['position_id']);
 
-            $employeeData = [
-                'foundation_id' => $school->foundation_id,
-                'school_id' => $school->getKey(),
-                'user_id' => $account->getKey(),
-                'employee_code' => $data['employee_code'],
-                'name' => $data['name'],
-                'nuptk' => $data['nuptk'] ?? null,
-                'nip' => Employee::isPnsStatus($data['employment_status']) ? $data['nip'] : null,
-                'rank' => Employee::isPnsStatus($data['employment_status']) ? $data['rank'] : null,
-                'grade' => Employee::isPnsStatus($data['employment_status']) ? $data['grade'] : null,
-                'employee_type' => $this->resolveEmployeeType($data['employment_status'], $position),
-                'employment_status' => $data['employment_status'],
-                'last_education' => $data['last_education'],
-                'program_study' => $data['program_study'],
-                'birth_place' => $data['birth_place'],
-                'birth_date' => $data['birth_date'],
-                'phone' => $data['phone'],
-                'email' => $data['email'],
-                'avatar_path' => null,
-                'is_active' => true,
-            ];
+                $account = $this->createUserAccount($data, $actor);
+                $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
 
-            $employee = new Employee;
-            $employee->fill($employeeData);
-            $employee->setAttribute('nuptk', $employeeData['nuptk']);
-            $employee->save();
+                $employeeData = [
+                    'foundation_id' => $school->foundation_id,
+                    'school_id' => $school->getKey(),
+                    'user_id' => $account->getKey(),
+                    'employee_code' => $data['employee_code'],
+                    'name' => $data['name'],
+                    'nuptk' => $data['nuptk'] ?? null,
+                    'nip' => Employee::isPnsStatus($data['employment_status']) ? $data['nip'] : null,
+                    'rank' => Employee::isPnsStatus($data['employment_status']) ? $data['rank'] : null,
+                    'grade' => Employee::isPnsStatus($data['employment_status']) ? $data['grade'] : null,
+                    'employee_type' => $this->resolveEmployeeType($data['employment_status'], $position),
+                    'employment_status' => $data['employment_status'],
+                    'last_education' => $data['last_education'],
+                    'program_study' => $data['program_study'],
+                    'birth_place' => $data['birth_place'],
+                    'birth_date' => $data['birth_date'],
+                    'phone' => $data['phone'],
+                    'email' => $data['email'],
+                    'avatar_path' => null,
+                    'is_active' => true,
+                ];
 
-            Membership::query()->create([
-                'user_id' => $account->getKey(),
-                'foundation_id' => $school->foundation_id,
-                'school_id' => $school->getKey(),
-                'status' => 'active',
-                'start_date' => $data['assignment_start_date'],
-            ]);
+                $employee = new Employee;
+                $employee->fill($employeeData);
+                $employee->setAttribute('nuptk', $employeeData['nuptk']);
+                $employee->save();
 
-            $employee->assignments()->create([
-                'employee_position_id' => $position->getKey(),
-                'foundation_id' => $school->foundation_id,
-                'school_id' => $school->getKey(),
-                'start_date' => $data['assignment_start_date'],
-                'status' => EmployeeAssignment::STATUS_ACTIVE,
-                'is_primary' => true,
-            ]);
+                Membership::query()->create([
+                    'user_id' => $account->getKey(),
+                    'foundation_id' => $school->foundation_id,
+                    'school_id' => $school->getKey(),
+                    'status' => 'active',
+                    'start_date' => $data['assignment_start_date'],
+                ]);
 
-            return DecreeProposal::query()->create([
-                'employee_id' => $employee->getKey(),
-                'partner_admin_number' => $data['partner_admin_number'] ?? null,
-                'status' => DecreeProposal::STATUS_SUBMITTED,
-                'photo_path' => $data['photo_path'],
-                'diploma_path' => $data['diploma_path'],
-                'application_letter_path' => $data['application_letter_path'],
-                'service_statement_path' => $data['service_statement_path'],
-                'teaching_certificate_path' => $data['teaching_certificate_path'] ?? null,
-                'educator_certificate_path' => $data['educator_certificate_path'] ?? null,
-                'task_assignment_certificate_path' => $data['task_assignment_certificate_path'] ?? null,
-                'submitted_by' => $actor->getKey(),
-            ]);
-        });
+                $employee->assignments()->create([
+                    'employee_position_id' => $position->getKey(),
+                    'foundation_id' => $school->foundation_id,
+                    'school_id' => $school->getKey(),
+                    'start_date' => $data['assignment_start_date'],
+                    'status' => EmployeeAssignment::STATUS_ACTIVE,
+                    'is_primary' => true,
+                ]);
+
+                $files = $this->storeUploadedFiles($data);
+                $storedPaths = array_values(array_filter($files));
+
+                return DecreeProposal::query()->create([
+                    'employee_id' => $employee->getKey(),
+                    'partner_admin_number' => $data['partner_admin_number'] ?? null,
+                    'status' => DecreeProposal::STATUS_SUBMITTED,
+                    ...$files,
+                    'submitted_by' => $actor->getKey(),
+                ]);
+            });
+
+            foreach ($temporaryFiles as $file) {
+                $file->delete();
+            }
+
+            return $proposal;
+        } catch (Throwable $exception) {
+            Storage::disk('decree-proposals')->delete($storedPaths);
+
+            throw $exception;
+        }
     }
 
     protected function getCreateFormAction(): Action
@@ -168,6 +184,54 @@ class CreateDecreeProposal extends CreateRecord
         }
 
         $this->form->fill($this->data);
+    }
+
+    /** @return array<string, TemporaryUploadedFile> */
+    private function temporaryFilesFrom(array $data): array
+    {
+        return collect($data)
+            ->only(array_keys(self::fileDirectories()))
+            ->filter(fn (mixed $file): bool => $file instanceof TemporaryUploadedFile)
+            ->all();
+    }
+
+    /** @return array<string, string|null> */
+    private function storeUploadedFiles(array $data): array
+    {
+        $stored = [];
+
+        foreach (self::fileDirectories() as $field => $directory) {
+            $file = $data[$field] ?? null;
+
+            if ($file instanceof TemporaryUploadedFile) {
+                $name = Str::uuid()->toString().'.'.$file->getClientOriginalExtension();
+                $path = $file->storeAs($directory, $name, ['disk' => 'decree-proposals']);
+
+                if (! is_string($path) || $path === '') {
+                    throw new \RuntimeException("File {$field} gagal disimpan.");
+                }
+
+                $stored[$field] = $path;
+            } else {
+                $stored[$field] = is_string($file) ? $file : null;
+            }
+        }
+
+        return $stored;
+    }
+
+    /** @return array<string, string> */
+    private static function fileDirectories(): array
+    {
+        return [
+            'photo_path' => 'photos',
+            'diploma_path' => 'diplomas',
+            'application_letter_path' => 'application-letters',
+            'service_statement_path' => 'service-statements',
+            'teaching_certificate_path' => 'teaching-certificates',
+            'educator_certificate_path' => 'educator-certificates',
+            'task_assignment_certificate_path' => 'task-assignment-certificates',
+        ];
     }
 
     /**

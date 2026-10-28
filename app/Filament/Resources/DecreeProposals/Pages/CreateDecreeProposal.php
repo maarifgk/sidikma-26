@@ -13,9 +13,11 @@ use App\Models\Membership;
 use App\Models\School;
 use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use League\Flysystem\UnableToRetrieveMetadata;
 
 class CreateDecreeProposal extends CreateRecord
 {
@@ -26,6 +28,28 @@ class CreateDecreeProposal extends CreateRecord
     protected static ?string $title = 'Input Data Usulan Guru & Pegawai Baru';
 
     protected static bool $canCreateAnother = false;
+
+    /**
+     * A failed save can leave the browser holding a Livewire temporary-file
+     * reference whose physical file has already been removed. Filament then
+     * tries to read its size on the next click and the request becomes a 500.
+     * Convert that condition into a recoverable form notification instead.
+     */
+    public function create(bool $another = false): void
+    {
+        try {
+            parent::create($another);
+        } catch (UnableToRetrieveMetadata $exception) {
+            report($exception);
+            $this->clearTemporaryFileState();
+
+            Notification::make()
+                ->danger()
+                ->title('File unggahan sudah kedaluwarsa')
+                ->body('Pilih ulang semua file sebelum menekan Simpan kembali.')
+                ->send();
+        }
+    }
 
     protected function handleRecordCreation(array $data): Model
     {
@@ -127,6 +151,23 @@ class CreateDecreeProposal extends CreateRecord
         }
 
         return Employee::TYPE_PEGAWAI;
+    }
+
+    private function clearTemporaryFileState(): void
+    {
+        foreach ([
+            'photo_path',
+            'diploma_path',
+            'application_letter_path',
+            'service_statement_path',
+            'teaching_certificate_path',
+            'educator_certificate_path',
+            'task_assignment_certificate_path',
+        ] as $field) {
+            $this->data[$field] = null;
+        }
+
+        $this->form->fill($this->data);
     }
 
     /**

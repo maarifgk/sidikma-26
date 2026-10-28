@@ -66,10 +66,6 @@ Route::get('/learning-module-files/{learningModule}/download', DownloadLearningM
     ->middleware('auth')
     ->name('learning-module.download');
 
-Route::get('/learning-module-files/{learningModule}/download', DownloadLearningModuleController::class)
-    ->middleware('auth')
-    ->name('learning-module.download');
-
 Route::get('/attendance-records/{attendanceRecord}/selfie/{slot}', ViewAttendanceSelfieController::class)
     ->middleware('auth')
     ->name('attendance.selfie.view');

@@ -165,7 +165,7 @@ class CreateDecreeProposal extends CreateRecord
                 'service_statement_path' => $data['service_statement_path'],
                 'teaching_certificate_path' => $data['teaching_certificate_path'] ?? null,
                 'educator_certificate_path' => $data['educator_certificate_path'] ?? null,
-                'task_assignment_certificate_path' => $data['task_assignment_certificate_path'],
+                'task_assignment_certificate_path' => $data['task_assignment_certificate_path'] ?? null,
                 'submitted_by' => $actor->getKey(),
             ]);
         });

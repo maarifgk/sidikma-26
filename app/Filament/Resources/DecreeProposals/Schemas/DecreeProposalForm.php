@@ -234,8 +234,7 @@ class DecreeProposalForm
                     ->directory('task-assignment-certificates')
                     ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
                     ->maxSize(self::MAX_FILE_KB)
-                    ->helperText('Format PDF, JPG, atau PNG. Maksimal 600 MB.')
-                    ->required(),
+                    ->helperText('Opsional. Format PDF, JPG, atau PNG. Maksimal 600 MB.'),
             ])
             ->columns(2);
     }

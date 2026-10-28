@@ -65,7 +65,13 @@ class CreateDecreeProposal extends CreateRecord
         $temporaryFiles = $this->temporaryFilesFrom($data);
 
         try {
-            $proposal = DB::transaction(function () use ($data, $actor, &$storedPaths): DecreeProposal {
+            // Keep file I/O outside the database transaction. Large uploads can
+            // otherwise leave the MySQL connection idle until wait_timeout and
+            // cause "MySQL server has gone away" during rollback.
+            $files = $this->storeUploadedFiles($data);
+            $storedPaths = array_values(array_filter($files));
+
+            $proposal = DB::transaction(function () use ($data, $actor, $files): DecreeProposal {
                 $school = School::query()
                     ->accessibleTo($actor)
                     ->findOrFail($data['school_id']);
@@ -117,9 +123,6 @@ class CreateDecreeProposal extends CreateRecord
                     'status' => EmployeeAssignment::STATUS_ACTIVE,
                     'is_primary' => true,
                 ]);
-
-                $files = $this->storeUploadedFiles($data);
-                $storedPaths = array_values(array_filter($files));
 
                 return DecreeProposal::query()->create([
                     'employee_id' => $employee->getKey(),
@@ -200,21 +203,27 @@ class CreateDecreeProposal extends CreateRecord
     {
         $stored = [];
 
-        foreach (self::fileDirectories() as $field => $directory) {
-            $file = $data[$field] ?? null;
+        try {
+            foreach (self::fileDirectories() as $field => $directory) {
+                $file = $data[$field] ?? null;
 
-            if ($file instanceof TemporaryUploadedFile) {
-                $name = Str::uuid()->toString().'.'.$file->getClientOriginalExtension();
-                $path = $file->storeAs($directory, $name, ['disk' => 'decree-proposals']);
+                if ($file instanceof TemporaryUploadedFile) {
+                    $name = Str::uuid()->toString().'.'.$file->getClientOriginalExtension();
+                    $path = $file->storeAs($directory, $name, ['disk' => 'decree-proposals']);
 
-                if (! is_string($path) || $path === '') {
-                    throw new \RuntimeException("File {$field} gagal disimpan.");
+                    if (! is_string($path) || $path === '' || ! Storage::disk('decree-proposals')->exists($path)) {
+                        throw new \RuntimeException("File {$field} gagal disimpan.");
+                    }
+
+                    $stored[$field] = $path;
+                } else {
+                    $stored[$field] = is_string($file) ? $file : null;
                 }
-
-                $stored[$field] = $path;
-            } else {
-                $stored[$field] = is_string($file) ? $file : null;
             }
+        } catch (Throwable $exception) {
+            Storage::disk('decree-proposals')->delete(array_values(array_filter($stored)));
+
+            throw $exception;
         }
 
         return $stored;

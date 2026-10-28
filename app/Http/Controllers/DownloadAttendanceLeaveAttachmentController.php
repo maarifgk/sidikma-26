@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AttendanceLeaveRequest;
 use App\Models\AttendanceRecord;
 use App\Models\User;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 class DownloadAttendanceLeaveAttachmentController extends Controller
 {

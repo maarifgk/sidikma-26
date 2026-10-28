@@ -60,7 +60,7 @@ class CreateDecreeProposal extends CreateRecord
             $account = User::query()->create($userData);
             $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
 
-            $employee = Employee::query()->create([
+            $employeeData = [
                 'foundation_id' => $school->foundation_id,
                 'school_id' => $school->getKey(),
                 'user_id' => $account->getKey(),
@@ -80,7 +80,12 @@ class CreateDecreeProposal extends CreateRecord
                 'email' => $data['email'],
                 'avatar_path' => null,
                 'is_active' => true,
-            ]);
+            ];
+
+            $employee = new Employee;
+            $employee->fill($employeeData);
+            $employee->setAttribute('nuptk', $employeeData['nuptk']);
+            $employee->save();
 
             Membership::query()->create([
                 'user_id' => $account->getKey(),

@@ -16,6 +16,8 @@ use Illuminate\Validation\Rule;
 
 class DecreeProposalForm
 {
+    private const MAX_FILE_KB = 614400;
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
@@ -177,7 +179,8 @@ class DecreeProposalForm
                     ->directory('photos')
                     ->image()
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                    ->maxSize(1024000)
+                    ->maxSize(self::MAX_FILE_KB)
+                    ->helperText('Format JPG, PNG, atau WEBP. Maksimal 600 MB.')
                     ->required(),
                 FileUpload::make('diploma_path')
                     ->label('IJAZAH TERAKHIR (PDF)')
@@ -185,7 +188,8 @@ class DecreeProposalForm
                     ->visibility('private')
                     ->directory('diplomas')
                     ->acceptedFileTypes(['application/pdf'])
-                    ->maxSize(1024000)
+                    ->maxSize(self::MAX_FILE_KB)
+                    ->helperText('Format PDF. Maksimal 600 MB.')
                     ->required(),
                 FileUpload::make('application_letter_path')
                     ->label('SURAT PERMOHONAN (PDF)')
@@ -193,7 +197,8 @@ class DecreeProposalForm
                     ->visibility('private')
                     ->directory('application-letters')
                     ->acceptedFileTypes(['application/pdf'])
-                    ->maxSize(1024000)
+                    ->maxSize(self::MAX_FILE_KB)
+                    ->helperText('Format PDF. Maksimal 600 MB.')
                     ->required(),
                 FileUpload::make('service_statement_path')
                     ->label('SURAT PERNYATAAN SIAP BERHIDMAD (PDF)')
@@ -201,7 +206,8 @@ class DecreeProposalForm
                     ->visibility('private')
                     ->directory('service-statements')
                     ->acceptedFileTypes(['application/pdf'])
-                    ->maxSize(1024000)
+                    ->maxSize(self::MAX_FILE_KB)
+                    ->helperText('Format PDF. Maksimal 600 MB.')
                     ->required(),
                 FileUpload::make('teaching_certificate_path')
                     ->label('AKTA MENGAJAR (BAGI YANG MEMILIKI)')
@@ -210,7 +216,8 @@ class DecreeProposalForm
                     ->visibility('private')
                     ->directory('teaching-certificates')
                     ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
-                    ->maxSize(1024000),
+                    ->maxSize(self::MAX_FILE_KB)
+                    ->helperText('Format PDF, JPG, atau PNG. Maksimal 600 MB.'),
                 FileUpload::make('educator_certificate_path')
                     ->label('SERTIFIKAT PENDIDIK (BAGI YANG MEMILIKI)')
                     ->nullable()
@@ -218,14 +225,16 @@ class DecreeProposalForm
                     ->visibility('private')
                     ->directory('educator-certificates')
                     ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
-                    ->maxSize(1024000),
+                    ->maxSize(self::MAX_FILE_KB)
+                    ->helperText('Format PDF, JPG, atau PNG. Maksimal 600 MB.'),
                 FileUpload::make('task_assignment_certificate_path')
                     ->label('SERTIFIKAT PEMBAGIAN TUGAS DARI KEPALA SEKOLAH/MADRASAH')
                     ->disk('decree-proposals')
                     ->visibility('private')
                     ->directory('task-assignment-certificates')
                     ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
-                    ->maxSize(1024000)
+                    ->maxSize(self::MAX_FILE_KB)
+                    ->helperText('Format PDF, JPG, atau PNG. Maksimal 600 MB.')
                     ->required(),
             ])
             ->columns(2);

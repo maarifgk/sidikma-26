@@ -100,7 +100,7 @@ class CreateDecreeProposal extends CreateRecord
             }
 
             $generatedColumns = collect($userSchema->getColumns($userModel->getTable()))
-                ->filter(fn (array $column): bool => str_contains(strtoupper((string) ($column['extra'] ?? '')), 'GENERATED'))
+                ->filter(fn (array $column): bool => ($column['generation'] ?? null) !== null)
                 ->pluck('name')
                 ->all();
 

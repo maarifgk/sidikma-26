@@ -70,17 +70,18 @@ class CreateDecreeProposal extends CreateRecord
             // cause "MySQL server has gone away" during rollback.
             $files = $this->storeUploadedFiles($data);
             $storedPaths = array_values(array_filter($files));
+            $connectionName = (new Employee)->getConnectionName() ?: config('database.default');
 
-            $proposal = DB::transaction(function () use ($data, $actor, $files): DecreeProposal {
+            $proposal = DB::connection($connectionName)->transaction(function () use ($data, $actor, $files, $connectionName): DecreeProposal {
                 $school = School::query()
                     ->accessibleTo($actor)
                     ->where('is_active', true)
                     ->findOrFail($data['school_id']);
-                $position = EmployeePosition::query()
+                $position = EmployeePosition::on($connectionName)
                     ->where('is_active', true)
                     ->findOrFail($data['position_id']);
 
-                $account = $this->createUserAccount($data, $actor);
+                $account = $this->createUserAccount($data, $actor, $connectionName);
                 $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
 
                 $employeeData = [
@@ -110,7 +111,7 @@ class CreateDecreeProposal extends CreateRecord
                 $employee->setAttribute('nuptk', $employeeData['nuptk']);
                 $employee->save();
 
-                Membership::query()->create([
+                Membership::on($connectionName)->create([
                     'user_id' => $account->getKey(),
                     'foundation_id' => $school->foundation_id,
                     'school_id' => $school->getKey(),
@@ -118,7 +119,8 @@ class CreateDecreeProposal extends CreateRecord
                     'start_date' => $data['assignment_start_date'],
                 ]);
 
-                $employee->assignments()->create([
+                EmployeeAssignment::on($connectionName)->create([
+                    'employee_id' => $employee->getKey(),
                     'employee_position_id' => $position->getKey(),
                     'foundation_id' => $school->foundation_id,
                     'school_id' => $school->getKey(),
@@ -127,14 +129,14 @@ class CreateDecreeProposal extends CreateRecord
                     'is_primary' => true,
                 ]);
 
-                return DecreeProposal::query()->create([
+                return DecreeProposal::on($connectionName)->create([
                     'employee_id' => $employee->getKey(),
                     'partner_admin_number' => $data['partner_admin_number'] ?? null,
                     'status' => DecreeProposal::STATUS_SUBMITTED,
                     ...$files,
                     'submitted_by' => $actor->getKey(),
                 ]);
-            }, attempts: 3);
+            });
 
             foreach ($temporaryFiles as $file) {
                 $file->delete();
@@ -253,9 +255,10 @@ class CreateDecreeProposal extends CreateRecord
      * current User model, and some deployments expose generated columns. Sending
      * the model a fixed payload makes the save dependent on one exact schema.
      */
-    private function createUserAccount(array $data, User $actor): User
+    private function createUserAccount(array $data, User $actor, string $connectionName): User
     {
         $account = new User;
+        $account->setConnection($connectionName);
         $schema = Schema::connection($account->getConnectionName() ?: config('database.default'));
         $table = $account->getTable();
         $columns = collect($schema->getColumns($table))->keyBy('name');

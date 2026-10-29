@@ -8,6 +8,10 @@ trait AddsAuditContext
 {
     public function tapActivity(Activity $activity, string $eventName): void
     {
+        if (blank(config('activitylog.database_connection'))) {
+            $activity->setConnection($this->getConnectionName() ?: config('database.default'));
+        }
+
         $properties = $activity->properties ?? collect();
 
         $activity->properties = $properties->merge([

@@ -156,6 +156,14 @@ class AttendanceDashboard extends Page
             ->latest('check_in_at')
             ->limit(300)
             ->get();
+        $mapFailedEvents = (clone $eventQuery)
+            ->where('event_status', 'rejected')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->with(['employee', 'school'])
+            ->latest('checked_at')
+            ->limit(300)
+            ->get();
         $mapSchoolIds = $this->selectedSchoolId
             ? collect([$this->selectedSchoolId])
             : $schoolIds;
@@ -238,6 +246,16 @@ class AttendanceDashboard extends Page
                 'checkOut' => $record->formattedStoredTime('check_out_at', 'H:i') ? $record->formattedStoredTime('check_out_at', 'H:i').' WIB' : null,
                 'status' => AttendanceRecord::statusOptions()[$record->status] ?? $record->status,
                 'distance' => $record->check_in_distance !== null ? number_format((float) $record->check_in_distance, 0).' meter' : '-',
+            ])->values(),
+            'mapFailedAttendances' => $mapFailedEvents->map(fn (AttendanceEvent $event): array => [
+                'name' => $event->employee?->name ?? '-',
+                'type' => $event->employee?->employee_type === Employee::TYPE_GURU ? 'Guru' : 'Pegawai',
+                'school' => $event->school?->name ?? '-',
+                'latitude' => (float) $event->latitude,
+                'longitude' => (float) $event->longitude,
+                'checkedAt' => $event->checked_at?->timezone('Asia/Jakarta')->format('H:i').' WIB',
+                'status' => 'Gagal',
+                'reason' => $event->rejection_reason ?: ($event->rejection_code ?: 'Presensi ditolak'),
             ])->values(),
             'reportUrl' => AttendanceReport::getUrl(panel: $this->attendancePanelId(), isAbsolute: false),
             'settingsUrl' => AttendanceSettings::getUrl(panel: $this->attendancePanelId(), isAbsolute: false),

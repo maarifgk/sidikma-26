@@ -13,6 +13,14 @@ abstract class TestCase extends BaseTestCase
         $connection = $app['config']->get('database.default');
         $database = $app['config']->get("database.connections.{$connection}.database");
 
+        // SQLite :memory: creates a separate database for every PDO. Domain
+        // models use sidikma_induk, so use the repository's test file to let
+        // both connections see the same migrated schema.
+        if ($connection === 'sqlite' && $database === ':memory:') {
+            $database = 'database/testing.sqlite';
+            $app['config']->set('database.connections.sqlite.database', $database);
+        }
+
         $databaseIsTestingSqlite = $connection === 'sqlite'
             && in_array($database, [':memory:', 'database/testing.sqlite'], true);
 

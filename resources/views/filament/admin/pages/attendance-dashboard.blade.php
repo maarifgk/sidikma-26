@@ -55,9 +55,9 @@
     <section class="at-card"><header class="at-section-head">Ringkasan Harian</header><div class="at-latest"><div class="at-latest-row"><strong>Tanggal · Hadir · Terlambat · Izin · Cuti · Ditolak · Fake GPS · Pulang Awal</strong></div>@forelse($dailyCharts as $day)<div class="at-latest-row"><span>{{ $day['label'] }} · {{ $day['present'] }} · {{ $day['late'] }} · {{ $day['permit'] }} · {{ $day['leave'] }} · {{ $day['rejected'] }} · {{ $day['fake_gps'] }} · {{ $day['early'] }}</span></div>@empty<div class="at-latest-row">Belum ada data pada periode ini.</div>@endforelse</div></section>
 
     <section class="at-card at-map-wrap">
-        <header class="at-section-head">Peta Lokasi Presensi <small style="display:block;margin-top:.25rem;color:#8b9aab;font-size:.68rem;font-weight:500">Menampilkan titik presensi masuk pada periode terpilih dan area sekolah.</small></header>
+        <header class="at-section-head">Peta Lokasi Presensi <small style="display:block;margin-top:.25rem;color:#8b9aab;font-size:.68rem;font-weight:500">Menampilkan titik presensi masuk berhasil dan gagal pada periode terpilih serta area sekolah.</small><small style="display:block;margin-top:.35rem;font-size:.68rem;font-weight:700"><span style="color:#078844">● Berhasil</span> &nbsp; <span style="color:#dc2626">● Gagal</span></small></header>
         <div wire:ignore id="attendance-map-{{ $this->selectedSchoolId ?: 'all' }}-{{ $from }}-{{ $to }}" class="at-map"></div>
-        @if($mapSchools->isEmpty() && $mapAttendances->isEmpty())
+        @if($mapSchools->isEmpty() && $mapAttendances->isEmpty() && $mapFailedAttendances->isEmpty())
             <div class="at-map-empty">Belum ada koordinat sekolah atau lokasi presensi. Peta tetap ditampilkan; atur koordinat sekolah pada Pengaturan Presensi.</div>
         @endif
     </section>
@@ -69,6 +69,7 @@
         (() => {
             const schools = @js($mapSchools);
             const attendances = @js($mapAttendances);
+            const failedAttendances = @js($mapFailedAttendances);
             const renderMap = () => {
                 const element = document.getElementById(@js('attendance-map-'.($this->selectedSchoolId ?: 'all').'-'.$from.'-'.$to));
                 if (!element || !window.L) return;
@@ -94,6 +95,14 @@
                         const line = document.createElement(index === 0 ? 'strong' : 'div'); line.textContent = text; popup.appendChild(line);
                     });
                     L.circleMarker(point, { radius: 8, color: '#078844', fillColor: '#16a35b', fillOpacity: .9 }).addTo(map).bindPopup(popup);
+                });
+                failedAttendances.forEach((item) => {
+                    const point = [item.latitude, item.longitude]; bounds.push(point);
+                    const popup = document.createElement('div');
+                    [item.name, item.type+' · '+item.school, 'Waktu: '+(item.checkedAt || '-'), 'Status: Gagal', 'Keterangan: '+item.reason].forEach((text, index) => {
+                        const line = document.createElement(index === 0 ? 'strong' : 'div'); line.textContent = text; popup.appendChild(line);
+                    });
+                    L.circleMarker(point, { radius: 8, color: '#b91c1c', fillColor: '#ef4444', fillOpacity: .95 }).addTo(map).bindPopup(popup);
                 });
                 bounds.length ? map.fitBounds(bounds, { padding: [35,35], maxZoom: 17 }) : map.setView([-7.8,110.36],10);
                 setTimeout(() => map.invalidateSize(), 150);

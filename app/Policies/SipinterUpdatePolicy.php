@@ -15,7 +15,7 @@ class SipinterUpdatePolicy
     public function view(User $user, SipinterUpdate $sipinterUpdate): bool
     {
         return $user->can('document.view')
-            && ($user->isAdminInduk() || $user->accessibleSchoolIds()->contains($sipinterUpdate->school_id));
+            && $this->canAccessUpdate($user, $sipinterUpdate);
     }
 
     public function create(User $user): bool
@@ -25,11 +25,20 @@ class SipinterUpdatePolicy
 
     public function update(User $user, SipinterUpdate $sipinterUpdate): bool
     {
-        return $user->can('document.update');
+        return $user->can('document.update')
+            && $this->canAccessUpdate($user, $sipinterUpdate);
     }
 
     public function delete(User $user, SipinterUpdate $sipinterUpdate): bool
     {
-        return $user->can('document.delete');
+        return $user->can('document.delete')
+            && $this->canAccessUpdate($user, $sipinterUpdate);
+    }
+
+    private function canAccessUpdate(User $user, SipinterUpdate $sipinterUpdate): bool
+    {
+        return $user->isAdminInduk()
+            || (filled($sipinterUpdate->school_id)
+                && $user->accessibleSchoolIds()->contains($sipinterUpdate->school_id));
     }
 }

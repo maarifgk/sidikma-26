@@ -15,7 +15,7 @@ class CorrespondenceRequestPolicy
     public function view(User $user, CorrespondenceRequest $request): bool
     {
         return $user->can('document.view')
-            && ($user->isAdminInduk() || $user->accessibleSchoolIds()->contains($request->school_id));
+            && $this->canAccessRequest($user, $request);
     }
 
     public function create(User $user): bool
@@ -25,11 +25,20 @@ class CorrespondenceRequestPolicy
 
     public function update(User $user, CorrespondenceRequest $request): bool
     {
-        return $user->can('document.update');
+        return $user->can('document.update')
+            && $this->canAccessRequest($user, $request);
     }
 
     public function delete(User $user, CorrespondenceRequest $request): bool
     {
-        return $user->can('document.delete');
+        return $user->can('document.delete')
+            && $this->canAccessRequest($user, $request);
+    }
+
+    private function canAccessRequest(User $user, CorrespondenceRequest $request): bool
+    {
+        return $user->isAdminInduk()
+            || (filled($request->school_id)
+                && $user->accessibleSchoolIds()->contains($request->school_id));
     }
 }

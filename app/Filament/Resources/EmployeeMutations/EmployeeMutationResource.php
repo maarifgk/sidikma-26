@@ -52,11 +52,10 @@ class EmployeeMutationResource extends Resource
 
         $schoolIds = $user->accessibleSchoolIds();
 
-        return $query->where(function (Builder $query) use ($schoolIds, $user): void {
+        return $query->where(function (Builder $query) use ($schoolIds): void {
             $query
                 ->whereIn('origin_school_id', $schoolIds)
-                ->orWhereIn('destination_school_id', $schoolIds)
-                ->orWhere('submitted_by', $user->getKey());
+                ->orWhereIn('destination_school_id', $schoolIds);
         });
     }
 

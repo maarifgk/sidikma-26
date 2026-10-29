@@ -18,12 +18,7 @@ class EmployeeMutationPolicy
             return false;
         }
 
-        $schoolIds = $user->accessibleSchoolIds();
-
-        return $user->isAdminInduk()
-            || $employeeMutation->submitted_by === $user->getKey()
-            || $schoolIds->contains($employeeMutation->origin_school_id)
-            || $schoolIds->contains($employeeMutation->destination_school_id);
+        return $this->canAccessMutation($user, $employeeMutation);
     }
 
     public function create(User $user): bool
@@ -33,11 +28,24 @@ class EmployeeMutationPolicy
 
     public function update(User $user, EmployeeMutation $employeeMutation): bool
     {
-        return $user->can('approval.update');
+        return $user->can('approval.update')
+            && $this->canAccessMutation($user, $employeeMutation);
     }
 
     public function delete(User $user, EmployeeMutation $employeeMutation): bool
     {
-        return $user->can('approval.delete');
+        return $user->can('approval.delete')
+            && $this->canAccessMutation($user, $employeeMutation);
+    }
+
+    private function canAccessMutation(User $user, EmployeeMutation $employeeMutation): bool
+    {
+        $schoolIds = $user->accessibleSchoolIds();
+
+        return $user->isAdminInduk()
+            || (filled($employeeMutation->origin_school_id)
+                && $schoolIds->contains($employeeMutation->origin_school_id))
+            || (filled($employeeMutation->destination_school_id)
+                && $schoolIds->contains($employeeMutation->destination_school_id));
     }
 }

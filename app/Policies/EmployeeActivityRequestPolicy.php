@@ -15,7 +15,7 @@ class EmployeeActivityRequestPolicy
     public function view(User $user, EmployeeActivityRequest $request): bool
     {
         return $user->can('approval.view')
-            && ($user->isAdminInduk() || $user->accessibleSchoolIds()->contains($request->school_id));
+            && $this->canAccessRequest($user, $request);
     }
 
     public function create(User $user): bool
@@ -25,11 +25,20 @@ class EmployeeActivityRequestPolicy
 
     public function update(User $user, EmployeeActivityRequest $request): bool
     {
-        return $user->can('approval.update');
+        return $user->can('approval.update')
+            && $this->canAccessRequest($user, $request);
     }
 
     public function delete(User $user, EmployeeActivityRequest $request): bool
     {
-        return $user->can('approval.delete');
+        return $user->can('approval.delete')
+            && $this->canAccessRequest($user, $request);
+    }
+
+    private function canAccessRequest(User $user, EmployeeActivityRequest $request): bool
+    {
+        return $user->isAdminInduk()
+            || (filled($request->school_id)
+                && $user->accessibleSchoolIds()->contains($request->school_id));
     }
 }

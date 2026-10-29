@@ -43,8 +43,12 @@ class CreateEmployeeMutation extends CreateRecord
         $destinationSchoolId = filled($data['destination_school_id'] ?? null)
             ? (int) $data['destination_school_id']
             : null;
-        $originSchool = filled($originSchoolId) ? School::query()->findOrFail($originSchoolId) : null;
-        $destinationSchool = filled($destinationSchoolId) ? School::query()->findOrFail($destinationSchoolId) : null;
+        $originSchool = filled($originSchoolId)
+            ? School::query()->where('is_active', true)->findOrFail($originSchoolId)
+            : null;
+        $destinationSchool = filled($destinationSchoolId)
+            ? School::query()->where('is_active', true)->findOrFail($destinationSchoolId)
+            : null;
 
         if (! $user->isAdminInduk()) {
             $accessibleSchoolIds = $user->accessibleSchoolIds();

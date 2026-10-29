@@ -74,8 +74,11 @@ class CreateDecreeProposal extends CreateRecord
             $proposal = DB::transaction(function () use ($data, $actor, $files): DecreeProposal {
                 $school = School::query()
                     ->accessibleTo($actor)
+                    ->where('is_active', true)
                     ->findOrFail($data['school_id']);
-                $position = EmployeePosition::query()->findOrFail($data['position_id']);
+                $position = EmployeePosition::query()
+                    ->where('is_active', true)
+                    ->findOrFail($data['position_id']);
 
                 $account = $this->createUserAccount($data, $actor);
                 $account->syncRoles([User::ROLE_GURU_PEGAWAI]);

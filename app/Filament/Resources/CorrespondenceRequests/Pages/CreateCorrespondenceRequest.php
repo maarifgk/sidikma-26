@@ -27,6 +27,7 @@ class CreateCorrespondenceRequest extends CreateRecord
 
         $school = School::query()
             ->accessibleTo($user)
+            ->where('is_active', true)
             ->findOrFail($data['school_id']);
         $data['school_name'] = $school->name;
         $data['correspondence_type_id'] = null;

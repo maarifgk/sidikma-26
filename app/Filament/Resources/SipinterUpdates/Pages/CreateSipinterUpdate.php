@@ -26,6 +26,7 @@ class CreateSipinterUpdate extends CreateRecord
 
         $data['school_id'] = School::query()
             ->accessibleTo($user)
+            ->where('is_active', true)
             ->findOrFail($data['school_id'])
             ->getKey();
         $data['uploaded_by'] = $user->getKey();

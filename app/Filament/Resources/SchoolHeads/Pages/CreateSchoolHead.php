@@ -26,7 +26,7 @@ class CreateSchoolHead extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = auth()->user();
-        abort_unless($user instanceof User && School::query()->accessibleTo($user)->whereKey($data['school_id'])->exists(), 403);
+        abort_unless($user instanceof User && School::query()->accessibleTo($user)->where('is_active', true)->whereKey($data['school_id'])->exists(), 403);
 
         $path = $data['latest_sk_upload'] ?? null;
         $originalName = $data['latest_sk_original_name'] ?? null;

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SipinterUpdates\Schemas;
 
 use App\Models\School;
 use App\Models\SipinterUpdate;
+use App\Models\User;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -27,7 +28,10 @@ class SipinterUpdateForm
                     ->preload()
                     ->live()
                     ->afterStateUpdated(function (mixed $state, Set $set): void {
-                        $school = School::query()->find($state);
+                        $user = auth()->user();
+                        $school = $user instanceof User
+                            ? School::query()->accessibleTo($user)->find($state)
+                            : null;
 
                         $set('npsn', $school?->npsn);
                         $set('school_address', $school?->address);

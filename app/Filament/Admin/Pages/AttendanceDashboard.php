@@ -156,6 +156,15 @@ class AttendanceDashboard extends Page
             ->latest('check_in_at')
             ->limit(300)
             ->get();
+        $mapAcceptedEvents = (clone $eventQuery)
+            ->where('event_status', 'accepted')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereNotIn('attendance_id', $mapRecords->pluck('id')->filter())
+            ->with(['employee', 'school'])
+            ->latest('checked_at')
+            ->limit(300)
+            ->get();
         $mapFailedEvents = (clone $eventQuery)
             ->where('event_status', 'rejected')
             ->whereNotNull('latitude')
@@ -246,7 +255,17 @@ class AttendanceDashboard extends Page
                 'checkOut' => $record->formattedStoredTime('check_out_at', 'H:i') ? $record->formattedStoredTime('check_out_at', 'H:i').' WIB' : null,
                 'status' => AttendanceRecord::statusOptions()[$record->status] ?? $record->status,
                 'distance' => $record->check_in_distance !== null ? number_format((float) $record->check_in_distance, 0).' meter' : '-',
-            ])->values(),
+            ])->concat($mapAcceptedEvents->map(fn (AttendanceEvent $event): array => [
+                'name' => $event->employee?->name ?? '-',
+                'type' => $event->employee?->employee_type === Employee::TYPE_GURU ? 'Guru' : 'Pegawai',
+                'school' => $event->school?->name ?? '-',
+                'latitude' => (float) $event->latitude,
+                'longitude' => (float) $event->longitude,
+                'checkIn' => $event->checked_at?->timezone('Asia/Jakarta')->format('H:i').' WIB',
+                'checkOut' => null,
+                'status' => 'Hadir',
+                'distance' => '-',
+            ]))->values(),
             'mapFailedAttendances' => $mapFailedEvents->map(fn (AttendanceEvent $event): array => [
                 'name' => $event->employee?->name ?? '-',
                 'type' => $event->employee?->employee_type === Employee::TYPE_GURU ? 'Guru' : 'Pegawai',

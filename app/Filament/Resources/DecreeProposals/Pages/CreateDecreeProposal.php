@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use League\Flysystem\UnableToRetrieveMetadata;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Spatie\Permission\Guard;
@@ -269,7 +270,48 @@ class CreateDecreeProposal extends CreateRecord
         $table = $account->getTable();
         $columns = collect($schema->getColumns($table))->keyBy('name');
 
-        $userData = [
+        $userData = self::buildUserData($data, $actor);
+
+        $generatedColumns = $columns
+            ->filter(fn (array $column): bool => ($column['generation'] ?? null) !== null
+                || str_contains(strtoupper((string) ($column['extra'] ?? '')), 'GENERATED'))
+            ->keys()
+            ->all();
+
+        foreach ([
+            'nama_lengkap' => ['field' => 'name', 'label' => 'Nama lengkap'],
+            'nuptk' => ['field' => 'nuptk', 'label' => 'NUPTK'],
+            'ptt_lulus' => ['field' => 'employment_status', 'label' => 'Status kepegawaian'],
+        ] as $column => $field) {
+            $definition = $columns->get($column);
+
+            if (! is_array($definition)
+                || in_array($column, $generatedColumns, true)
+                || ($definition['nullable'] ?? true)
+                || filled($userData[$column] ?? null)) {
+                continue;
+            }
+
+            throw ValidationException::withMessages([
+                $field['field'] => "{$field['label']} wajib diisi sesuai struktur database aplikasi.",
+            ]);
+        }
+
+        $userData = collect($userData)
+            ->reject(fn (mixed $value, string $column): bool => in_array($column, $generatedColumns, true))
+            ->filter(fn (mixed $value, string $column): bool => $columns->has($column))
+            ->all();
+
+        $account->forceFill($userData);
+        $account->save();
+
+        return $account;
+    }
+
+    /** @return array<string, mixed> */
+    private static function buildUserData(array $data, User $actor): array
+    {
+        return [
             'name' => $data['name'],
             'email' => $data['email'],
             'phone_number' => $data['phone'],
@@ -278,7 +320,7 @@ class CreateDecreeProposal extends CreateRecord
             'created_by' => $actor->getKey(),
             'updated_by' => $actor->getKey(),
             'nama_lengkap' => $data['name'],
-            'nuptk' => filled($data['nuptk'] ?? null) ? $data['nuptk'] : '0',
+            'nuptk' => $data['nuptk'] ?? null,
             'ptt_lulus' => $data['employment_status'] ?? '',
             'p_studi' => mb_substr($data['program_study'] ?? '', 0, 50),
             'nama_kelas' => '',
@@ -308,21 +350,5 @@ class CreateDecreeProposal extends CreateRecord
             'status' => 'ON',
             'image' => null,
         ];
-
-        $generatedColumns = $columns
-            ->filter(fn (array $column): bool => ($column['generation'] ?? null) !== null
-                || str_contains(strtoupper((string) ($column['extra'] ?? '')), 'GENERATED'))
-            ->keys()
-            ->all();
-
-        $userData = collect($userData)
-            ->reject(fn (mixed $value, string $column): bool => in_array($column, $generatedColumns, true))
-            ->filter(fn (mixed $value, string $column): bool => $columns->has($column))
-            ->all();
-
-        $account->forceFill($userData);
-        $account->save();
-
-        return $account;
     }
 }

@@ -6,6 +6,7 @@ use App\Filament\Resources\DecreeProposals\Pages\CreateDecreeProposal;
 use App\Models\Activity;
 use App\Models\Employee;
 use App\Models\EmployeeAssignment;
+use App\Models\User;
 use Illuminate\Config\Repository;
 use Illuminate\Container\Container;
 use Illuminate\Foundation\Application;
@@ -27,6 +28,34 @@ class DecreeProposalTransactionTest extends TestCase
         self::assertStringContainsString('Role::on($connectionName)', $source);
         self::assertStringContainsString('$account->setConnection($connectionName)', $source);
         self::assertStringNotContainsString('attempts:', $source);
+    }
+
+    public function test_legacy_required_user_fields_are_mapped_without_a_fake_nuptk(): void
+    {
+        $method = (new ReflectionClass(CreateDecreeProposal::class))->getMethod('buildUserData');
+        $method->setAccessible(true);
+
+        $data = [
+            'name' => 'Test Guru',
+            'email' => 'test@example.test',
+            'phone' => '081234567890',
+            'application_password' => 'password-test',
+            'nuptk' => '1234567890123456',
+            'employment_status' => 'GTY',
+            'program_study' => 'Pendidikan',
+            'birth_place' => 'Gunungkidul',
+        ];
+
+        $mapped = $method->invoke(null, $data, new User);
+
+        self::assertSame('Test Guru', $mapped['nama_lengkap']);
+        self::assertSame('1234567890123456', $mapped['nuptk']);
+        self::assertSame('GTY', $mapped['ptt_lulus']);
+
+        $data['nuptk'] = null;
+        $mappedWithoutNuptk = $method->invoke(null, $data, new User);
+
+        self::assertNull($mappedWithoutNuptk['nuptk']);
     }
 
     public function test_assignment_primary_check_uses_the_model_connection(): void

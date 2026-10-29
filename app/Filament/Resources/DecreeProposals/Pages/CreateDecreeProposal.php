@@ -134,7 +134,7 @@ class CreateDecreeProposal extends CreateRecord
                     ...$files,
                     'submitted_by' => $actor->getKey(),
                 ]);
-            });
+            }, attempts: 3);
 
             foreach ($temporaryFiles as $file) {
                 $file->delete();

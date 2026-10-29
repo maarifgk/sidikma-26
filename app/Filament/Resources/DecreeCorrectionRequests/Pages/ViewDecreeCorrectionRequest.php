@@ -12,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Support\Facades\Gate;
 
 class ViewDecreeCorrectionRequest extends ViewRecord
 {
@@ -40,10 +41,11 @@ class ViewDecreeCorrectionRequest extends ViewRecord
                 ->modalHeading('Proses Pengajuan Perbaikan SK')
                 ->modalDescription('Periksa permintaan, tentukan status, dan unggah SK hasil jika disetujui.')
                 ->modalSubmitActionLabel('Simpan')
-                ->visible(fn (): bool => ! in_array($this->record->status, [
-                    DecreeCorrectionRequest::STATUS_APPROVED,
-                    DecreeCorrectionRequest::STATUS_REJECTED,
-                ], true))
+                ->visible(fn (): bool => Gate::allows('update', $this->record)
+                    && ! in_array($this->record->status, [
+                        DecreeCorrectionRequest::STATUS_APPROVED,
+                        DecreeCorrectionRequest::STATUS_REJECTED,
+                    ], true))
                 ->fillForm(fn (): array => [
                     'status' => $this->record->status === DecreeCorrectionRequest::STATUS_DRAFT
                         ? DecreeCorrectionRequest::STATUS_PROCESSING
@@ -81,6 +83,8 @@ class ViewDecreeCorrectionRequest extends ViewRecord
                         ->required(fn (Get $get): bool => $get('status') === DecreeCorrectionRequest::STATUS_APPROVED),
                 ])
                 ->action(function (array $data): void {
+                    Gate::authorize('update', $this->record);
+
                     $status = $data['status'];
                     $updates = [
                         'admin_notes' => $data['admin_notes'] ?? null,

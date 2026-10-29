@@ -13,6 +13,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class ProposalRequestsTable
@@ -131,11 +132,12 @@ class ProposalRequestsTable
                     ->rows(3)
                     ->maxLength(5000),
             ])
-            ->visible(fn (ProposalRequest $record): bool => self::canReview()
+            ->visible(fn (ProposalRequest $record): bool => self::canReview($record)
                 && $record->process_status === ProposalRequest::STATUS_SUBMITTED)
             ->action(function (ProposalRequest $record, array $data, Action $action): void {
                 $user = auth()->user();
-                abort_unless($user instanceof User && $user->isAdminInduk(), 403);
+                abort_unless($user instanceof User, 403);
+                Gate::forUser($user)->authorize('review', $record);
 
                 DB::transaction(function () use ($record, $data, $user): void {
                     $request = ProposalRequest::query()
@@ -175,11 +177,12 @@ class ProposalRequestsTable
                     ->rows(4)
                     ->maxLength(5000),
             ])
-            ->visible(fn (ProposalRequest $record): bool => self::canReview()
+            ->visible(fn (ProposalRequest $record): bool => self::canReview($record)
                 && $record->process_status === ProposalRequest::STATUS_SUBMITTED)
             ->action(function (ProposalRequest $record, array $data, Action $action): void {
                 $user = auth()->user();
-                abort_unless($user instanceof User && $user->isAdminInduk(), 403);
+                abort_unless($user instanceof User, 403);
+                Gate::forUser($user)->authorize('review', $record);
 
                 DB::transaction(function () use ($record, $data, $user): void {
                     $request = ProposalRequest::query()
@@ -202,10 +205,10 @@ class ProposalRequestsTable
             });
     }
 
-    private static function canReview(): bool
+    private static function canReview(ProposalRequest $record): bool
     {
         $user = auth()->user();
 
-        return $user instanceof User && $user->isAdminInduk();
+        return $user instanceof User && Gate::forUser($user)->allows('review', $record);
     }
 }

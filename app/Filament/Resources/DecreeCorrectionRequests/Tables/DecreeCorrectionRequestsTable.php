@@ -16,6 +16,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 
 class DecreeCorrectionRequestsTable
 {
@@ -36,7 +37,7 @@ class DecreeCorrectionRequestsTable
                 ->label('Proses')
                 ->icon('heroicon-o-pencil-square')
                 ->color('warning')
-                ->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)
+                ->visible(fn (DecreeCorrectionRequest $record): bool => Gate::allows('update', $record))
                 ->modalHeading('Proses Pengajuan Perbaikan SK')
                 ->modalDescription('Periksa pengajuan, ubah status proses, dan unggah SK hasil perbaikan bila proses selesai.')
                 ->modalSubmitActionLabel('Simpan')
@@ -77,6 +78,8 @@ class DecreeCorrectionRequestsTable
                         ->required(fn (Get $get): bool => $get('status') === DecreeCorrectionRequest::STATUS_APPROVED),
                 ])
                 ->action(function (DecreeCorrectionRequest $record, array $data): void {
+                    Gate::authorize('update', $record);
+
                     $status = $data['status'];
                     $updates = [
                         'status' => $status,

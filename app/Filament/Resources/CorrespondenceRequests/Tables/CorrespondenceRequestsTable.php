@@ -10,6 +10,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class CorrespondenceRequestsTable
@@ -71,7 +72,7 @@ class CorrespondenceRequestsTable
                     ->label('File Balasan Surat')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('success')
-                    ->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)
+                    ->visible(fn (CorrespondenceRequest $record): bool => Gate::allows('update', $record))
                     ->fillForm(fn (CorrespondenceRequest $record): array => [
                         'response_file_path' => $record->response_file_path,
                     ])
@@ -88,6 +89,8 @@ class CorrespondenceRequestsTable
                             ->helperText('Format PDF, maksimal 1000 MB.'),
                     ])
                     ->action(function (CorrespondenceRequest $record, array $data): void {
+                        Gate::authorize('update', $record);
+
                         $record->update([
                             'response_file_path' => $data['response_file_path'],
                             'process_status' => CorrespondenceRequest::STATUS_COMPLETED,

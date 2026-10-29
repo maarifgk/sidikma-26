@@ -11,6 +11,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class EmployeeActivityRequestsTable
@@ -63,7 +64,9 @@ class EmployeeActivityRequestsTable
                     ->requiresConfirmation()
                     ->modalHeading('Proses permohonan nonaktif?')
                     ->modalDescription('Guru/pegawai akan diubah menjadi tidak aktif pada Master Data.')
-                    ->visible(fn (EmployeeActivityRequest $record): bool => $record->status === EmployeeActivityRequest::STATUS_SUBMITTED && filled($record->employee_id))
+                    ->visible(fn (EmployeeActivityRequest $record): bool => $record->status === EmployeeActivityRequest::STATUS_SUBMITTED
+                        && filled($record->employee_id)
+                        && Gate::allows('update', $record))
                     ->action(function (EmployeeActivityRequest $record, Action $action): void {
                         $user = auth()->user();
                         abort_unless($user instanceof User, 403);
@@ -73,12 +76,15 @@ class EmployeeActivityRequestsTable
                                 ->lockForUpdate()
                                 ->findOrFail($record->getKey());
 
+                            Gate::forUser($user)->authorize('update', $request);
+
                             if ($request->status !== EmployeeActivityRequest::STATUS_SUBMITTED) {
                                 return;
                             }
 
                             $employee = Employee::query()
                                 ->lockForUpdate()
+                                ->where('school_id', $request->school_id)
                                 ->findOrFail($request->employee_id);
                             $employee->update(['is_active' => false]);
 

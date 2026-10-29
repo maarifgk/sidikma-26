@@ -9,6 +9,7 @@ use App\Models\DecreeCorrectionRequest;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Gate;
 
 class EditDecreeCorrectionRequest extends EditRecord
 {
@@ -23,8 +24,11 @@ class EditDecreeCorrectionRequest extends EditRecord
                 ->label($this->record->status === DecreeCorrectionRequest::STATUS_REVISION ? 'Ajukan Kembali' : 'Ajukan Perbaikan')
                 ->color('warning')
                 ->requiresConfirmation()
-                ->visible(fn (): bool => ! (auth()->user()?->isAdminInduk() ?? false))
+                ->visible(fn (): bool => Gate::allows('update', $this->record)
+                    && ! (auth()->user()?->isAdminInduk() ?? false))
                 ->action(function (): void {
+                    Gate::authorize('update', $this->record);
+
                     $this->save(shouldRedirect: false);
                     $this->record->update([
                         'status' => DecreeCorrectionRequest::STATUS_SUBMITTED,

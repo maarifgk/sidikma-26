@@ -18,6 +18,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class DecreeProposalsTable
 {
@@ -72,7 +73,7 @@ class DecreeProposalsTable
                     ->modalHeading('Proses Usulan SK Guru/Pegawai Baru')
                     ->modalSubmitActionLabel('Simpan')
                     ->modalWidth(Width::SevenExtraLarge)
-                    ->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)
+                    ->visible(fn (DecreeProposal $record): bool => Gate::allows('update', $record))
                     ->fillForm(fn (DecreeProposal $record): array => [
                         'employee_code' => $record->employee?->employee_code,
                         'name' => $record->employee?->name,
@@ -116,9 +117,13 @@ class DecreeProposalsTable
                             ->options(DecreeProposal::statusOptions())->required()->native(false),
                     ])
                     ->action(function (DecreeProposal $record, array $data): void {
+                        Gate::authorize('update', $record);
+
                         DB::transaction(function () use ($record, $data): void {
                             $employee = $record->employee()->lockForUpdate()->firstOrFail();
-                            $position = EmployeePosition::query()->findOrFail($data['position_id']);
+                            $position = EmployeePosition::query()
+                                ->where('is_active', true)
+                                ->findOrFail($data['position_id']);
 
                             $employee->update([
                                 'employee_code' => strtoupper(trim($data['employee_code'])),

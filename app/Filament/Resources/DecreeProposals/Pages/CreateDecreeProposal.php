@@ -10,6 +10,7 @@ use App\Models\Employee;
 use App\Models\EmployeeAssignment;
 use App\Models\EmployeePosition;
 use App\Models\Membership;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
 use Filament\Actions\Action;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use League\Flysystem\UnableToRetrieveMetadata;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Spatie\Permission\Guard;
 use Throwable;
 
 class CreateDecreeProposal extends CreateRecord
@@ -82,7 +84,11 @@ class CreateDecreeProposal extends CreateRecord
                     ->findOrFail($data['position_id']);
 
                 $account = $this->createUserAccount($data, $actor, $connectionName);
-                $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
+                $role = Role::on($connectionName)
+                    ->where('name', User::ROLE_GURU_PEGAWAI)
+                    ->where('guard_name', Guard::getDefaultName($account))
+                    ->firstOrFail();
+                $account->syncRoles([$role]);
 
                 $employeeData = [
                     'foundation_id' => $school->foundation_id,

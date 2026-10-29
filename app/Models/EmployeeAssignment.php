@@ -118,7 +118,7 @@ class EmployeeAssignment extends Model
             return;
         }
 
-        $hasAnotherActivePrimaryAssignment = self::query()
+        $hasAnotherActivePrimaryAssignment = $this->newQuery()
             ->where('employee_id', $this->employee_id)
             ->where('status', self::STATUS_ACTIVE)
             ->where('is_primary', true)

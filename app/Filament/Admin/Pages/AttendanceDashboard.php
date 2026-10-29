@@ -46,9 +46,14 @@ class AttendanceDashboard extends Page
     {
         $today = now('Asia/Jakarta')->toDateString();
         $schoolIds = $this->accessibleAttendanceSchoolIds();
-        $latestAttendanceDate = AttendanceRecord::query()
-            ->whereIn('school_id', $schoolIds)
-            ->max('attendance_date');
+        $latestAttendanceDate = collect([
+            AttendanceRecord::query()
+                ->whereIn('school_id', $schoolIds)
+                ->max('attendance_date'),
+            AttendanceEvent::query()
+                ->whereIn('school_id', $schoolIds)
+                ->max('attendance_date'),
+        ])->filter()->max();
 
         $this->dateFrom = $latestAttendanceDate
             ? Carbon::parse($latestAttendanceDate)->toDateString()

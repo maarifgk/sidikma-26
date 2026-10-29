@@ -98,6 +98,29 @@ class AttendanceDashboardFeatureTest extends TestCase
             ->assertSee('1');
     }
 
+    public function test_dashboard_opens_the_latest_rejected_event_date_when_no_record_exists(): void
+    {
+        $this->actingAs($this->admin);
+        AttendanceEvent::create([
+            'user_id' => $this->admin->id,
+            'employee_id' => $this->employee->id,
+            'school_id' => $this->one->id,
+            'attendance_date' => '2026-10-28',
+            'event_type' => 'check_in',
+            'event_status' => 'rejected',
+            'rejection_code' => 'outside_geofence',
+            'rejection_reason' => 'Di luar area presensi',
+            'latitude' => '-7.8000000',
+            'longitude' => '110.3600000',
+            'checked_at' => '2026-10-28 01:00:00',
+        ]);
+
+        filament()->setCurrentPanel(filament()->getPanel('admin'));
+        Livewire::test(AttendanceDashboard::class)
+            ->assertSet('dateFrom', '2026-10-28')
+            ->assertSet('dateTo', '2026-10-28');
+    }
+
     public function test_attendance_time_uses_the_database_local_timezone(): void
     {
         $this->actingAs($this->admin);

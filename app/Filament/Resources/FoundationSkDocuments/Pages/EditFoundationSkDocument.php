@@ -1,27 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\FoundationSkDocuments\Pages;
-
-use App\Filament\Resources\FoundationSkDocuments\FoundationSkDocumentResource;
-use App\Models\User;
-use App\Services\FoundationSkDocumentService;
-use Filament\Resources\Pages\EditRecord;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\UploadedFile;
-
-class EditFoundationSkDocument extends EditRecord
-{
-    protected static string $resource = FoundationSkDocumentResource::class;
-
-    protected function handleRecordUpdate(Model $record, array $data): Model
-    {
-        $file = $data['file'] ?? null;
-        unset($data['file']);
-        $templateId = filled($data['sk_template_id'] ?? null) ? (int) $data['sk_template_id'] : null;
-        if ($file instanceof UploadedFile) {
-            return app(FoundationSkDocumentService::class)->store(User::findOrFail($data['user_id']), (int) $data['tahun_sk'], $templateId, $file, auth()->user(), replaceExisting: true);
-        }$record->update(['user_id' => $data['user_id'], 'tahun_sk' => $data['tahun_sk'], 'sk_template_id' => $templateId]);
-
-        return $record->fresh();
-    }
-}
+use App\Filament\Resources\FoundationSkDocuments\FoundationSkDocumentResource;use App\Models\FoundationSkDocument;use App\Models\User;use App\Services\FoundationSkDocumentService;use Filament\Resources\Pages\EditRecord;use Illuminate\Database\Eloquent\Model;
+class EditFoundationSkDocument extends EditRecord { protected static string $resource=FoundationSkDocumentResource::class; protected function handleRecordUpdate(Model $record,array $data): Model { $file=$data['file']??null;unset($data['file']);$templateId=filled($data['sk_template_id']??null)?(int)$data['sk_template_id']:null;if($file instanceof \Illuminate\Http\UploadedFile){return app(FoundationSkDocumentService::class)->store(User::findOrFail($data['user_id']),(int)$data['tahun_sk'],$templateId,$file,auth()->user());}$record->update(['user_id'=>$data['user_id'],'tahun_sk'=>$data['tahun_sk'],'sk_template_id'=>$templateId]);return $record->fresh(); } }

@@ -56,17 +56,104 @@
 
     <section class="at-card at-map-wrap">
         <header class="at-section-head">Peta Lokasi Presensi <small style="display:block;margin-top:.25rem;color:#8b9aab;font-size:.68rem;font-weight:500">Menampilkan titik presensi masuk berhasil dan gagal pada periode terpilih serta area sekolah.</small><small style="display:block;margin-top:.35rem;font-size:.68rem;font-weight:700"><span style="color:#078844">● Berhasil</span> &nbsp; <span style="color:#dc2626">● Gagal</span></small></header>
-        <div wire:ignore id="attendance-map-{{ $this->selectedSchoolId ?: 'all' }}-{{ $from }}-{{ $to }}" class="at-map"></div>
+        <div wire:key="attendance-map-state-{{ $this->selectedSchoolId ?: 'all' }}-{{ $from }}-{{ $to }}" x-data="attendanceMap(@js($mapSchools), @js($mapAttendances), @js($mapFailedAttendances))" x-init="initialize()">
+            <div wire:ignore x-ref="map" id="attendance-map-{{ $this->selectedSchoolId ?: 'all' }}-{{ $from }}-{{ $to }}" class="at-map"></div>
+        </div>
         @if($mapSchools->isEmpty() && $mapAttendances->isEmpty() && $mapFailedAttendances->isEmpty())
             <div class="at-map-empty">Belum ada koordinat sekolah atau lokasi presensi. Peta tetap ditampilkan; atur koordinat sekolah pada Pengaturan Presensi.</div>
         @endif
     </section>
 </div>
 
+@assets
 <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}">
-    <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
+<script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
+@endassets
+
+@script
+<script>
+window.attendanceMap = (schools, attendances, failedAttendances) => {
+    let map = null;
+
+    return {
+        schools: Array.isArray(schools) ? schools : [],
+        attendances: Array.isArray(attendances) ? attendances : [],
+        failedAttendances: Array.isArray(failedAttendances) ? failedAttendances : [],
+        initialize() {
+            this.$nextTick(() => this.renderMap());
+        },
+        destroy() {
+            map?.remove();
+            map = null;
+        },
+        validPoint(item) {
+            const latitude = Number(item.latitude);
+            const longitude = Number(item.longitude);
+
+            return Number.isFinite(latitude) && Number.isFinite(longitude)
+                ? [latitude, longitude]
+                : null;
+        },
+        renderMap() {
+            if (!window.L || !this.$refs.map) return;
+
+            map?.remove();
+            this.$refs.map.replaceChildren();
+            map = L.map(this.$refs.map, { scrollWheelZoom: true, maxZoom: 19, zoomSnap: 1, zoomAnimation: false, fadeAnimation: false });
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, maxNativeZoom: 19, detectRetina: false, updateWhenZooming: false, updateWhenIdle: true, keepBuffer: 2, crossOrigin: true, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+            const bounds = [];
+
+            this.schools.forEach((school) => {
+                const point = this.validPoint(school);
+                if (!point) return;
+                bounds.push(point);
+                L.marker(point).addTo(map).bindPopup(document.createTextNode('Lokasi ' + school.name));
+                if (Array.isArray(school.polygon) && school.polygon.length >= 3) {
+                    const polygonPoints = school.polygon.map((item) => this.validPoint(item)).filter(Boolean);
+                    polygonPoints.forEach((item) => bounds.push(item));
+                    L.polygon(polygonPoints, { color: '#1757bb', fillColor: '#5a91df', fillOpacity: .15, smoothFactor: 0 }).addTo(map);
+                } else {
+                    L.circle(point, { radius: Number(school.radius) || 200, color: '#1757bb', fillColor: '#5a91df', fillOpacity: .12 }).addTo(map);
+                }
+            });
+
+            this.attendances.forEach((item) => {
+                const point = this.validPoint(item);
+                if (!point) return;
+                bounds.push(point);
+                const popup = document.createElement('div');
+                [item.name, item.type + ' · ' + item.school, 'Masuk: ' + (item.checkIn || '-'), 'Pulang: ' + (item.checkOut || '-'), 'Status: ' + item.status, 'Jarak: ' + item.distance].forEach((text, index) => {
+                    const line = document.createElement(index === 0 ? 'strong' : 'div');
+                    line.textContent = text;
+                    popup.appendChild(line);
+                });
+                L.circleMarker(point, { radius: 8, color: '#078844', fillColor: '#16a35b', fillOpacity: .9 }).addTo(map).bindPopup(popup);
+            });
+
+            this.failedAttendances.forEach((item) => {
+                const point = this.validPoint(item);
+                if (!point) return;
+                bounds.push(point);
+                const popup = document.createElement('div');
+                [item.name, item.type + ' · ' + item.school, 'Waktu: ' + (item.checkedAt || '-'), 'Status: Gagal', 'Keterangan: ' + item.reason].forEach((text, index) => {
+                    const line = document.createElement(index === 0 ? 'strong' : 'div');
+                    line.textContent = text;
+                    popup.appendChild(line);
+                });
+                L.circleMarker(point, { radius: 8, color: '#b91c1c', fillColor: '#ef4444', fillOpacity: .95 }).addTo(map).bindPopup(popup);
+            });
+
+            bounds.length ? map.fitBounds(bounds, { padding: [35, 35], maxZoom: 17 }) : map.setView([-7.8, 110.36], 10);
+            setTimeout(() => map?.invalidateSize(), 150);
+        },
+    };
+};
+</script>
+@endscript
+
     <script>
         (() => {
+            if (document.querySelector('[x-data^="attendanceMap"]')) return;
             const schools = @js($mapSchools);
             const attendances = @js($mapAttendances);
             const failedAttendances = @js($mapFailedAttendances);

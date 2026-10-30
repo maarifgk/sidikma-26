@@ -3,9 +3,9 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Filament\Concerns\ScopesAttendanceToAccessibleSchools;
-use App\Models\AttendanceRecord;
 use App\Models\AttendanceEvent;
 use App\Models\AttendanceLeaveRequest;
+use App\Models\AttendanceRecord;
 use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Models\School;
@@ -165,7 +165,17 @@ class AttendanceDashboard extends Page
             ->where('event_status', 'accepted')
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->whereNotIn('attendance_id', $mapRecords->pluck('id')->filter())
+            ->where(function (Builder $query) use ($mapRecords): void {
+                $recordIds = $mapRecords->pluck('id')->filter()->values();
+
+                if ($recordIds->isEmpty()) {
+                    return;
+                }
+
+                $query
+                    ->whereNotIn('attendance_id', $recordIds)
+                    ->orWhereNull('attendance_id');
+            })
             ->with(['employee', 'school'])
             ->latest('checked_at')
             ->limit(300)
@@ -213,6 +223,7 @@ class AttendanceDashboard extends Page
             $approved = AttendanceLeaveRequest::query()->whereIn('school_id', $schoolIds)->where('status', AttendanceLeaveRequest::STATUS_APPROVED)->whereDate('start_date', '<=', $day)->whereDate('end_date', '>=', $day)->when($this->selectedSchoolId, fn (Builder $q): Builder => $q->where('school_id', $this->selectedSchoolId));
             $permitEmployees = (clone $base)->where('status', AttendanceRecord::STATUS_PERMIT)->pluck('employee_id')->merge((clone $approved)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->pluck('employee_id'))->unique();
             $leaveEmployees = (clone $base)->where('status', AttendanceRecord::STATUS_LEAVE)->pluck('employee_id')->merge((clone $approved)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->pluck('employee_id'))->unique();
+
             return ['date' => $day, 'label' => $date->locale('id')->translatedFormat('D, d M'), 'present' => (clone $base)->where('status', AttendanceRecord::STATUS_PRESENT)->count(), 'late' => (clone $base)->where('status', AttendanceRecord::STATUS_LATE)->count(), 'permit' => (clone $base)->where('status', AttendanceRecord::STATUS_PERMIT)->count() + (clone $approved)->whereIn('leave_type', [AttendanceLeaveRequest::TYPE_PERMIT, AttendanceLeaveRequest::TYPE_SICK])->count(), 'leave' => (clone $base)->where('status', AttendanceRecord::STATUS_LEAVE)->count() + (clone $approved)->where('leave_type', AttendanceLeaveRequest::TYPE_LEAVE)->count(), 'rejected' => (clone $events)->where('event_status', 'rejected')->count(), 'fake_gps' => (clone $events)->where('is_mock_location', true)->count(), 'early' => (clone $base)->whereNotNull('check_out_reason')->count()];
         })->values();
 

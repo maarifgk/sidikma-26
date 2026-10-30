@@ -234,4 +234,74 @@
             </table>
         </div>
     </section>
+
+    <section class="ar-card" aria-labelledby="ar-rejected-title">
+        <header class="ar-card-head">
+            <h2 id="ar-rejected-title" class="ar-card-title">
+                <span><x-filament::icon icon="heroicon-o-shield-exclamation" /></span>
+                Presensi Ditolak
+            </h2>
+            <span class="ar-period">Riwayat percobaan server</span>
+        </header>
+
+        <div class="ar-panel" style="border:0;border-radius:0;box-shadow:none">
+            <div class="ar-filter-grid-secondary" style="margin-top:0">
+                <div class="ar-field">
+                    <label for="ar-rejection-type">Jenis Presensi</label>
+                    <select id="ar-rejection-type" wire:model.live="selectedRejectionType" class="ar-input">
+                        <option value="">Masuk dan Pulang</option>
+                        <option value="check_in">Masuk</option>
+                        <option value="check_out">Pulang</option>
+                    </select>
+                </div>
+                <div class="ar-field">
+                    <label for="ar-rejection-code">Alasan</label>
+                    <select id="ar-rejection-code" wire:model.live="selectedRejectionCode" class="ar-input">
+                        <option value="">Semua alasan</option>
+                        @foreach($rejectionCodeOptions as $code => $label)
+                            <option value="{{ $code }}">{{ $rejectionLabels[$code] ?? $code }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="ar-table-wrap">
+            <table class="ar-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Jam</th>
+                        <th>Sekolah</th>
+                        <th>Nama</th>
+                        <th>Jenis</th>
+                        <th>Status</th>
+                        <th>Kode</th>
+                        <th>Keterangan</th>
+                        <th>Akurasi GPS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($rejectionRecords as $event)
+                        <tr>
+                            <td>{{ $event->attendance_date?->format('d-m-Y') ?? '-' }}</td>
+                            <td>{{ $event->checked_at?->timezone(config('attendance.timezone'))->format('H:i:s') ?? '-' }}</td>
+                            <td>{{ $event->school?->name ?? '-' }}</td>
+                            <td class="ar-name">{{ $event->employee?->name ?? '-' }}</td>
+                            <td>{{ $event->event_type === 'check_out' ? 'Pulang' : 'Masuk' }}</td>
+                            <td><span class="ar-badge ar-status-alpha">Ditolak</span></td>
+                            <td>{{ $event->rejection_code ?? '-' }}</td>
+                            <td>{{ $event->rejection_reason ?: ($rejectionLabels[$event->rejection_code] ?? 'Presensi ditolak') }}</td>
+                            <td>{{ $event->gps_accuracy !== null ? number_format((float) $event->gps_accuracy, 2).' m' : '-' }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="9" class="ar-empty">Belum ada presensi ditolak pada periode dan filter ini.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div style="padding:1rem 1.25rem">
+            {{ $rejectionRecords->links() }}
+        </div>
+    </section>
 </div>

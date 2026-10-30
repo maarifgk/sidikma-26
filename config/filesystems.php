@@ -33,7 +33,7 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],
@@ -158,6 +158,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
+            'serve' => true,
             // Relative URL keeps uploaded images working when the application is
             // opened from localhost, 127.0.0.1, a LAN IP, or a production domain.
             'url' => '/storage',

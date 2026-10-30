@@ -17,6 +17,8 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Services\AttendanceXlsxExportService;
 use App\Models\AttendanceLeaveRequest;
@@ -44,6 +46,10 @@ class AttendanceReport extends Page
 
     public string $selectedStatus = '';
 
+    public string $selectedEventType = '';
+
+    public string $selectedRejectionCode = '';
+
     public string $reportType = 'custom';
 
     public string $referenceDate = '';
@@ -52,11 +58,7 @@ class AttendanceReport extends Page
 
     public string $dateTo = '';
 
-    public string $selectedRejectionType = '';
-
-    public string $selectedRejectionCode = '';
-
-    public int $rejectionPage = 1;
+    public int $reportPage = 1;
 
     public function mount(): void
     {
@@ -71,14 +73,15 @@ class AttendanceReport extends Page
         if (in_array($property, [
             'selectedSchoolId',
             'selectedEmployeeId',
-            'selectedRejectionType',
+            'selectedStatus',
+            'selectedEventType',
             'selectedRejectionCode',
             'referenceDate',
             'dateFrom',
             'dateTo',
             'reportType',
         ], true)) {
-            $this->resetPage('rejectionPage');
+            $this->resetPage('reportPage');
         }
     }
 
@@ -102,6 +105,8 @@ class AttendanceReport extends Page
 
     public function exportReport(): StreamedResponse
     {
+        abort_if($this->selectedStatus === 'rejected', 422, 'Export Kehadiran tidak memuat percobaan presensi ditolak.');
+
         $records = $this->reportRecords();
         [$from, $to] = $this->range();
         $leaves = AttendanceLeaveRequest::query()->whereIn('school_id', $this->accessibleAttendanceSchoolIds())->whereDate('start_date','<=',$to)->whereDate('end_date','>=',$from)->with(['employee','school','reviewedBy'])->get();
@@ -154,35 +159,114 @@ class AttendanceReport extends Page
         return [
             'schoolOptions' => School::query()->whereKey($this->accessibleAttendanceSchoolIds())->where('is_active', true)->orderBy('name')->pluck('name', 'id'),
             'employeeOptions' => Employee::query()->whereIn('school_id', $this->accessibleAttendanceSchoolIds())->where('is_active', true)->orderBy('name')->pluck('name', 'id'),
-            'statusOptions' => AttendanceRecord::statusOptions(),
-            'records' => $this->reportRecords(),
+            'statusOptions' => array_merge(AttendanceRecord::statusOptions(), ['rejected' => 'Ditolak']),
+            'records' => $this->unifiedReportRows(),
             'reportType' => $this->reportType,
             'fromLabel' => Carbon::parse($from)->format('d-m-Y'),
             'toLabel' => Carbon::parse($to)->format('d-m-Y'),
             'dashboardUrl' => AttendanceDashboard::getUrl(panel: $this->attendancePanelId(), isAbsolute: false),
-            'rejectionRecords' => $this->rejectionRecords(),
-            'rejectionCodeOptions' => $this->rejectionCodeOptions(),
             'rejectionLabels' => $this->rejectionLabels(),
+            'rejectionCodeOptions' => $this->rejectionCodeOptions(),
         ];
     }
 
-    private function rejectionRecords(): \Illuminate\Pagination\LengthAwarePaginator
+    private function unifiedReportRows(): LengthAwarePaginator
     {
         [$from, $to] = $this->range();
+        $schoolIds = $this->accessibleAttendanceSchoolIds();
 
-        abort_if($this->selectedSchoolId && ! $this->accessibleAttendanceSchoolIds()->contains($this->selectedSchoolId), 403);
+        abort_if($this->selectedSchoolId && ! $schoolIds->contains($this->selectedSchoolId), 403);
 
-        return AttendanceEvent::query()
-            ->whereIn('school_id', $this->accessibleAttendanceSchoolIds())
-            ->where('event_status', 'rejected')
-            ->whereBetween('attendance_date', [$from, $to])
-            ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('school_id', $this->selectedSchoolId))
-            ->when($this->selectedEmployeeId, fn (Builder $query): Builder => $query->where('employee_id', $this->selectedEmployeeId))
-            ->when(filled($this->selectedRejectionType), fn (Builder $query): Builder => $query->where('event_type', $this->selectedRejectionType))
-            ->when(filled($this->selectedRejectionCode), fn (Builder $query): Builder => $query->where('rejection_code', $this->selectedRejectionCode))
-            ->with(['employee', 'school'])
-            ->orderByDesc('checked_at')
-            ->paginate(25, ['*'], 'rejectionPage', $this->rejectionPage);
+        $records = AttendanceRecord::query()
+            ->from('attendance_records as ar')
+            ->leftJoin('employees as employee', 'employee.id', '=', 'ar.employee_id')
+            ->leftJoin('schools as school', 'school.id', '=', 'ar.school_id')
+            ->whereIn('ar.school_id', $schoolIds)
+            ->whereBetween('ar.attendance_date', [$from, $to])
+            ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('ar.school_id', $this->selectedSchoolId))
+            ->when($this->selectedEmployeeId, fn (Builder $query): Builder => $query->where('ar.employee_id', $this->selectedEmployeeId))
+            ->when(filled($this->selectedStatus) && $this->selectedStatus !== 'rejected', fn (Builder $query): Builder => $query->where('ar.status', $this->selectedStatus))
+            ->when($this->selectedStatus === 'rejected', fn (Builder $query): Builder => $query->whereRaw('1 = 0'))
+            ->when($this->selectedEventType === 'check_in', fn (Builder $query): Builder => $query->whereNotNull('ar.check_in_at'))
+            ->when($this->selectedEventType === 'check_out', fn (Builder $query): Builder => $query->whereNotNull('ar.check_out_at'))
+            ->when(filled($this->selectedRejectionCode), fn (Builder $query): Builder => $query->whereRaw('1 = 0'))
+            ->select([
+                'ar.id as source_id',
+                DB::raw("'attendance_record' as source_type"),
+                'ar.attendance_date',
+                DB::raw('COALESCE(ar.check_out_at, ar.check_in_at) as occurred_at'),
+                'ar.school_id',
+                'ar.employee_id',
+                'employee.name as employee_name',
+                'school.name as school_name',
+                'ar.status as status_key',
+                DB::raw('0 as is_rejected'),
+                DB::raw('NULL as rejection_code'),
+                DB::raw('NULL as rejection_reason'),
+                DB::raw('NULL as event_type'),
+                'ar.check_in_at',
+                'ar.check_out_at',
+                'ar.check_in_latitude',
+                'ar.check_in_longitude',
+                'ar.check_in_accuracy',
+                'ar.check_out_latitude',
+                'ar.check_out_longitude',
+                'ar.check_out_accuracy',
+                'ar.check_in_reason',
+                'ar.check_out_reason',
+                'ar.notes',
+                'ar.check_in_selfie_path',
+                'ar.check_out_selfie_path',
+            ]);
+
+        $rejected = DB::connection('sidikma_induk')
+            ->table('attendance_events as ae')
+            ->leftJoin('employees as employee', 'employee.id', '=', 'ae.employee_id')
+            ->leftJoin('schools as school', 'school.id', '=', 'ae.school_id')
+            ->whereIn('ae.school_id', $schoolIds)
+            ->where('ae.event_status', 'rejected')
+            ->whereBetween('ae.attendance_date', [$from, $to])
+            ->when($this->selectedSchoolId, fn ($query) => $query->where('ae.school_id', $this->selectedSchoolId))
+            ->when($this->selectedEmployeeId, fn ($query) => $query->where('ae.employee_id', $this->selectedEmployeeId))
+            ->when($this->selectedStatus !== '' && $this->selectedStatus !== 'rejected', fn ($query) => $query->whereRaw('1 = 0'))
+            ->when(filled($this->selectedEventType), fn ($query) => $query->where('ae.event_type', $this->selectedEventType))
+            ->when(filled($this->selectedRejectionCode), fn ($query) => $query->where('ae.rejection_code', $this->selectedRejectionCode))
+            ->select([
+                'ae.id as source_id',
+                DB::raw("'attendance_event' as source_type"),
+                'ae.attendance_date',
+                DB::raw('COALESCE(ae.checked_at, ae.created_at) as occurred_at'),
+                'ae.school_id',
+                'ae.employee_id',
+                'employee.name as employee_name',
+                'school.name as school_name',
+                DB::raw('NULL as status_key'),
+                DB::raw('1 as is_rejected'),
+                'ae.rejection_code',
+                'ae.rejection_reason',
+                'ae.event_type',
+                DB::raw('NULL as check_in_at'),
+                DB::raw('NULL as check_out_at'),
+                DB::raw("CASE WHEN ae.event_type = 'check_in' THEN ae.latitude ELSE NULL END as check_in_latitude"),
+                DB::raw("CASE WHEN ae.event_type = 'check_in' THEN ae.longitude ELSE NULL END as check_in_longitude"),
+                DB::raw("CASE WHEN ae.event_type = 'check_in' THEN ae.gps_accuracy ELSE NULL END as check_in_accuracy"),
+                DB::raw("CASE WHEN ae.event_type = 'check_out' THEN ae.latitude ELSE NULL END as check_out_latitude"),
+                DB::raw("CASE WHEN ae.event_type = 'check_out' THEN ae.longitude ELSE NULL END as check_out_longitude"),
+                DB::raw("CASE WHEN ae.event_type = 'check_out' THEN ae.gps_accuracy ELSE NULL END as check_out_accuracy"),
+                DB::raw('NULL as check_in_reason'),
+                DB::raw('NULL as check_out_reason'),
+                DB::raw('NULL as notes'),
+                DB::raw('NULL as check_in_selfie_path'),
+                DB::raw('NULL as check_out_selfie_path'),
+            ]);
+
+        return DB::connection('sidikma_induk')
+            ->query()
+            ->fromSub($records->unionAll($rejected), 'report_rows')
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('source_type')
+            ->orderByDesc('source_id')
+            ->paginate(25, ['*'], 'reportPage', $this->reportPage);
     }
 
     /** @return array<string, string> */

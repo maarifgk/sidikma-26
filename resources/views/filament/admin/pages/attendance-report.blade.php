@@ -17,6 +17,22 @@
         @media(max-width:767px){.ar-page{gap:1rem}.ar-hero{align-items:flex-start;flex-direction:column;padding:1.1rem}.ar-hero-side{width:100%;justify-content:space-between}.ar-title{font-size:1.3rem}.ar-panel{padding:1rem}.ar-filter-grid,.ar-filter-grid-secondary{max-width:none;grid-template-columns:1fr}.ar-actions-left,.ar-exports{display:grid;width:100%;grid-template-columns:1fr}.ar-button{width:100%}.ar-period-row{align-items:stretch;flex-direction:column}.ar-period{justify-content:center;text-align:center}.ar-card-head{align-items:stretch;flex-direction:column}.ar-search{width:100%}}
         @media(max-width:430px){.ar-heading-icon{display:none}.ar-hero-side{align-items:flex-end;flex-direction:column}.ar-user{align-self:stretch}.ar-dashboard{width:100%;justify-content:center}}
     </style>
+    <style>
+        .ar-page .ar-status-rejected{background:#fee2e2;color:#b42318}
+        .ar-page .ar-status-cuti{background:#f3e8ff;color:#7e22ce}
+        .ar-page .ar-status-detail{display:block;max-width:15rem;margin-top:.35rem;color:#b42318;font-size:.68rem;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
+        .ar-page .ar-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.25rem;border-top:1px solid #e8edf3;color:#64748b;font-size:.7rem;overflow-x:auto}
+        .ar-page .ar-pagination nav{display:flex;align-items:center;gap:.25rem;min-width:max-content}
+        .ar-page .ar-pagination a,.ar-page .ar-pagination button,.ar-page .ar-pagination span[aria-current]{display:inline-flex;min-width:2rem;height:2rem;align-items:center;justify-content:center;border:1px solid #d7e0ea;border-radius:6px;background:#fff;padding:0 .55rem;color:#52657b;font-size:.7rem;text-decoration:none}
+        .ar-page .ar-pagination a:hover,.ar-page .ar-pagination button:hover{border-color:#8bb3ea;background:#eff6ff;color:#175bb7}
+        .ar-page .ar-pagination span[aria-current]{border-color:var(--ar-blue);background:var(--ar-blue);color:#fff;font-weight:800}
+        .ar-page .ar-pagination [aria-disabled="true"]{cursor:not-allowed;opacity:.45}
+        .ar-page .ar-pagination svg{display:block;width:1.1rem!important;height:1.1rem!important;max-width:1.1rem!important;max-height:1.1rem!important}
+        .ar-page .ar-button-export:disabled{cursor:not-allowed;opacity:.5}
+        .ar-page .ar-export-note{margin:0;color:#64748b;font-size:.7rem;line-height:1.5}
+        .ar-page .ar-export-note.is-warning{color:#b42318}
+        @media(max-width:767px){.ar-page .ar-pagination{align-items:flex-start;flex-direction:column}.ar-page .ar-pagination nav{width:100%;justify-content:flex-start}}
+    </style>
 
     <section class="ar-hero">
         <div class="ar-heading">
@@ -94,11 +110,30 @@
             </div>
 
             <div class="ar-field">
+                <label for="ar-event-type">Jenis Presensi</label>
+                <select id="ar-event-type" wire:model.live="selectedEventType" class="ar-input">
+                    <option value="">Masuk dan Pulang</option>
+                    <option value="check_in">Masuk</option>
+                    <option value="check_out">Pulang</option>
+                </select>
+            </div>
+
+            <div class="ar-field">
                 <label for="ar-status">Status</label>
                 <select id="ar-status" wire:model.live="selectedStatus" class="ar-input">
                     <option value="">Semua</option>
                     @foreach($statusOptions as $value => $label)
                         <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="ar-field">
+                <label for="ar-rejection-code">Alasan Penolakan</label>
+                <select id="ar-rejection-code" wire:model.live="selectedRejectionCode" class="ar-input">
+                    <option value="">Semua alasan</option>
+                    @foreach($rejectionCodeOptions as $code => $label)
+                        <option value="{{ $code }}">{{ $rejectionLabels[$code] ?? $label }}</option>
                     @endforeach
                 </select>
             </div>
@@ -110,27 +145,35 @@
                     <x-filament::icon icon="heroicon-o-funnel" />
                     Filter
                 </button>
-                <button type="button" wire:click="exportReport" wire:loading.attr="disabled" class="ar-button ar-button-export">
+                <button type="button" wire:click="exportReport" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected') title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
                     <x-filament::icon icon="heroicon-o-arrow-down-tray" />
-                    Export Sesuai Filter
+                    Export Kehadiran Sesuai Filter
                 </button>
             </div>
 
             <div class="ar-exports">
-                <button type="button" wire:click="exportReportType('daily')" wire:loading.attr="disabled" class="ar-button ar-button-export">
+                <button type="button" wire:click="exportReportType('daily')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected') title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
                     <x-filament::icon icon="heroicon-o-calendar" />
-                    Export Harian
+                    Export Kehadiran Harian
                 </button>
-                <button type="button" wire:click="exportReportType('weekly')" wire:loading.attr="disabled" class="ar-button ar-button-export">
+                <button type="button" wire:click="exportReportType('weekly')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected') title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
                     <x-filament::icon icon="heroicon-o-calendar-days" />
-                    Export Mingguan
+                    Export Kehadiran Mingguan
                 </button>
-                <button type="button" wire:click="exportReportType('monthly')" wire:loading.attr="disabled" class="ar-button ar-button-export">
+                <button type="button" wire:click="exportReportType('monthly')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected') title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
                     <x-filament::icon icon="heroicon-o-calendar-days" />
-                    Export Bulanan
+                    Export Kehadiran Bulanan
                 </button>
             </div>
         </div>
+
+        <p class="ar-export-note {{ $selectedStatus === 'rejected' ? 'is-warning' : '' }}">
+            @if($selectedStatus === 'rejected')
+                Export Kehadiran dinonaktifkan karena tidak memuat percobaan presensi ditolak. Data ditolak tetap dapat dilihat pada tabel utama.
+            @else
+                Export Kehadiran hanya berisi presensi berhasil; percobaan presensi ditolak tidak disertakan.
+            @endif
+        </p>
 
         <div class="ar-period-row">
             <span class="ar-period">PERIODE AKTIF: {{ $fromLabel }} S/D {{ $toLabel }}</span>
@@ -168,22 +211,37 @@
                 <tbody>
                     @forelse($records as $record)
                         @php
-                            $statusKey = strtolower((string) $record->status);
-                            $statusClass = in_array($statusKey, ['hadir', 'terlambat', 'izin', 'sakit', 'alpha', 'tidak_hadir', 'absent'], true) ? 'ar-status-'.$statusKey : 'ar-status-default';
-                            $searchText = mb_strtolower(($record->school?->name ?? '').' '.($record->employee?->name ?? '').' '.($record->notes ?? '').' '.($statusOptions[$record->status] ?? $record->status));
+                            $statusKey = strtolower((string) ($record->is_rejected ? 'rejected' : $record->status_key));
+                            $statusClassKey = match ($statusKey) {
+                                'present' => 'hadir',
+                                'late' => 'terlambat',
+                                'permit' => 'izin',
+                                'leave' => 'cuti',
+                                default => $statusKey,
+                            };
+                            $statusClass = in_array($statusClassKey, ['hadir', 'terlambat', 'izin', 'sakit', 'cuti', 'alpha', 'tidak_hadir', 'absent'], true) ? 'ar-status-'.$statusClassKey : 'ar-status-default';
+                            if ($record->is_rejected) {
+                                $statusClass = 'ar-status-rejected';
+                            }
+                            $searchText = mb_strtolower(($record->school_name ?? '').' '.($record->employee_name ?? '').' '.($record->notes ?? '').' '.($record->rejection_reason ?? '').' '.($statusOptions[$record->status_key] ?? $record->status_key ?? 'Ditolak'));
                         @endphp
                         <tr x-show="!search || @js($searchText).includes(search.toLowerCase())">
                             <td>
                                 <span class="ar-date">
                                     <x-filament::icon icon="heroicon-o-calendar-days" />
-                                    {{ $record->attendance_date?->format('d-m-Y') ?? '-' }}
+                                    {{ filled($record->attendance_date) ? \Illuminate\Support\Carbon::parse($record->attendance_date)->format('d-m-Y') : '-' }}
                                 </span>
                             </td>
-                            <td>{{ $record->school?->name ?? '-' }}</td>
-                            <td class="ar-name">{{ $record->employee?->name ?? '-' }}</td>
-                            <td><span class="ar-badge {{ $statusClass }}">{{ strtoupper($statusOptions[$record->status] ?? $record->status) }}</span></td>
-                            <td><span class="ar-time">{{ $record->formattedStoredTime('check_in_at') ?? '-' }}</span></td>
-                            <td><span class="ar-time">{{ $record->formattedStoredTime('check_out_at') ?? '-' }}</span></td>
+                            <td>{{ $record->school_name ?? '-' }}</td>
+                            <td class="ar-name">{{ $record->employee_name ?? '-' }}</td>
+                            <td>
+                                <span class="ar-badge {{ $statusClass }}">{{ $record->is_rejected ? 'DITOLAK' : strtoupper($statusOptions[$record->status_key] ?? $record->status_key) }}</span>
+                                @if($record->is_rejected)
+                                    <span class="ar-status-detail">{{ $record->rejection_reason ?: ($rejectionLabels[$record->rejection_code] ?? $record->rejection_code ?? 'Presensi ditolak') }}</span>
+                                @endif
+                            </td>
+                            <td><span class="ar-time">{{ filled($record->check_in_at) ? \Illuminate\Support\Carbon::parse($record->check_in_at)->timezone(config('attendance.timezone'))->format('H:i:s') : '-' }}</span></td>
+                            <td><span class="ar-time">{{ filled($record->check_out_at) ? \Illuminate\Support\Carbon::parse($record->check_out_at)->timezone(config('attendance.timezone'))->format('H:i:s') : '-' }}</span></td>
                             <td>
                                 @if(filled($record->check_in_latitude) && filled($record->check_in_longitude))
                                     <span class="ar-location">
@@ -207,21 +265,21 @@
                             <td><span class="ar-notes" title="{{ $record->check_in_reason ?: ($record->check_out_reason ?: $record->notes) }}">{{ $record->check_in_reason ?: ($record->check_out_reason ?: ($record->notes ?: '-')) }}</span></td>
                             <td>
                                 <div class="ar-selfies">
-                                    @if($record->check_in_selfie_path)
-                                        <a class="ar-selfie" target="_blank" href="{{ route('attendance.selfie.view', [$record, 'masuk']) }}">
+                                    @if($record->source_type === 'attendance_record' && $record->check_in_selfie_path)
+                                        <a class="ar-selfie" target="_blank" href="{{ route('attendance.selfie.view', [$record->source_id, 'masuk']) }}">
                                             <x-filament::icon icon="heroicon-o-camera" />
                                             Masuk
                                         </a>
                                     @endif
 
-                                    @if($record->check_out_selfie_path)
-                                        <a class="ar-selfie ar-selfie-out" target="_blank" href="{{ route('attendance.selfie.view', [$record, 'pulang']) }}">
+                                    @if($record->source_type === 'attendance_record' && $record->check_out_selfie_path)
+                                        <a class="ar-selfie ar-selfie-out" target="_blank" href="{{ route('attendance.selfie.view', [$record->source_id, 'pulang']) }}">
                                             <x-filament::icon icon="heroicon-o-camera" />
                                             Pulang
                                         </a>
                                     @endif
 
-                                    @if(! $record->check_in_selfie_path && ! $record->check_out_selfie_path)
+                                    @if($record->source_type !== 'attendance_record' || (! $record->check_in_selfie_path && ! $record->check_out_selfie_path))
                                         <span>-</span>
                                     @endif
                                 </div>
@@ -233,75 +291,8 @@
                 </tbody>
             </table>
         </div>
-    </section>
-
-    <section class="ar-card" aria-labelledby="ar-rejected-title">
-        <header class="ar-card-head">
-            <h2 id="ar-rejected-title" class="ar-card-title">
-                <span><x-filament::icon icon="heroicon-o-shield-exclamation" /></span>
-                Presensi Ditolak
-            </h2>
-            <span class="ar-period">Riwayat percobaan server</span>
-        </header>
-
-        <div class="ar-panel" style="border:0;border-radius:0;box-shadow:none">
-            <div class="ar-filter-grid-secondary" style="margin-top:0">
-                <div class="ar-field">
-                    <label for="ar-rejection-type">Jenis Presensi</label>
-                    <select id="ar-rejection-type" wire:model.live="selectedRejectionType" class="ar-input">
-                        <option value="">Masuk dan Pulang</option>
-                        <option value="check_in">Masuk</option>
-                        <option value="check_out">Pulang</option>
-                    </select>
-                </div>
-                <div class="ar-field">
-                    <label for="ar-rejection-code">Alasan</label>
-                    <select id="ar-rejection-code" wire:model.live="selectedRejectionCode" class="ar-input">
-                        <option value="">Semua alasan</option>
-                        @foreach($rejectionCodeOptions as $code => $label)
-                            <option value="{{ $code }}">{{ $rejectionLabels[$code] ?? $code }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="ar-table-wrap">
-            <table class="ar-table">
-                <thead>
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>Jam</th>
-                        <th>Sekolah</th>
-                        <th>Nama</th>
-                        <th>Jenis</th>
-                        <th>Status</th>
-                        <th>Kode</th>
-                        <th>Keterangan</th>
-                        <th>Akurasi GPS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($rejectionRecords as $event)
-                        <tr>
-                            <td>{{ $event->attendance_date?->format('d-m-Y') ?? '-' }}</td>
-                            <td>{{ $event->checked_at?->timezone(config('attendance.timezone'))->format('H:i:s') ?? '-' }}</td>
-                            <td>{{ $event->school?->name ?? '-' }}</td>
-                            <td class="ar-name">{{ $event->employee?->name ?? '-' }}</td>
-                            <td>{{ $event->event_type === 'check_out' ? 'Pulang' : 'Masuk' }}</td>
-                            <td><span class="ar-badge ar-status-alpha">Ditolak</span></td>
-                            <td>{{ $event->rejection_code ?? '-' }}</td>
-                            <td>{{ $event->rejection_reason ?: ($rejectionLabels[$event->rejection_code] ?? 'Presensi ditolak') }}</td>
-                            <td>{{ $event->gps_accuracy !== null ? number_format((float) $event->gps_accuracy, 2).' m' : '-' }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="9" class="ar-empty">Belum ada presensi ditolak pada periode dan filter ini.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div style="padding:1rem 1.25rem">
-            {{ $rejectionRecords->links() }}
+        <div class="ar-pagination" aria-label="Pagination laporan presensi">
+            {{ $records->onEachSide(1)->links() }}
         </div>
     </section>
 </div>

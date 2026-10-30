@@ -29,5 +29,11 @@
         @media (max-width: 640px) { .sk-page { margin: 0 auto; } }
     </style>
 </head>
-<body><main class="sk-page">{!! $html !!}</main></body>
+<body>
+    @if (isset($renderedHtml))
+        <iframe title="Preview Template SK" srcdoc="{{ $renderedHtml }}" style="width:100%;min-height:100vh;border:0;background:#fff"></iframe>
+    @else
+        <main class="sk-page">{!! $html !!}</main>
+    @endif
+</body>
 </html>

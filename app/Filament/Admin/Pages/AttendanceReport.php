@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Pages;
 
 use App\Filament\Concerns\ScopesAttendanceToAccessibleSchools;
 use App\Models\AttendanceRecord;
+use App\Models\AttendanceEvent;
 use App\Models\Employee;
 use App\Models\School;
 use App\Models\AttendanceSetting;
@@ -20,10 +21,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Services\AttendanceXlsxExportService;
 use App\Models\AttendanceLeaveRequest;
 use UnitEnum;
+use Livewire\WithPagination;
 
 class AttendanceReport extends Page
 {
     use ScopesAttendanceToAccessibleSchools;
+    use WithPagination;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
@@ -49,12 +52,34 @@ class AttendanceReport extends Page
 
     public string $dateTo = '';
 
+    public string $selectedRejectionType = '';
+
+    public string $selectedRejectionCode = '';
+
+    public int $rejectionPage = 1;
+
     public function mount(): void
     {
         $today = now('Asia/Jakarta');
         $this->referenceDate = $today->toDateString();
         $this->dateFrom = $today->startOfMonth()->toDateString();
         $this->dateTo = now('Asia/Jakarta')->toDateString();
+    }
+
+    public function updated(string $property): void
+    {
+        if (in_array($property, [
+            'selectedSchoolId',
+            'selectedEmployeeId',
+            'selectedRejectionType',
+            'selectedRejectionCode',
+            'referenceDate',
+            'dateFrom',
+            'dateTo',
+            'reportType',
+        ], true)) {
+            $this->resetPage('rejectionPage');
+        }
     }
 
     public static function canAccess(): bool
@@ -135,7 +160,58 @@ class AttendanceReport extends Page
             'fromLabel' => Carbon::parse($from)->format('d-m-Y'),
             'toLabel' => Carbon::parse($to)->format('d-m-Y'),
             'dashboardUrl' => AttendanceDashboard::getUrl(panel: $this->attendancePanelId(), isAbsolute: false),
+            'rejectionRecords' => $this->rejectionRecords(),
+            'rejectionCodeOptions' => $this->rejectionCodeOptions(),
+            'rejectionLabels' => $this->rejectionLabels(),
         ];
+    }
+
+    private function rejectionRecords(): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        [$from, $to] = $this->range();
+
+        abort_if($this->selectedSchoolId && ! $this->accessibleAttendanceSchoolIds()->contains($this->selectedSchoolId), 403);
+
+        return AttendanceEvent::query()
+            ->whereIn('school_id', $this->accessibleAttendanceSchoolIds())
+            ->where('event_status', 'rejected')
+            ->whereBetween('attendance_date', [$from, $to])
+            ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('school_id', $this->selectedSchoolId))
+            ->when($this->selectedEmployeeId, fn (Builder $query): Builder => $query->where('employee_id', $this->selectedEmployeeId))
+            ->when(filled($this->selectedRejectionType), fn (Builder $query): Builder => $query->where('event_type', $this->selectedRejectionType))
+            ->when(filled($this->selectedRejectionCode), fn (Builder $query): Builder => $query->where('rejection_code', $this->selectedRejectionCode))
+            ->with(['employee', 'school'])
+            ->orderByDesc('checked_at')
+            ->paginate(25, ['*'], 'rejectionPage', $this->rejectionPage);
+    }
+
+    /** @return array<string, string> */
+    private function rejectionLabels(): array
+    {
+        return [
+            'invalid_accuracy' => 'Akurasi GPS tidak memenuhi batas.',
+            'outside_geofence' => 'Lokasi berada di luar area sekolah.',
+            'fake_gps' => 'Lokasi palsu/mock terdeteksi.',
+            'duplicate_attendance' => 'Presensi pada hari ini sudah tercatat.',
+            'invalid_coordinates' => 'Koordinat GPS tidak valid atau belum tersedia.',
+            'selfie_required' => 'Selfie wajib belum tersedia.',
+            'location_settings_changed' => 'Konfigurasi lokasi sekolah telah berubah.',
+            'early_checkout_reason_required' => 'Alasan pulang awal belum diisi.',
+            'feature_disabled' => 'Fitur presensi sedang dinonaktifkan.',
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function rejectionCodeOptions(): array
+    {
+        return AttendanceEvent::query()
+            ->whereIn('school_id', $this->accessibleAttendanceSchoolIds())
+            ->where('event_status', 'rejected')
+            ->whereNotNull('rejection_code')
+            ->distinct()
+            ->orderBy('rejection_code')
+            ->pluck('rejection_code', 'rejection_code')
+            ->all();
     }
 
     private function reportRecords(): Collection

@@ -236,12 +236,6 @@ class AppPanelProvider extends PanelProvider
                     ->group('PAYMENT')
                     ->icon('heroicon-o-credit-card')
                     ->sort(1)
-                    ->visible(fn (): bool => auth()->user()?->roles()
-                        ->whereIn('name', [
-                            User::ROLE_ADMIN_INDUK,
-                            User::ROLE_ADMIN_SEKOLAH_MADRASAH,
-                        ])
-                        ->exists() ?? false)
                     ->url('/app/billings')
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.app.resources.billings.*')),
             ])

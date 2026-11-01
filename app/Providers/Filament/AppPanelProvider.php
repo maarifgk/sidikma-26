@@ -233,6 +233,7 @@ class AppPanelProvider extends PanelProvider
                     ->url(fn (): string => BatikOrderResource::getUrl(panel: 'app', isAbsolute: false))
                     ->isActiveWhen(fn (): bool => request()->routeIs('filament.app.resources.batik-orders.*')),
                 NavigationItem::make('Pembayaran')
+                    ->group('PAYMENT')
                     ->icon('heroicon-o-credit-card')
                     ->sort(4)
                     ->url('/app/billings')

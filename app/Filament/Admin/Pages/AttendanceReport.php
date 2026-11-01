@@ -58,8 +58,6 @@ class AttendanceReport extends Page
 
     public string $dateTo = '';
 
-    public int $reportPage = 1;
-
     public function mount(): void
     {
         $today = now('Asia/Jakarta');
@@ -105,7 +103,7 @@ class AttendanceReport extends Page
 
     public function exportReport(): StreamedResponse
     {
-        abort_if($this->selectedStatus === 'rejected', 422, 'Export Kehadiran tidak memuat percobaan presensi ditolak.');
+        abort_if($this->selectedStatus === 'rejected' || filled($this->selectedRejectionCode), 422, 'Export Kehadiran tidak memuat percobaan presensi ditolak.');
 
         $records = $this->reportRecords();
         [$from, $to] = $this->range();
@@ -160,6 +158,8 @@ class AttendanceReport extends Page
             'schoolOptions' => School::query()->whereKey($this->accessibleAttendanceSchoolIds())->where('is_active', true)->orderBy('name')->pluck('name', 'id'),
             'employeeOptions' => Employee::query()->whereIn('school_id', $this->accessibleAttendanceSchoolIds())->where('is_active', true)->orderBy('name')->pluck('name', 'id'),
             'statusOptions' => array_merge(AttendanceRecord::statusOptions(), ['rejected' => 'Ditolak']),
+            'selectedStatus' => $this->selectedStatus,
+            'selectedRejectionCode' => $this->selectedRejectionCode,
             'records' => $this->unifiedReportRows(),
             'reportType' => $this->reportType,
             'fromLabel' => Carbon::parse($from)->format('d-m-Y'),
@@ -266,7 +266,7 @@ class AttendanceReport extends Page
             ->orderByDesc('occurred_at')
             ->orderByDesc('source_type')
             ->orderByDesc('source_id')
-            ->paginate(25, ['*'], 'reportPage', $this->reportPage);
+            ->paginate(25, ['*'], 'reportPage');
     }
 
     /** @return array<string, string> */

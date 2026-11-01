@@ -21,8 +21,18 @@ abstract class TestCase extends BaseTestCase
             $app['config']->set('database.connections.sqlite.database', $database);
         }
 
+        $approvedExternalDatabase = rtrim((string) getenv('LOCALAPPDATA'), '\\/')
+            . DIRECTORY_SEPARATOR . 'SIDIKMA26'
+            . DIRECTORY_SEPARATOR . 'testing'
+            . DIRECTORY_SEPARATOR . 'sidikma_gps20_test.sqlite';
+
+        $databaseIsApprovedExternalSqlite = $connection === 'sqlite'
+            && ! is_link($approvedExternalDatabase)
+            && realpath($database) !== false
+            && realpath($database) === realpath($approvedExternalDatabase);
+
         $databaseIsTestingSqlite = $connection === 'sqlite'
-            && in_array($database, [':memory:', 'database/testing.sqlite'], true);
+            && (in_array($database, [':memory:', 'database/testing.sqlite'], true) || $databaseIsApprovedExternalSqlite);
 
         if (! $databaseIsTestingSqlite) {
             throw new \RuntimeException(
@@ -40,8 +50,9 @@ abstract class TestCase extends BaseTestCase
             $app['config']->get('database.connections.sqlite'),
         );
 
-        $app['config']->set('database.connections.sqlite.journal_mode', 'WAL');
-        $app['config']->set('database.connections.sidikma_induk.journal_mode', 'WAL');
+        $journalMode = $databaseIsApprovedExternalSqlite ? 'DELETE' : 'WAL';
+        $app['config']->set('database.connections.sqlite.journal_mode', $journalMode);
+        $app['config']->set('database.connections.sidikma_induk.journal_mode', $journalMode);
 
         $sqlite = $app['db']->connection('sqlite');
         $app['db']->purge('sidikma_induk');

@@ -145,30 +145,30 @@
                     <x-filament::icon icon="heroicon-o-funnel" />
                     Filter
                 </button>
-                <button type="button" wire:click="exportReport" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected') title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
+                <button type="button" wire:click="exportReport" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected' || filled($selectedRejectionCode)) title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
                     <x-filament::icon icon="heroicon-o-arrow-down-tray" />
                     Export Kehadiran Sesuai Filter
                 </button>
             </div>
 
             <div class="ar-exports">
-                <button type="button" wire:click="exportReportType('daily')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected') title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
+                <button type="button" wire:click="exportReportType('daily')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected' || filled($selectedRejectionCode)) title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
                     <x-filament::icon icon="heroicon-o-calendar" />
                     Export Kehadiran Harian
                 </button>
-                <button type="button" wire:click="exportReportType('weekly')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected') title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
+                <button type="button" wire:click="exportReportType('weekly')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected' || filled($selectedRejectionCode)) title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
                     <x-filament::icon icon="heroicon-o-calendar-days" />
                     Export Kehadiran Mingguan
                 </button>
-                <button type="button" wire:click="exportReportType('monthly')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected') title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
+                <button type="button" wire:click="exportReportType('monthly')" wire:loading.attr="disabled" class="ar-button ar-button-export" @disabled($selectedStatus === 'rejected' || filled($selectedRejectionCode)) title="Export Kehadiran tidak memuat percobaan presensi ditolak.">
                     <x-filament::icon icon="heroicon-o-calendar-days" />
                     Export Kehadiran Bulanan
                 </button>
             </div>
         </div>
 
-        <p class="ar-export-note {{ $selectedStatus === 'rejected' ? 'is-warning' : '' }}">
-            @if($selectedStatus === 'rejected')
+        <p class="ar-export-note {{ $selectedStatus === 'rejected' || filled($selectedRejectionCode) ? 'is-warning' : '' }}">
+            @if($selectedStatus === 'rejected' || filled($selectedRejectionCode))
                 Export Kehadiran dinonaktifkan karena tidak memuat percobaan presensi ditolak. Data ditolak tetap dapat dilihat pada tabel utama.
             @else
                 Export Kehadiran hanya berisi presensi berhasil; percobaan presensi ditolak tidak disertakan.

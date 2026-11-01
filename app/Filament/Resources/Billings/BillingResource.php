@@ -26,7 +26,7 @@ class BillingResource extends Resource
 
     protected static bool $shouldRegisterNavigation = true;
 
-    protected static string|UnitEnum|null $navigationGroup = 'PAYMENT';
+    protected static string|UnitEnum|null $navigationGroup = 'Pembayaran';
 
     protected static ?string $navigationLabel = 'Pembayaran';
 

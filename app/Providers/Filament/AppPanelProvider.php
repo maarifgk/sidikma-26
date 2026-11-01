@@ -88,8 +88,7 @@ class AppPanelProvider extends PanelProvider
                 'HOMES' => NavigationGroup::make('Utama')
                     ->collapsible(false),
                 'SERVICE' => NavigationGroup::make('Layanan'),
-                'PAYMENT' => NavigationGroup::make('Pembayaran')
-                    ->collapsible(false),
+                'PAYMENT' => NavigationGroup::make('Pembayaran'),
             ])
             ->navigationItems([
                 NavigationItem::make('Presensi')

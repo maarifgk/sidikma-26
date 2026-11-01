@@ -16,7 +16,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use UnitEnum;
 
 class BillingResource extends Resource
 {
@@ -24,9 +23,7 @@ class BillingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentMinus;
 
-    protected static bool $shouldRegisterNavigation = true;
-
-    protected static string|UnitEnum|null $navigationGroup = 'PAYMENT';
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function canViewAny(): bool
     {

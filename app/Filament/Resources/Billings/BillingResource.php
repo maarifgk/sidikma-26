@@ -23,7 +23,17 @@ class BillingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentMinus;
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static bool $shouldRegisterNavigation = true;
+
+    protected static ?string $navigationGroup = 'PAYMENT';
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasAnyRole([
+            User::ROLE_ADMIN_INDUK,
+            User::ROLE_ADMIN_SEKOLAH_MADRASAH,
+        ]) ?? false;
+    }
 
     protected static ?string $modelLabel = 'Pembayaran';
 

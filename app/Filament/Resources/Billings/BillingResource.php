@@ -16,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use UnitEnum;
 
 class BillingResource extends Resource
 {
@@ -25,7 +26,7 @@ class BillingResource extends Resource
 
     protected static bool $shouldRegisterNavigation = true;
 
-    protected static ?string $navigationGroup = 'PAYMENT';
+    protected static string|UnitEnum|null $navigationGroup = 'PAYMENT';
 
     public static function canViewAny(): bool
     {

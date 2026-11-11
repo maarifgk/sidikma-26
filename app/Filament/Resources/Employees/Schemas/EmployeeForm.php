@@ -122,6 +122,10 @@ class EmployeeForm
                     ->searchable()
                     ->nullable()
                     ->native(false),
+                DatePicker::make('assignment_start_date')
+                    ->label('TMT (Terhitung Mulai Tanggal)')
+                    ->maxDate(now())
+                    ->visible(fn (?Employee $record): bool => $record?->currentAssignment !== null || request()->routeIs('filament.admin.resources.employees.edit')),
                 Select::make('employment_status')
                     ->label('Status Kepegawaian')
                     ->options(function (?Employee $record): array {

@@ -19,12 +19,15 @@ class EditEmployee extends EditRecord
 
     private ?string $decreePeriod = null;
 
+    private ?string $assignmentStartDate = null;
+
     private ?string $newAccountPassword = null;
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data['position_id'] = $this->record->currentAssignment?->employee_position_id;
         $data['decree_period'] = $this->record->currentAssignment?->decree_period;
+        $data['assignment_start_date'] = $this->record->currentAssignment?->start_date?->toDateString();
 
         // The linked login account is the source of truth for the email used by SIDIKMA.
         // Keep the employee profile field aligned with users.email when an account exists.
@@ -41,8 +44,9 @@ class EditEmployee extends EditRecord
             ? (int) $data['position_id']
             : null;
         $this->decreePeriod = $data['decree_period'] ?? null;
+        $this->assignmentStartDate = $data['assignment_start_date'] ?? null;
         $this->newAccountPassword = $data['new_account_password'] ?? null;
-        unset($data['position_id'], $data['decree_period'], $data['new_account_password']);
+        unset($data['position_id'], $data['decree_period'], $data['assignment_start_date'], $data['new_account_password']);
 
         return $data;
     }
@@ -84,6 +88,7 @@ class EditEmployee extends EditRecord
                 'employee_position_id' => $this->positionId,
                 'foundation_id' => $this->record->foundation_id,
                 'school_id' => $this->record->school_id,
+                'start_date' => $this->assignmentStartDate ?: $assignment->start_date,
                 'decree_period' => $this->decreePeriod,
             ]);
 
@@ -94,7 +99,7 @@ class EditEmployee extends EditRecord
             'employee_position_id' => $this->positionId,
             'foundation_id' => $this->record->foundation_id,
             'school_id' => $this->record->school_id,
-            'start_date' => now()->toDateString(),
+            'start_date' => $this->assignmentStartDate ?: now()->toDateString(),
             'decree_period' => $this->decreePeriod,
             'status' => EmployeeAssignment::STATUS_ACTIVE,
             'is_primary' => true,

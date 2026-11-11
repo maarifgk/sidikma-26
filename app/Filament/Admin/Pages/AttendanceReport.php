@@ -313,7 +313,6 @@ class AttendanceReport extends Page
             ->with(['employee', 'school'])
             ->orderByDesc('attendance_date')
             ->orderByDesc('check_in_at')
-            ->limit(500)
             ->get();
     }
 

@@ -17,6 +17,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class EmployeeForm
 {
@@ -101,6 +102,9 @@ class EmployeeForm
                     ->email()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true)
+                    ->rules(fn (?Employee $record): array => [
+                        Rule::unique('users', 'email')->ignore($record?->user_id),
+                    ])
                     ->mutateStateForValidationUsing(
                         fn (?string $state): ?string => self::normalizeEmail($state),
                     )

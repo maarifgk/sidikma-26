@@ -20,6 +20,8 @@ class EditEmployee extends EditRecord
 
     private ?string $newAccountPassword = null;
 
+    private ?string $previousEmail = null;
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data['position_id'] = $this->record->currentAssignment?->employee_position_id;
@@ -30,6 +32,7 @@ class EditEmployee extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $this->previousEmail = $this->record->email;
         $this->positionId = filled($data['position_id'] ?? null)
             ? (int) $data['position_id']
             : null;
@@ -50,6 +53,13 @@ class EditEmployee extends EditRecord
 
     protected function afterSave(): void
     {
+        if ($this->record->user && $this->record->email !== $this->previousEmail) {
+            $this->record->user->update([
+                'email' => $this->record->email,
+                'updated_by' => auth()->id(),
+            ]);
+        }
+
         if (filled($this->newAccountPassword) && $this->record->user) {
             $this->record->user->update([
                 'password' => $this->newAccountPassword,

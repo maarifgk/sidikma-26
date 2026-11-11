@@ -8,6 +8,7 @@ use App\Models\EmployeeAssignment;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Illuminate\Database\Eloquent\Model;
 
 class EditEmployee extends EditRecord
 {
@@ -37,6 +38,14 @@ class EditEmployee extends EditRecord
         unset($data['position_id'], $data['decree_period'], $data['new_account_password']);
 
         return $data;
+    }
+
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        $record->fill($data);
+        $record->save();
+
+        return $record->refresh();
     }
 
     protected function afterSave(): void

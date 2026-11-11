@@ -292,6 +292,11 @@
             </table>
         </div>
         <div class="ar-pagination" aria-label="Pagination laporan presensi">
+            <span>
+                Menampilkan {{ $records->firstItem() ?? 0 }}–{{ $records->lastItem() ?? 0 }}
+                dari {{ number_format($records->total(), 0, ',', '.') }} data ·
+                Halaman {{ $records->currentPage() }} dari {{ $records->lastPage() }}
+            </span>
             {{ $records->onEachSide(1)->links() }}
         </div>
     </section>

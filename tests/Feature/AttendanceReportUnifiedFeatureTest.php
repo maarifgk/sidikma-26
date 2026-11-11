@@ -120,7 +120,7 @@ class AttendanceReportUnifiedFeatureTest extends TestCase
         $this->assertSame('invalid_accuracy', $records->first()->rejection_code);
     }
 
-    public function test_global_pagination_counts_union_rows_and_uses_twenty_five_rows(): void
+    public function test_global_pagination_counts_union_rows_and_uses_one_hundred_rows(): void
     {
         $foundation = $this->schoolOne->foundation_id;
 
@@ -156,8 +156,29 @@ class AttendanceReportUnifiedFeatureTest extends TestCase
         $paginator = $this->reportPaginator($this->adminInduk);
 
         $this->assertSame(27, $paginator->total());
-        $this->assertSame(25, $paginator->perPage());
-        $this->assertCount(25, $paginator->items());
+        $this->assertSame(100, $paginator->perPage());
+        $this->assertCount(27, $paginator->items());
+    }
+
+    public function test_monthly_filter_includes_all_dates_in_reference_month_only(): void
+    {
+        foreach (['2026-09-01', '2026-09-15', '2026-09-30', '2026-10-01'] as $date) {
+            AttendanceRecord::create([
+                'user_id' => $this->teacher->id,
+                'employee_id' => $this->teacherEmployee->id,
+                'school_id' => $this->schoolOne->id,
+                'attendance_date' => $date,
+                'status' => AttendanceRecord::STATUS_PRESENT,
+            ]);
+        }
+
+        $records = $this->reportRecords($this->adminInduk, function (AttendanceReport $page): void {
+            $page->reportType = 'monthly';
+            $page->referenceDate = '2026-09-15';
+        });
+
+        $this->assertCount(3, $records);
+        $this->assertSame(['2026-09-30', '2026-09-15', '2026-09-01'], $records->pluck('attendance_date')->map(fn ($date) => (string) $date)->all());
     }
 
     public function test_school_filter_and_unauthorized_school_are_enforced_on_report(): void

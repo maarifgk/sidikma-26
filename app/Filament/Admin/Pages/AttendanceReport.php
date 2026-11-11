@@ -114,27 +114,6 @@ class AttendanceReport extends Page
         $leaveRows = [['Nama','Employee ID','Sekolah','Kategori','Tanggal Mulai','Tanggal Selesai','Alasan','Status','Reviewer','Catatan Review','Waktu Pengajuan','Waktu Review']]; foreach($leaves as $l){$leaveRows[]=[ $l->employee?->name,$l->employee_id,$l->school?->name,$l->leave_type,$l->start_date?->format('d-m-Y'),$l->end_date?->format('d-m-Y'),$l->reason,$l->status,$l->reviewedBy?->name,$l->review_notes,$l->created_at?->timezone(config('attendance.timezone'))->format('d-m-Y H:i:s'),$l->reviewed_at?->timezone(config('attendance.timezone'))->format('d-m-Y H:i:s')];}
         return app(AttendanceXlsxExportService::class)->download($attendance,$leaveRows,'laporan-presensi-'.$from.'-'.$to.'.xlsx');
 
-        return response()->streamDownload(function () use ($records): void {
-            $output = fopen('php://output', 'wb');
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, ['Tanggal', 'Sekolah', 'Nama', 'Status', 'Jam Masuk', 'Jam Pulang', 'Lokasi Masuk', 'Lokasi Pulang', 'Keterangan'], ';');
-
-            foreach ($records as $record) {
-                fputcsv($output, [
-                    $record->attendance_date?->format('d-m-Y'),
-                    $record->school?->name,
-                    $record->employee?->name,
-                    AttendanceRecord::statusOptions()[$record->status] ?? $record->status,
-                    $record->formattedStoredTime('check_in_at'),
-                    $record->formattedStoredTime('check_out_at'),
-                    $this->coordinates($record->check_in_latitude, $record->check_in_longitude),
-                    $this->coordinates($record->check_out_latitude, $record->check_out_longitude),
-                    $record->notes,
-                ], ';');
-            }
-
-            fclose($output);
-        }, $fileName, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function exportReportType(string $type): StreamedResponse
@@ -318,7 +297,6 @@ class AttendanceReport extends Page
             ->with(['employee', 'school'])
             ->orderByDesc('attendance_date')
             ->orderByDesc('check_in_at')
-            ->limit(500)
             ->get();
     }
 

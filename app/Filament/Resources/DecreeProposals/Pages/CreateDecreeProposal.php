@@ -32,7 +32,7 @@ class CreateDecreeProposal extends CreateRecord
 
         abort_unless($actor instanceof User, 403);
 
-        return DB::transaction(function () use ($data, $actor): DecreeProposal {
+        return DB::connection('sidikma_induk')->transaction(function () use ($data, $actor): DecreeProposal {
             $school = School::query()
                 ->accessibleTo($actor)
                 ->findOrFail($data['school_id']);

@@ -32,6 +32,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class DecreeProposal extends Model
 {
+    protected $connection = 'sidikma_induk';
+
     public const STATUS_SUBMITTED = 'submitted';
 
     public const STATUS_COMPLETED = 'completed';

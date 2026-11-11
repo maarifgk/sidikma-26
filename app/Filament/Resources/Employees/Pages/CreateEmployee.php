@@ -79,6 +79,9 @@ class CreateEmployee extends CreateRecord
                 'name' => $data['name'],
                 'nama_lengkap' => $data['name'],
                 'nuptk' => $data['nuptk'] ?? $data['employee_code'],
+                // Required by the legacy production users table. The current
+                // form stores the equivalent value as the last education.
+                'ptt_lulus' => $data['last_education'] ?? '-',
                 'email' => $data['email'],
                 'no_tlp' => $data['phone'] ?? null,
                 'password' => $this->applicationPassword,

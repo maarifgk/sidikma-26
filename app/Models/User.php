@@ -25,6 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
     'name',
     'nama_lengkap',
     'nuptk',
+    'ptt_lulus',
     'email',
     'phone_number',
     'no_tlp',

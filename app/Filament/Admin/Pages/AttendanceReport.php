@@ -15,8 +15,10 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema as DatabaseSchema;
 use Illuminate\Support\Carbon;
+use Livewire\WithPagination;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Services\AttendanceXlsxExportService;
 use App\Models\AttendanceLeaveRequest;
@@ -25,6 +27,7 @@ use UnitEnum;
 class AttendanceReport extends Page
 {
     use ScopesAttendanceToAccessibleSchools;
+    use WithPagination;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
@@ -49,6 +52,13 @@ class AttendanceReport extends Page
     public string $dateFrom = '';
 
     public string $dateTo = '';
+
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['selectedSchoolId', 'selectedEmployeeId', 'selectedStatus', 'reportType', 'referenceDate', 'dateFrom', 'dateTo'], true)) {
+            $this->resetPage();
+        }
+    }
 
     public function mount(): void
     {
@@ -78,9 +88,12 @@ class AttendanceReport extends Page
 
     public function exportReport(): StreamedResponse
     {
-        $records = $this->reportRecords();
+        $records = $this->reportRecords(false);
         [$from, $to] = $this->range();
-        $leaves = AttendanceLeaveRequest::query()->whereIn('school_id', $this->accessibleAttendanceSchoolIds())->whereDate('start_date','<=',$to)->whereDate('end_date','>=',$from)->with(['employee','school','reviewedBy'])->get();
+        $leaves = AttendanceLeaveRequest::query()->whereIn('school_id', $this->accessibleAttendanceSchoolIds())
+            ->when($to, fn (Builder $query): Builder => $query->whereDate('start_date', '<=', $to))
+            ->when($from, fn (Builder $query): Builder => $query->whereDate('end_date', '>=', $from))
+            ->with(['employee','school','reviewedBy'])->get();
         $headers = ['Tanggal','Nama','Employee ID','Sekolah','Status','Jam Datang','Jam Pulang','Akurasi Datang','Akurasi Pulang','Lokasi Datang','Lokasi Pulang','Geofence Datang','Geofence Pulang','Mode Geofence','Jarak Datang (m)','Jarak Pulang (m)','Fake GPS Datang','Fake GPS Pulang','Sumber Fake GPS','Alasan Pulang Awal','Rejection Code','Rejection Reason','Keterangan'];
         $events = collect();
         if (DatabaseSchema::connection('sidikma_induk')->hasTable('attendance_events')
@@ -106,7 +119,7 @@ class AttendanceReport extends Page
             $attendance[] = [Carbon::parse($r->attendance_date)->format('d-m-Y'), $r->employee?->name, $r->employee_id, $r->school?->name, AttendanceRecord::statusOptions()[$r->status] ?? $r->status, $r->formattedStoredTime('check_in_at'), $r->formattedStoredTime('check_out_at'), $r->check_in_accuracy, $r->check_out_accuracy, $this->coordinates($r->check_in_latitude, $r->check_in_longitude), $this->coordinates($r->check_out_latitude, $r->check_out_longitude), $in?->is_inside_geofence, $out?->is_inside_geofence, $mode, $r->check_in_distance, $r->check_out_distance, $r->check_in_fake_gps ? 'Ya' : 'Tidak', $r->check_out_fake_gps ? 'Ya' : 'Tidak', $r->check_in_fake_gps_source ?: $r->check_out_fake_gps_source, $r->check_out_reason, $in?->rejection_code ?: $out?->rejection_code, $in?->rejection_reason ?: $out?->rejection_reason, $r->notes];
         }
         $leaveRows = [['Nama','Employee ID','Sekolah','Kategori','Tanggal Mulai','Tanggal Selesai','Alasan','Status','Reviewer','Catatan Review','Waktu Pengajuan','Waktu Review']]; foreach($leaves as $l){$leaveRows[]=[ $l->employee?->name,$l->employee_id,$l->school?->name,$l->leave_type,$l->start_date?->format('d-m-Y'),$l->end_date?->format('d-m-Y'),$l->reason,$l->status,$l->reviewedBy?->name,$l->review_notes,$l->created_at?->timezone(config('attendance.timezone'))->format('d-m-Y H:i:s'),$l->reviewed_at?->timezone(config('attendance.timezone'))->format('d-m-Y H:i:s')];}
-        return app(AttendanceXlsxExportService::class)->download($attendance,$leaveRows,'laporan-presensi-'.$from.'-'.$to.'.xlsx');
+        return app(AttendanceXlsxExportService::class)->download($attendance, $leaveRows, 'laporan-presensi-'.($from ?: 'semua').'-'.($to ?: 'riwayat').'.xlsx');
 
     }
 
@@ -133,31 +146,32 @@ class AttendanceReport extends Page
             'statusOptions' => AttendanceRecord::statusOptions(),
             'records' => $this->reportRecords(),
             'reportType' => $this->reportType,
-            'fromLabel' => Carbon::parse($from)->format('d-m-Y'),
-            'toLabel' => Carbon::parse($to)->format('d-m-Y'),
+            'fromLabel' => $this->reportType === 'custom' && ! $this->dateFrom ? 'Semua riwayat' : Carbon::parse($from)->format('d-m-Y'),
+            'toLabel' => $this->reportType === 'custom' && ! $this->dateTo ? 'sampai sekarang' : Carbon::parse($to)->format('d-m-Y'),
             'dashboardUrl' => AttendanceDashboard::getUrl(panel: $this->attendancePanelId(), isAbsolute: false),
         ];
     }
 
-    private function reportRecords(): Collection
+    private function reportRecords(bool $paginate = true): Collection|LengthAwarePaginator
     {
         [$from, $to] = $this->range();
 
         abort_if($this->selectedSchoolId && ! $this->accessibleAttendanceSchoolIds()->contains($this->selectedSchoolId), 403);
 
-        return AttendanceRecord::query()->whereIn('school_id', $this->accessibleAttendanceSchoolIds())
-            ->whereBetween('attendance_date', [$from, $to])
+        $query = AttendanceRecord::query()->whereIn('school_id', $this->accessibleAttendanceSchoolIds())
+            ->when($from, fn (Builder $query): Builder => $query->whereDate('attendance_date', '>=', $from))
+            ->when($to, fn (Builder $query): Builder => $query->whereDate('attendance_date', '<=', $to))
             ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('school_id', $this->selectedSchoolId))
             ->when($this->selectedEmployeeId, fn (Builder $query): Builder => $query->where('employee_id', $this->selectedEmployeeId))
             ->when(filled($this->selectedStatus), fn (Builder $query): Builder => $query->where('status', $this->selectedStatus))
             ->with(['employee', 'school'])
             ->orderByDesc('attendance_date')
-            ->orderByDesc('check_in_at')
-            ->limit(500)
-            ->get();
+            ->orderByDesc('check_in_at');
+
+        return $paginate ? $query->paginate(25) : $query->get();
     }
 
-    /** @return array{0: string, 1: string} */
+    /** @return array{0: ?string, 1: ?string} */
     private function range(): array
     {
         $reference = Carbon::parse($this->referenceDate ?: now('Asia/Jakarta')->toDateString());
@@ -166,7 +180,7 @@ class AttendanceReport extends Page
             'daily' => [$reference->toDateString(), $reference->toDateString()],
             'weekly' => [$reference->copy()->startOfWeek()->toDateString(), $reference->copy()->endOfWeek()->toDateString()],
             'monthly' => [$reference->copy()->startOfMonth()->toDateString(), $reference->copy()->endOfMonth()->toDateString()],
-            default => [$this->dateFrom ?: $reference->toDateString(), $this->dateTo ?: $reference->toDateString()],
+            default => [$this->dateFrom ?: null, $this->dateTo ?: null],
         };
     }
 

@@ -233,5 +233,12 @@
                 </tbody>
             </table>
         </div>
+
+        @if($records instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
+            <div class="ar-pagination">
+                <span>Menampilkan {{ $records->firstItem() ?? 0 }}–{{ $records->lastItem() ?? 0 }} dari {{ $records->total() }} data</span>
+                {{ $records->links() }}
+            </div>
+        @endif
     </section>
 </div>

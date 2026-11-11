@@ -40,8 +40,10 @@ class CreateDecreeProposal extends CreateRecord
 
             $account = User::query()->create([
                 'name' => $data['name'],
+                'nama_lengkap' => $data['name'],
                 'email' => $data['email'],
                 'phone_number' => $data['phone'],
+                'no_tlp' => $data['phone'],
                 'password' => $data['application_password'],
                 'is_active' => true,
                 'created_by' => $actor->getKey(),

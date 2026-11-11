@@ -90,17 +90,21 @@ class MyAttendance extends Page
 
         $distance = $this->validateAttendanceRequirements($setting);
         $localNow = now(config('attendance.timezone'));
+        if (! $setting->isWorkday($localNow)) {
+            throw ValidationException::withMessages(['attendance' => 'Hari ini bukan hari belajar sekolah.']);
+        }
+        $schedule = $setting->scheduleFor($localNow);
 
-        if ($localNow->format('H:i:s') < $setting->check_in_start) {
+        if ($localNow->format('H:i:s') < $schedule['check_in_start']) {
             throw ValidationException::withMessages(['attendance' => 'Presensi masuk belum dibuka.']);
         }
 
-        $checkInEnd = $setting->check_in_end ?: $setting->check_out_start;
+        $checkInEnd = $schedule['check_in_end'] ?: $schedule['check_out_start'];
         if ($localNow->format('H:i:s') > $checkInEnd) {
             throw ValidationException::withMessages(['attendance' => 'Batas waktu presensi masuk sudah berakhir pada pukul '.substr($checkInEnd, 0, 5).'.']);
         }
 
-        if ($localNow->format('H:i:s') >= $setting->late_after && blank(trim($this->checkInReason))) {
+        if ($localNow->format('H:i:s') >= $schedule['late_after'] && blank(trim($this->checkInReason))) {
             throw ValidationException::withMessages(['checkInReason' => 'Alasan terlambat wajib diisi.']);
         }
 
@@ -123,7 +127,7 @@ class MyAttendance extends Page
                     'employee_id' => $employee->getKey(),
                     'school_id' => $employee->school_id,
                     'attendance_date' => $date,
-                    'status' => $localNow->format('H:i:s') >= $setting->late_after ? AttendanceRecord::STATUS_LATE : AttendanceRecord::STATUS_PRESENT,
+                    'status' => $localNow->format('H:i:s') >= $schedule['late_after'] ? AttendanceRecord::STATUS_LATE : AttendanceRecord::STATUS_PRESENT,
                     'check_in_reason' => filled(trim($this->checkInReason)) ? trim($this->checkInReason) : null,
                     'check_in_at' => now(),
                     'check_in_latitude' => $this->latitude,
@@ -161,8 +165,12 @@ class MyAttendance extends Page
 
         $distance = $this->validateAttendanceRequirements($setting);
         $localNow = now(config('attendance.timezone'));
+        if (! $setting->isWorkday($localNow)) {
+            throw ValidationException::withMessages(['attendance' => 'Hari ini bukan hari belajar sekolah.']);
+        }
+        $schedule = $setting->scheduleFor($localNow);
 
-        if ($localNow->format('H:i:s') > ($setting->check_out_end ?: '17:00:00')) {
+        if ($localNow->format('H:i:s') > ($schedule['check_out_end'] ?: '17:00:00')) {
             throw ValidationException::withMessages(['attendance' => 'Presensi pulang ditolak karena sudah melewati batas presensi.']);
         }
 
@@ -181,7 +189,7 @@ class MyAttendance extends Page
             if (! $record || $record->check_out_at) {
                 throw ValidationException::withMessages(['attendance' => 'Data presensi masuk tidak ditemukan atau presensi pulang sudah dilakukan.']);
             }
-            if ($localNow->format('H:i:s') < $setting->check_out_start && blank(trim($this->checkOutReason))) {
+            if ($localNow->format('H:i:s') < $schedule['check_out_start'] && blank(trim($this->checkOutReason))) {
                 app(AttendanceEventService::class)->record($employee, 'check_out', 'rejected', $this->rejectionData('early_checkout_reason_required', 'Alasan wajib diisi jika pulang lebih awal.', $setting->geofence_version, $localNow->toDateString()));
                 throw ValidationException::withMessages(['checkOutReason' => 'Alasan wajib diisi jika pulang lebih awal.']);
             }
@@ -214,7 +222,9 @@ class MyAttendance extends Page
         $record = $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->whereDate('attendance_date', $today)->first() : null;
         $setting = $employee?->school_id ? AttendanceSetting::forSchool($employee->school_id) : null;
         $currentTime = now(config('attendance.timezone'))->format('H:i:s');
-        $checkInEnd = $setting ? ($setting->check_in_end ?: $setting->check_out_start) : null;
+        $today = now(config('attendance.timezone'));
+        $schedule = $setting ? $setting->scheduleFor($today) : null;
+        $checkInEnd = $schedule ? ($schedule['check_in_end'] ?: $schedule['check_out_start']) : null;
 
         return [
             'employee' => $employee,
@@ -222,6 +232,7 @@ class MyAttendance extends Page
             'setting' => $setting,
             'checkInEnd' => $checkInEnd,
             'checkInClosed' => $checkInEnd !== null && $currentTime > $checkInEnd,
+            'isWorkday' => $setting?->isWorkday($today) ?? false,
             'gpsAccuracyLimit' => $this->gpsAccuracyLimit($setting),
             'statusOptions' => AttendanceRecord::statusOptions(),
             'recentRecords' => $employee ? AttendanceRecord::query()->where('employee_id', $employee->getKey())->latest('attendance_date')->limit(10)->get() : collect(),

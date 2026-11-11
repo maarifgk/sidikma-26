@@ -37,6 +37,18 @@ class AttendanceSettings extends Page
     #[Url(as: 'school')]
     public ?int $selectedSchoolId = null;
 
+    public int $workdaysPerWeek = 5;
+
+    public string $fridayCheckInStart = '06:00';
+
+    public string $fridayLateAfter = '07:15';
+
+    public string $fridayCheckInEnd = '11:59';
+
+    public string $fridayCheckOutStart = '14:00';
+
+    public string $fridayCheckOutEnd = '17:00';
+
     public string $checkInStart = '06:00';
 
     public string $checkInHour = '06';
@@ -123,9 +135,15 @@ class AttendanceSettings extends Page
         $this->lateAfter = Carbon::createFromFormat('H:i', $this->checkInStart)
             ->addMinutes($this->lateToleranceMinutes)
             ->format('H:i');
+        $this->fridayCheckInStart = $this->fridayCheckInStart ?: $this->checkInStart;
+        $this->fridayLateAfter = $this->fridayLateAfter ?: $this->lateAfter;
+        $this->fridayCheckInEnd = $this->fridayCheckInEnd ?: $this->checkInEnd;
+        $this->fridayCheckOutStart = $this->fridayCheckOutStart ?: $this->checkOutStart;
+        $this->fridayCheckOutEnd = $this->fridayCheckOutEnd ?: $this->checkOutEnd;
 
         $validated = $this->validate([
             'selectedSchoolId' => ['required', 'integer', Rule::in($this->accessibleAttendanceSchoolIds())],
+            'workdaysPerWeek' => ['required', 'integer', Rule::in([5, 6])],
             'checkInStart' => ['required', 'date_format:H:i', 'before:12:00'],
             'checkInHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
             'checkInMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
@@ -136,6 +154,11 @@ class AttendanceSettings extends Page
             'checkOutEnd' => ['required', 'date_format:H:i', 'after:checkOutStart'],
             'checkOutHour' => ['required', Rule::in(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])],
             'checkOutMinute' => ['required', Rule::in(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])],
+            'fridayCheckInStart' => ['required', 'date_format:H:i', 'before:fridayLateAfter'],
+            'fridayLateAfter' => ['required', 'date_format:H:i', 'after_or_equal:fridayCheckInStart'],
+            'fridayCheckInEnd' => ['required', 'date_format:H:i', 'after:fridayLateAfter', 'before_or_equal:fridayCheckOutStart'],
+            'fridayCheckOutStart' => ['required', 'date_format:H:i', 'after:fridayCheckInEnd'],
+            'fridayCheckOutEnd' => ['required', 'date_format:H:i', 'after:fridayCheckOutStart'],
             'officeLatitude' => ['required_if:requireLocation,true', 'required_with:officeLongitude', 'nullable', 'numeric', 'between:-90,90'],
             'officeLongitude' => ['required_if:requireLocation,true', 'required_with:officeLatitude', 'nullable', 'numeric', 'between:-180,180'],
             'maximumAccuracyMeters' => ['required', 'integer', 'min:10', 'max:1000'],
@@ -166,16 +189,22 @@ class AttendanceSettings extends Page
             ]);
         }
 
-        $before = AttendanceSetting::query()->where('school_id', $validated['selectedSchoolId'])->first()?->only(['check_in_start','late_after','check_out_start','check_out_end','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']);
+        $before = AttendanceSetting::query()->where('school_id', $validated['selectedSchoolId'])->first()?->only(['workdays_per_week','friday_check_in_start','friday_late_after','friday_check_in_end','friday_check_out_start','friday_check_out_end','check_in_start','late_after','check_out_start','check_out_end','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']);
         $canChangeFeatureActivation = auth()->user()?->isAdminInduk() ?? false;
         $setting = AttendanceSetting::query()->updateOrCreate(
             ['school_id' => $validated['selectedSchoolId']],
             [
+                'workdays_per_week' => $validated['workdaysPerWeek'],
                 'check_in_start' => $validated['checkInStart'].':00',
                 'late_after' => $validated['lateAfter'].':00',
                 'check_in_end' => $validated['checkInEnd'].':00',
                 'check_out_start' => $validated['checkOutStart'].':00',
                 'check_out_end' => $validated['checkOutEnd'].':00',
+                'friday_check_in_start' => $validated['fridayCheckInStart'].':00',
+                'friday_late_after' => $validated['fridayLateAfter'].':00',
+                'friday_check_in_end' => $validated['fridayCheckInEnd'].':00',
+                'friday_check_out_start' => $validated['fridayCheckOutStart'].':00',
+                'friday_check_out_end' => $validated['fridayCheckOutEnd'].':00',
                 'office_latitude' => $validated['officeLatitude'],
                 'office_longitude' => $validated['officeLongitude'],
                 // The attendance boundary now follows the single GPS accuracy limit.
@@ -192,7 +221,7 @@ class AttendanceSettings extends Page
             ],
         );
         $setting->increment('geofence_version');
-        app(AuditLogService::class)->record('attendance_settings_updated', $setting, $setting->fresh()->only(['check_in_start','late_after','check_out_start','check_out_end','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']), $before, ['school_id'=>$setting->school_id]);
+        app(AuditLogService::class)->record('attendance_settings_updated', $setting, $setting->fresh()->only(['workdays_per_week','friday_check_in_start','friday_late_after','friday_check_in_end','friday_check_out_start','friday_check_out_end','check_in_start','late_after','check_out_start','check_out_end','office_latitude','office_longitude','radius_meters','maximum_accuracy_meters','geofence_polygon','require_location','detect_fake_gps','require_selfie','is_active','enable_check_in','enable_check_out']), $before, ['school_id'=>$setting->school_id]);
 
         Notification::make()->success()->title('Pengaturan presensi disimpan')->send();
         $this->skipRender();
@@ -250,6 +279,7 @@ class AttendanceSettings extends Page
         abort_unless($this->accessibleAttendanceSchoolIds()->contains($this->selectedSchoolId), 403);
 
         $setting = AttendanceSetting::forSchool($this->selectedSchoolId);
+        $this->workdaysPerWeek = $setting->workdays_per_week ?: 5;
         $checkInStart = $setting->check_in_start ?: '06:00:00';
         $lateAfter = $setting->late_after ?: '07:15:00';
         $checkOutStart = $setting->check_out_start ?: '14:00:00';
@@ -268,6 +298,11 @@ class AttendanceSettings extends Page
         $this->checkOutHour = $checkOut->format('h');
         $this->checkOutMinute = str_pad((string) (intdiv((int) $checkOut->format('i'), 5) * 5), 2, '0', STR_PAD_LEFT);
         $this->checkOutEnd = substr($setting->check_out_end ?: '17:00:00', 0, 5);
+        $this->fridayCheckInStart = substr($setting->friday_check_in_start ?: $checkInStart, 0, 5);
+        $this->fridayLateAfter = substr($setting->friday_late_after ?: $lateAfter, 0, 5);
+        $this->fridayCheckInEnd = substr($setting->friday_check_in_end ?: ($setting->check_in_end ?: '11:59:00'), 0, 5);
+        $this->fridayCheckOutStart = substr($setting->friday_check_out_start ?: $checkOutStart, 0, 5);
+        $this->fridayCheckOutEnd = substr($setting->friday_check_out_end ?: ($setting->check_out_end ?: '17:00:00'), 0, 5);
         $this->officeLatitude = $setting->office_latitude;
         $this->officeLongitude = $setting->office_longitude;
         $this->radiusMeters = (int) ($setting->radius_meters ?: 100);

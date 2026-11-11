@@ -39,7 +39,6 @@ class CreateDecreeProposal extends CreateRecord
             $position = EmployeePosition::query()->findOrFail($data['position_id']);
 
             $account = User::query()->create([
-                'name' => $data['name'],
                 'nama_lengkap' => $data['name'],
                 'nuptk' => $data['nuptk'] ?? $data['employee_code'],
                 'ptt_lulus' => $data['last_education'] ?? '-',

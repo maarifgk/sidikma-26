@@ -76,7 +76,6 @@ class CreateEmployee extends CreateRecord
 
         return DB::transaction(function () use ($data, $actor): Employee {
             $account = User::query()->create([
-                'name' => $data['name'],
                 'nama_lengkap' => $data['name'],
                 'nuptk' => $data['nuptk'] ?? $data['employee_code'],
                 'ptt_lulus' => $data['last_education'] ?? '-',

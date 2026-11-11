@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Employees\Pages;
 use App\Filament\Pages\EditRecord;
 use App\Filament\Resources\Employees\EmployeeResource;
 use App\Models\EmployeeAssignment;
+use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -19,8 +20,6 @@ class EditEmployee extends EditRecord
     private ?string $decreePeriod = null;
 
     private ?string $newAccountPassword = null;
-
-    private ?string $previousEmail = null;
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
@@ -38,7 +37,6 @@ class EditEmployee extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $this->previousEmail = $this->record->email;
         $this->positionId = filled($data['position_id'] ?? null)
             ? (int) $data['position_id']
             : null;
@@ -54,18 +52,20 @@ class EditEmployee extends EditRecord
         $record->fill($data);
         $record->save();
 
+        if ($record->user_id && array_key_exists('email', $data)) {
+            User::query()
+                ->whereKey($record->user_id)
+                ->update([
+                    'email' => $record->email,
+                    'updated_by' => auth()->id(),
+                ]);
+        }
+
         return $record->refresh();
     }
 
     protected function afterSave(): void
     {
-        if ($this->record->user && $this->record->email !== $this->previousEmail) {
-            $this->record->user->update([
-                'email' => $this->record->email,
-                'updated_by' => auth()->id(),
-            ]);
-        }
-
         if (filled($this->newAccountPassword) && $this->record->user) {
             $this->record->user->update([
                 'password' => $this->newAccountPassword,

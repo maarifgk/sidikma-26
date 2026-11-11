@@ -182,7 +182,8 @@ class AttendanceReport extends Page
             ->leftJoin('employees as employee', 'employee.id', '=', 'ar.employee_id')
             ->leftJoin('schools as school', 'school.id', '=', 'ar.school_id')
             ->whereIn('ar.school_id', $schoolIds)
-            ->whereBetween('ar.attendance_date', [$from, $to])
+            ->whereDate('ar.attendance_date', '>=', $from)
+            ->whereDate('ar.attendance_date', '<=', $to)
             ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('ar.school_id', $this->selectedSchoolId))
             ->when($this->selectedEmployeeId, fn (Builder $query): Builder => $query->where('ar.employee_id', $this->selectedEmployeeId))
             ->when(filled($this->selectedStatus) && $this->selectedStatus !== 'rejected', fn (Builder $query): Builder => $query->where('ar.status', $this->selectedStatus))
@@ -225,7 +226,8 @@ class AttendanceReport extends Page
             ->leftJoin('schools as school', 'school.id', '=', 'ae.school_id')
             ->whereIn('ae.school_id', $schoolIds)
             ->where('ae.event_status', 'rejected')
-            ->whereBetween('ae.attendance_date', [$from, $to])
+            ->whereDate('ae.attendance_date', '>=', $from)
+            ->whereDate('ae.attendance_date', '<=', $to)
             ->when($this->selectedSchoolId, fn ($query) => $query->where('ae.school_id', $this->selectedSchoolId))
             ->when($this->selectedEmployeeId, fn ($query) => $query->where('ae.employee_id', $this->selectedEmployeeId))
             ->when($this->selectedStatus !== '' && $this->selectedStatus !== 'rejected', fn ($query) => $query->whereRaw('1 = 0'))
@@ -266,7 +268,10 @@ class AttendanceReport extends Page
             ->orderByDesc('occurred_at')
             ->orderByDesc('source_type')
             ->orderByDesc('source_id')
-            ->paginate(25, ['*'], 'reportPage');
+            // Laporan bulanan umumnya berisi lebih dari 25 baris. Batas kecil
+            // membuat halaman pertama terlihat seolah-olah hanya memuat
+            // beberapa tanggal, walaupun query sebenarnya sudah benar.
+            ->paginate(100, ['*'], 'reportPage');
     }
 
     /** @return array<string, string> */
@@ -305,7 +310,8 @@ class AttendanceReport extends Page
         abort_if($this->selectedSchoolId && ! $this->accessibleAttendanceSchoolIds()->contains($this->selectedSchoolId), 403);
 
         return AttendanceRecord::query()->whereIn('school_id', $this->accessibleAttendanceSchoolIds())
-            ->whereBetween('attendance_date', [$from, $to])
+            ->whereDate('attendance_date', '>=', $from)
+            ->whereDate('attendance_date', '<=', $to)
             ->when($this->selectedSchoolId, fn (Builder $query): Builder => $query->where('school_id', $this->selectedSchoolId))
             ->when($this->selectedEmployeeId, fn (Builder $query): Builder => $query->where('employee_id', $this->selectedEmployeeId))
             ->when(filled($this->selectedStatus), fn (Builder $query): Builder => $query->where('status', $this->selectedStatus))

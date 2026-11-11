@@ -106,7 +106,6 @@ class CreateEmployee extends CreateRecord
                 'sertifikat' => '-',
                 'atasnama' => '-',
                 'phbnu' => '-',
-                'is_active' => true,
                 'created_by' => $actor->getKey(),
                 'updated_by' => $actor->getKey(),
             ]);

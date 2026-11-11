@@ -48,7 +48,6 @@ class CreateDecreeProposal extends CreateRecord
                 'nama_jurusan' => '-',
                 'tempat_lahir' => $data['birth_place'] ?? '-',
                 'skbfr2025' => '-',
-                'phone_number' => $data['phone'],
                 'no_tlp' => $data['phone'],
                 'password' => $data['application_password'],
                 'role' => 0,

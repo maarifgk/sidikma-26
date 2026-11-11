@@ -140,9 +140,9 @@ class DecreeProposalsTable
                             ]);
 
                             $employee->user?->update([
-                                'name' => $data['name'],
+                                'nama_lengkap' => $data['name'],
                                 'email' => strtolower(trim($data['email'])),
-                                'phone_number' => $data['phone'],
+                                'no_tlp' => $data['phone'],
                             ]);
 
                             $employee->currentAssignment?->update([

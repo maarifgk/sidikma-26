@@ -85,7 +85,6 @@ class CreateEmployee extends CreateRecord
                 'nama_jurusan' => '-',
                 'tempat_lahir' => $data['birth_place'] ?? '-',
                 'skbfr2025' => '-',
-                'phone_number' => $data['phone'] ?? null,
                 'no_tlp' => $data['phone'] ?? null,
                 'password' => $this->applicationPassword,
                 'role' => 0,

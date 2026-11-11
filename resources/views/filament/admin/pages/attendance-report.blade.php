@@ -15,7 +15,7 @@
         .dark .ar-panel,.dark .ar-card,.dark .ar-input,.dark .ar-button-export,.dark .ar-search{border-color:#364152;background:#171b22;color:#cbd5e1}.dark .ar-card-head,.dark .ar-actions{border-color:#303947}.dark .ar-table th{background:#202630;color:#aeb9c7}.dark .ar-table td{border-color:#303844;color:#c4ceda}.dark .ar-table tbody tr:hover{background:#202630}.dark .ar-card-title,.dark .ar-name,.dark .ar-date,.dark .ar-time{color:#e2e8f0}
         @media(max-width:1199px){.ar-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ar-actions{align-items:flex-start;flex-direction:column}.ar-exports{width:100%}}
         @media(max-width:767px){.ar-page{gap:1rem}.ar-hero{align-items:flex-start;flex-direction:column;padding:1.1rem}.ar-hero-side{width:100%;justify-content:space-between}.ar-title{font-size:1.3rem}.ar-panel{padding:1rem}.ar-filter-grid,.ar-filter-grid-secondary{max-width:none;grid-template-columns:1fr}.ar-actions-left,.ar-exports{display:grid;width:100%;grid-template-columns:1fr}.ar-button{width:100%}.ar-period-row{align-items:stretch;flex-direction:column}.ar-period{justify-content:center;text-align:center}.ar-card-head{align-items:stretch;flex-direction:column}.ar-search{width:100%}}
-        @media(max-width:430px){.ar-heading-icon{display:none}.ar-hero-side{align-items:flex-end;flex-direction:column}.ar-user{align-self:stretch}.ar-dashboard{width:100%;justify-content:center}}
+        .ar-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;border-top:1px solid #edf1f5;padding:1rem 1.25rem;color:#64748b;font-size:.72rem}.ar-pagination-nav{display:flex;align-items:center;gap:.35rem}.ar-page-button{display:inline-flex;min-width:2rem;height:2rem;cursor:pointer;align-items:center;justify-content:center;border:1px solid #d8e1eb;border-radius:6px;background:#fff;color:#526174;font-size:.72rem;font-weight:800}.ar-page-button:hover:not(:disabled){border-color:#8bb3ea;background:#eff6ff;color:#175bb7}.ar-page-button.is-current{border-color:var(--ar-blue);background:var(--ar-blue);color:#fff}.ar-page-button:disabled{cursor:not-allowed;opacity:.45}.ar-page-ellipsis{padding:0 .2rem;color:#94a3b8}.dark .ar-pagination{border-color:#303947;color:#aeb9c7}.dark .ar-page-button{border-color:#465161;background:#202630;color:#cbd5e1}.dark .ar-page-button.is-current{border-color:#4f8fe8;background:#2563eb;color:#fff}@media(max-width:430px){.ar-heading-icon{display:none}.ar-hero-side{align-items:flex-end;flex-direction:column}.ar-user{align-self:stretch}.ar-dashboard{width:100%;justify-content:center}.ar-pagination{align-items:flex-start;flex-direction:column}.ar-pagination-nav{width:100%;justify-content:center}}
     </style>
 
     <section class="ar-hero">
@@ -237,7 +237,23 @@
         @if($records instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
             <div class="ar-pagination">
                 <span>Menampilkan {{ $records->firstItem() ?? 0 }}–{{ $records->lastItem() ?? 0 }} dari {{ $records->total() }} data</span>
-                {{ $records->links() }}
+                <nav class="ar-pagination-nav" aria-label="Navigasi halaman laporan presensi">
+                    <button type="button" class="ar-page-button" wire:click="previousPage" @disabled($records->onFirstPage()) aria-label="Halaman sebelumnya">&lsaquo;</button>
+                    @php
+                        $lastPage = $records->lastPage();
+                        $currentPage = $records->currentPage();
+                        $pages = collect([1, $lastPage, $currentPage - 1, $currentPage, $currentPage + 1])->filter(fn ($page) => $page >= 1 && $page <= $lastPage)->unique()->sort()->values();
+                        $previousPage = null;
+                    @endphp
+                    @foreach($pages as $page)
+                        @if($previousPage !== null && $page > $previousPage + 1)
+                            <span class="ar-page-ellipsis">…</span>
+                        @endif
+                        <button type="button" class="ar-page-button {{ $page === $currentPage ? 'is-current' : '' }}" wire:click="gotoPage({{ $page }})" @if($page === $currentPage) aria-current="page" @endif>{{ $page }}</button>
+                        @php $previousPage = $page; @endphp
+                    @endforeach
+                    <button type="button" class="ar-page-button" wire:click="nextPage" @disabled(! $records->hasMorePages()) aria-label="Halaman berikutnya">&rsaquo;</button>
+                </nav>
             </div>
         @endif
     </section>

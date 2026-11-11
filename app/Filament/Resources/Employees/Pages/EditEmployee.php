@@ -27,6 +27,12 @@ class EditEmployee extends EditRecord
         $data['position_id'] = $this->record->currentAssignment?->employee_position_id;
         $data['decree_period'] = $this->record->currentAssignment?->decree_period;
 
+        // The linked login account is the source of truth for the email used by SIDIKMA.
+        // Keep the employee profile field aligned with users.email when an account exists.
+        if ($this->record->user?->email) {
+            $data['email'] = $this->record->user->email;
+        }
+
         return $data;
     }
 

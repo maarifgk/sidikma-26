@@ -78,6 +78,7 @@ class CreateEmployee extends CreateRecord
             $account = User::query()->create([
                 'name' => $data['name'],
                 'nama_lengkap' => $data['name'],
+                'nuptk' => $data['nuptk'] ?? $data['employee_code'],
                 'email' => $data['email'],
                 'no_tlp' => $data['phone'] ?? null,
                 'password' => $this->applicationPassword,

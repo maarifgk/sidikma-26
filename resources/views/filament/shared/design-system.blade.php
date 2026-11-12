@@ -59,7 +59,7 @@
     body:not(:has(.teacher-mobile)) .fi-sidebar-header { position:relative;height:104px;min-height:104px;justify-content:center;padding:2px 16px;border-bottom:1px solid var(--ui-border);background:#fff; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-header-logo-ctn { flex:0 1 80%;min-width:0; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-header-logo-ctn a { display:flex;align-items:center;justify-content:center; }
-    body:not(:has(.teacher-mobile)) .fi-sidebar-header .fi-logo { display:block;width:150px;max-width:100%;height:auto!important;object-fit:contain;margin-inline:auto;color:var(--ui-green-800); }
+    body:not(:has(.teacher-mobile)) .fi-sidebar-header .fi-logo { display:block;width:130px;max-width:100%;height:78px!important;object-fit:contain;margin-inline:auto;color:var(--ui-green-800); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-header > .fi-icon-btn { position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%); }
     body:not(:has(.teacher-mobile)) .fi-sidebar-nav { gap:1rem;padding:1.1rem .75rem 1.5rem;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent;scroll-padding-block:1rem;overscroll-behavior:contain; }
     body:not(:has(.teacher-mobile)) .fi-sidebar-nav::-webkit-scrollbar { width:5px; }
@@ -72,7 +72,7 @@
         body.fi-body-has-topbar:not(:has(.teacher-mobile)) .fi-sidebar { top:104px;height:calc(100dvh - 104px); }
         body:not(:has(.teacher-mobile)) .fi-topbar-start { position:relative;flex-shrink:0;justify-content:center;width:var(--sidebar-width);height:103px;margin-inline-start:-16px;margin-inline-end:16px;padding-inline:16px;background:#fff; }
         body:not(:has(.teacher-mobile)) .fi-topbar-start > a { display:flex;align-items:center;justify-content:center;max-width:80%; }
-        body:not(:has(.teacher-mobile)) .fi-topbar-start .fi-logo { display:block;width:150px;max-width:100%;height:auto!important;object-fit:contain;margin-inline:0; }
+        body:not(:has(.teacher-mobile)) .fi-topbar-start .fi-logo { display:block;width:130px;max-width:100%;height:78px!important;object-fit:contain;margin-inline:0; }
         body:not(:has(.teacher-mobile)) .fi-topbar-collapse-sidebar-btn-ctn { position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%); }
         body:not(:has(.teacher-mobile)):has(.fi-sidebar:not(.fi-sidebar-open)) .fi-topbar-start { width:var(--collapsed-sidebar-width); }
         body:not(:has(.teacher-mobile)):has(.fi-sidebar:not(.fi-sidebar-open)) .fi-topbar-start > :is(a,.fi-logo) { display:none; }
@@ -85,7 +85,7 @@
     }
     @media (max-width:63.999rem) {
         body:not(:has(.teacher-mobile)) .fi-sidebar { max-width:calc(100vw - 3rem); }
-        body:not(:has(.teacher-mobile)) .fi-sidebar-header .fi-logo { width:clamp(135px,18vw,150px); }
+        body:not(:has(.teacher-mobile)) .fi-sidebar-header .fi-logo { width:clamp(118px,18vw,130px);height:72px!important; }
     }
     body:not(:has(.teacher-mobile)) .fi-sidebar-footer { margin-inline:.75rem;border-top:1px solid rgba(255,255,255,.1);padding:.85rem 0; }
 

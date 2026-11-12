@@ -5,7 +5,7 @@
 @endphp
 
 <x-filament-panels::layout.base :livewire="$livewire">
-    <link rel="icon" type="image/png" href="{{ $logoUrl }}?v={{ $logoVersion }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/sidikma-favicon.svg') }}?v={{ $logoVersion }}">
     <style>
         :root { color-scheme: light; }
         body { background: #075d32 !important; }

@@ -83,8 +83,8 @@ class AdminPanelProvider extends PanelProvider
             ->globalSearch(NavigationSearchProvider::class)
             ->databaseNotifications()
             ->brandName('SIDIKMA GK')
-            ->brandLogo(fn (): string => asset('images/sidikma-tab-logo.png'))
-            ->favicon(fn (): string => asset('images/sidikma-tab-logo.png'))
+            ->brandLogo(fn (): string => '/images/sidikma-tab-logo.png')
+            ->favicon(fn (): string => '/images/sidikma-tab-logo.png')
             ->brandLogoHeight('3rem')
             ->colors([
                 'primary' => Color::Emerald,

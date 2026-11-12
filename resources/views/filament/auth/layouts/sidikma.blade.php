@@ -1,7 +1,15 @@
-@php($livewire ??= null)
+@php
+    $setting = \App\Models\ApplicationSetting::current();
+    $logoDisk = \Illuminate\Support\Facades\Storage::disk('public');
+    $logoPath = trim((string) $setting->logo_path);
+    $logoUrl = $logoPath !== '' && $logoDisk->exists($logoPath)
+        ? $logoDisk->url($logoPath)
+        : '/images/sidikma-header-logo.png';
+    $livewire ??= null;
+@endphp
 
 <x-filament-panels::layout.base :livewire="$livewire">
-    <link rel="icon" type="image/png" href="{{ asset('images/sidikma-header-logo.png') }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}">
+    <link rel="icon" type="image/png" href="/images/sidikma-header-logo.png?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}">
     <style>
         :root { color-scheme: light; }
         body { background: #075d32 !important; }
@@ -18,7 +26,6 @@
         .sidikma-auth__form-wrap { width: min(100%, 500px); }
         .sidikma-auth__portal { display: inline-flex; align-items: center; gap: .45rem; margin-bottom: 1rem; padding: .45rem .8rem; border: 1px solid #d9e9e2; border-radius: 999px; background: #edf8f2; color: #176742; font-size: .78rem; font-weight: 700; }
         .sidikma-auth__form-logo { display: block; width: min(100%, 320px); height: 126px; margin: .5rem auto 1rem; object-fit: contain; object-position: center; }
-        .sidikma-auth__form-mark { display: block; width: 132px; height: 132px; margin: .9rem auto 1.15rem; object-fit: contain; object-position: center; }
         .sidikma-auth .fi-simple-main-ctn, .sidikma-auth .fi-simple-main { width: 100%; padding: 0; background: transparent; }
         .sidikma-auth .fi-simple-main { max-width: none; }
         .sidikma-auth .fi-simple-page { padding: 0; box-shadow: none; background: transparent; }
@@ -46,16 +53,16 @@
                     <x-filament::icon icon="heroicon-o-lock-closed" class="h-4 w-4" />
                     <span>Portal Login</span>
                 </div>
-                <img class="sidikma-auth__form-mark" src="{{ asset('images/sidikma-header-logo.png') }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}" alt="Logo SIDIKMA GK">
+                <img class="sidikma-auth__form-logo" src="{{ $logoUrl }}" alt="Logo SIDIKMA">
                 <main id="fi-main-content" tabindex="-1">{{ $slot }}</main>
             </div>
         </section>
 
-        <aside class="sidikma-auth__brand" aria-label="Informasi SIDIKMA GK">
+        <aside class="sidikma-auth__brand" aria-label="Informasi SIDIKMA">
             <div class="sidikma-auth__brand-content">
-                <div class="sidikma-auth__welcome">WELCOME TO SIDIKMA GK</div>
+                <div class="sidikma-auth__welcome">WELCOME TO</div>
                 <h1>Sistem Data dan Informasi Kelembagaan Ma'arif NU Kabupaten Gunungkidul</h1>
-                <img class="sidikma-auth__illustration" src="{{ asset('images/sidikma-login-illustration-transparent.png') }}" alt="Ilustrasi portal data pendidikan">
+                <img class="sidikma-auth__illustration" src="/images/sidikma-login-illustration-transparent.png" alt="Ilustrasi portal data pendidikan">
             </div>
         </aside>
     </div>

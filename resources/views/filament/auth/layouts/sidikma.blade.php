@@ -53,7 +53,12 @@
                     <x-filament::icon icon="heroicon-o-lock-closed" class="h-4 w-4" />
                     <span>Portal Login</span>
                 </div>
-                <img class="sidikma-auth__form-logo" src="{{ $logoUrl }}" alt="Logo SIDIKMA">
+                <img
+                    class="sidikma-auth__form-logo"
+                    src="{{ $logoUrl }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}"
+                    alt="Logo SIDIKMA"
+                    onerror="this.onerror=null;this.src='/images/sidikma-header-logo.png?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}';"
+                >
                 <main id="fi-main-content" tabindex="-1">{{ $slot }}</main>
             </div>
         </section>

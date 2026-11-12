@@ -37,6 +37,26 @@ Route::get('/sidikma-assets/logo', function () {
     ]);
 })->name('sidikma.assets.logo');
 
+Route::get('/sidikma-assets/illustration', function () {
+    $path = public_path('images/sidikma-login-illustration-transparent.png');
+
+    abort_unless(is_file($path), 404);
+
+    return response()->file($path, [
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->name('sidikma.assets.illustration');
+
+Route::get('/sidikma-assets/illustration', function () {
+    $path = public_path('images/sidikma-login-illustration-transparent.png');
+
+    abort_unless(is_file($path), 404);
+
+    return response()->file($path, [
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->name('sidikma.assets.illustration');
+
 Route::get('/batik-products/{product}/image', BatikProductImageController::class)
     ->name('batik-products.image');
 

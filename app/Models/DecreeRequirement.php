@@ -7,6 +7,18 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $position
+ * @property string|null $number
+ * @property string $description
+ * @property string|null $template_label
+ * @property string|null $template_path
+ * @property bool $is_active
+ * @property int|null $created_by
+ * @property int|null $updated_by
+ */
+
 #[Fillable([
     'position',
     'number',
@@ -19,6 +31,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class DecreeRequirement extends Model
 {
+    /** @param array<string, mixed> $attributes */
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+    }
+
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

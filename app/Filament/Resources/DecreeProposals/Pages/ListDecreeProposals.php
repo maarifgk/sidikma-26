@@ -92,6 +92,7 @@ class ListDecreeProposals extends ListRecords
                                 'application/msword',
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                 'application/zip',
+                                'application/x-zip-compressed',
                                 'application/octet-stream',
                             ])
                             ->maxSize(819200)
@@ -145,7 +146,11 @@ class ListDecreeProposals extends ListRecords
             foreach (array_values($items) as $index => $item) {
                 $requirement = filled($item['id'] ?? null)
                     ? DecreeRequirement::query()->findOrFail($item['id'])
-                    : new DecreeRequirement(['created_by' => auth()->id()]);
+                    : new DecreeRequirement;
+
+                if (! $requirement->exists) {
+                    $requirement->created_by = auth()->id();
+                }
 
                 $requirement->fill([
                     'position' => $index + 1,

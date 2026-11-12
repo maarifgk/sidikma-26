@@ -114,7 +114,7 @@ class MyAttendance extends Page
             throw ValidationException::withMessages(['attendance' => 'Presensi ditolak: lokasi palsu/mock terdeteksi.']);
         }
         try {
-            DB::transaction(function () use ($employee, $setting, $date, $localNow, $distance): void {
+            DB::transaction(function () use ($employee, $setting, $date, $localNow, $distance, $schedule): void {
                 // Lock the parent row too: a missing attendance row cannot itself be locked.
                 Employee::query()->whereKey($employee->getKey())->lockForUpdate()->firstOrFail();
                 $existing = AttendanceRecord::query()->where('employee_id', $employee->getKey())->whereDate('attendance_date', $date)->lockForUpdate()->first();
@@ -179,7 +179,7 @@ class MyAttendance extends Page
             throw ValidationException::withMessages(['attendance' => 'Presensi pulang ditolak: lokasi palsu/mock terdeteksi.']);
         }
 
-        DB::transaction(function () use ($employee, $setting, $distance, $localNow): void {
+        DB::transaction(function () use ($employee, $setting, $distance, $localNow, $schedule): void {
             Employee::query()->whereKey($employee->getKey())->lockForUpdate()->firstOrFail();
             $record = AttendanceRecord::query()
                 ->where('employee_id', $employee->getKey())

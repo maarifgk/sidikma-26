@@ -10,8 +10,6 @@ class BatikProductImageController extends Controller
 {
     public function __invoke(BatikProduct $product): Response
     {
-        abort_unless(auth()->check(), 403);
-
         $path = $product->image_path;
 
         abort_unless(filled($path) && Storage::disk('public')->exists($path), 404);

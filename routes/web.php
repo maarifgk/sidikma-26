@@ -28,7 +28,6 @@ Route::get('/', function () {
 });
 
 Route::get('/batik-products/{product}/image', BatikProductImageController::class)
-    ->middleware('auth')
     ->name('batik-products.image');
 
 Route::middleware('auth')->group(function (): void {

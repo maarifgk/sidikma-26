@@ -1,15 +1,11 @@
 @php
-    $setting = \App\Models\ApplicationSetting::current();
-    $logoDisk = \Illuminate\Support\Facades\Storage::disk('public');
-    $logoPath = trim((string) $setting->logo_path);
-    $logoUrl = $logoPath !== '' && $logoDisk->exists($logoPath)
-        ? $logoDisk->url($logoPath)
-        : route('sidikma.assets.logo');
+    $logoVersion = filemtime(public_path('images/sidikma-header-logo.png'));
+    $logoUrl = route('sidikma.assets.logo');
     $livewire ??= null;
 @endphp
 
 <x-filament-panels::layout.base :livewire="$livewire">
-    <link rel="icon" type="image/png" href="{{ route('sidikma.assets.logo') }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}">
+    <link rel="icon" type="image/png" href="{{ $logoUrl }}?v={{ $logoVersion }}">
     <style>
         :root { color-scheme: light; }
         body { background: #075d32 !important; }
@@ -55,9 +51,9 @@
                 </div>
                 <img
                     class="sidikma-auth__form-logo"
-                    src="{{ $logoUrl }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}"
+                    src="{{ $logoUrl }}?v={{ $logoVersion }}"
                     alt="Logo SIDIKMA"
-                    onerror="this.onerror=null;this.src='{{ route('sidikma.assets.logo') }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}';"
+                    onerror="this.onerror=null;this.src='{{ $logoUrl }}?v={{ $logoVersion }}';"
                 >
                 <main id="fi-main-content" tabindex="-1">{{ $slot }}</main>
             </div>

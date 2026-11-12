@@ -11,18 +11,12 @@ use App\Models\User;
 use Filament\Schemas\Components\EmbeddedTable;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Storage;
 
 class ListBatikOrders extends ListRecords
 {
     protected static string $resource = BatikOrderResource::class;
 
     protected static ?string $title = 'Pemesanan Kain Seragam Batik';
-
-    public function getSubheading(): ?string
-    {
-        return 'Katalog produk, stok, dan pemesanan batik dalam tampilan yang lebih bersih seperti halaman produk modern.';
-    }
 
     public function content(Schema $schema): Schema
     {
@@ -47,7 +41,7 @@ class ListBatikOrders extends ListRecords
                 'price' => (float) $product->price,
                 'sizeLabel' => $product->size_label,
                 'imageUrl' => filled($product->image_path)
-                    ? Storage::disk('public')->url($product->image_path)
+                    ? route('batik-products.image', ['product' => $product])
                     : null,
                 'editUrl' => $user instanceof User && $user->isAdminInduk()
                     ? BatikProductResource::getUrl(

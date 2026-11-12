@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DownloadAdministrationTemplateController;
+use App\Http\Controllers\BatikProductImageController;
 use App\Http\Controllers\AttendanceLocationSearchController;
 use App\Http\Controllers\DownloadDecreeSubmissionResultController;
 use App\Http\Controllers\DownloadDocumentController;
@@ -25,6 +26,11 @@ Route::post('/payments/midtrans/notification', \App\Http\Controllers\MidtransNot
 Route::get('/', function () {
     return redirect('/admin/login');
 });
+
+Route::get('/batik-products/{product}/image', BatikProductImageController::class)
+    ->middleware('auth')
+    ->name('batik-products.image');
+
 Route::middleware('auth')->group(function (): void {
     Route::get('/payments/local/{invoice}', [LocalPaymentController::class, 'show'])->name('payments.local.show');
     Route::post('/payments/local/{invoice}', [LocalPaymentController::class, 'create'])->name('payments.local.create');

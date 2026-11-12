@@ -51,9 +51,21 @@ window.attendanceGps = ({ maxAccuracy }) => ({
         if (needsLocation && !await this.locate()) return;
         this.submitting = true;
         try {
-            await this.$wire[action]();
+            // Use Livewire's public call API instead of dynamically indexing the
+            // wire proxy. This is reliable after Livewire morphs the page and
+            // also keeps the action invocation consistent for check-in/out.
+            if (typeof this.$wire.call === 'function') {
+                await this.$wire.call(action);
+            } else {
+                // Keep compatibility with the lightweight wire stub used by
+                // the browser/unit tests and older Livewire adapters.
+                await this.$wire[action]();
+            }
         } catch (error) {
-            this.gpsMessage = 'Presensi belum berhasil dikirim. Periksa koneksi, muat ulang halaman jika sesi berakhir, lalu coba lagi.';
+            const message = error?.message || '';
+            this.gpsMessage = message.includes('Presensi')
+                ? message
+                : 'Presensi belum berhasil disimpan. Periksa koneksi, muat ulang halaman jika sesi berakhir, lalu coba lagi.';
         } finally {
             this.submitting = false;
         }

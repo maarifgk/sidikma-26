@@ -4,12 +4,12 @@
     $logoPath = trim((string) $setting->logo_path);
     $logoUrl = $logoPath !== '' && $logoDisk->exists($logoPath)
         ? $logoDisk->url($logoPath)
-        : '/images/sidikma-header-logo.png';
+        : route('sidikma.assets.logo');
     $livewire ??= null;
 @endphp
 
 <x-filament-panels::layout.base :livewire="$livewire">
-    <link rel="icon" type="image/png" href="/images/sidikma-header-logo.png?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}">
+    <link rel="icon" type="image/png" href="{{ route('sidikma.assets.logo') }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}">
     <style>
         :root { color-scheme: light; }
         body { background: #075d32 !important; }
@@ -57,7 +57,7 @@
                     class="sidikma-auth__form-logo"
                     src="{{ $logoUrl }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}"
                     alt="Logo SIDIKMA"
-                    onerror="this.onerror=null;this.src='/images/sidikma-header-logo.png?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}';"
+                    onerror="this.onerror=null;this.src='{{ route('sidikma.assets.logo') }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}';"
                 >
                 <main id="fi-main-content" tabindex="-1">{{ $slot }}</main>
             </div>

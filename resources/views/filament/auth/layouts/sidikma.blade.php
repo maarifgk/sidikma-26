@@ -1,7 +1,7 @@
 @php($livewire ??= null)
 
 <x-filament-panels::layout.base :livewire="$livewire">
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v={{ filemtime(public_path('favicon.ico')) }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/sidikma-header-logo.png') }}?v={{ filemtime(public_path('images/sidikma-header-logo.png')) }}">
     <style>
         :root { color-scheme: light; }
         body { background: #075d32 !important; }

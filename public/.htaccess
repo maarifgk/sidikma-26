@@ -23,3 +23,9 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Allow Livewire/Filament document uploads up to the application's 850 MB
+# request limit when Apache enforces a request-body limit.
+<IfModule mod_core.c>
+    LimitRequestBody 891289600
+</IfModule>

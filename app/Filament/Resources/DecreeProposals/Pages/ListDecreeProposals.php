@@ -146,7 +146,7 @@ class ListDecreeProposals extends ListRecords
             foreach (array_values($items) as $index => $item) {
                 $requirement = filled($item['id'] ?? null)
                     ? DecreeRequirement::query()->findOrFail($item['id'])
-                    : new DecreeRequirement;
+                    : DecreeRequirement::query()->make();
 
                 if (! $requirement->exists) {
                     $requirement->created_by = auth()->id();

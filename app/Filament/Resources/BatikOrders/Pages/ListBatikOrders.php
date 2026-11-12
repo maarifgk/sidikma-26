@@ -11,6 +11,7 @@ use App\Models\User;
 use Filament\Schemas\Components\EmbeddedTable;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class ListBatikOrders extends ListRecords
 {
@@ -41,9 +42,7 @@ class ListBatikOrders extends ListRecords
                 'price' => (float) $product->price,
                 'sizeLabel' => $product->size_label,
                 'imageUrl' => filled($product->image_path)
-                    // Keep this URL host-relative so images work whether the app
-                    // is opened via localhost, 127.0.0.1, a LAN IP, or a domain.
-                    ? route('batik-products.image', ['product' => $product], false)
+                    ? Storage::disk('public')->url($product->image_path)
                     : null,
                 'editUrl' => $user instanceof User && $user->isAdminInduk()
                     ? BatikProductResource::getUrl(

@@ -86,7 +86,6 @@ class ListDecreeProposals extends ListRecords
                             ->columnSpan(5),
                         FileUpload::make('template_path')
                             ->label('File Template Word (.DOC / .DOCX)')
-                            ->preserveFilenames()
                             ->disk('decree-proposals')
                             ->directory('templates')
                             ->acceptedFileTypes([

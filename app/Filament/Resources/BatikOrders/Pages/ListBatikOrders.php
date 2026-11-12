@@ -41,7 +41,9 @@ class ListBatikOrders extends ListRecords
                 'price' => (float) $product->price,
                 'sizeLabel' => $product->size_label,
                 'imageUrl' => filled($product->image_path)
-                    ? route('batik-products.image', ['product' => $product])
+                    // Keep this URL host-relative so images work whether the app
+                    // is opened via localhost, 127.0.0.1, a LAN IP, or a domain.
+                    ? route('batik-products.image', ['product' => $product], false)
                     : null,
                 'editUrl' => $user instanceof User && $user->isAdminInduk()
                     ? BatikProductResource::getUrl(

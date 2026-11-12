@@ -84,7 +84,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->brandName('SIDIKMA GK')
             ->brandLogo(fn (): string => asset('images/sidikma-tab-logo.png'))
-            ->favicon(fn (): string => asset('images/sidikma-tab-logo.png'))
+            ->favicon(fn (): string => asset('favicon.ico'))
             ->brandLogoHeight('3rem')
             ->colors([
                 'primary' => Color::Emerald,

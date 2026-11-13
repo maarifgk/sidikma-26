@@ -154,7 +154,7 @@ class MigrateSidikmaEmployees extends Command
                     'employee_type' => SidikmaEmployeeData::employeeType($legacy->jurusan_id, $definition['category']),
                     'employment_status' => SidikmaEmployeeData::employmentStatus($legacy->jurusan_id),
                     'last_education' => $this->nullable($legacy->ptt_lulus), 'program_study' => $this->nullable($legacy->p_studi),
-                    'gender' => null, 'birth_place' => $this->nullable($legacy->tempat_lahir), 'birth_date' => $this->date($legacy->tgl_lahir),
+                    'gender' => SidikmaEmployeeData::gender($legacy->jenis_kelamin ?? $legacy->gender ?? $legacy->jk ?? null), 'birth_place' => $this->nullable($legacy->tempat_lahir), 'birth_date' => $this->date($legacy->tgl_lahir),
                     'phone' => $this->nullable($legacy->no_tlp), 'email' => $email, 'address' => $this->nullable($legacy->alamat), 'is_active' => $legacy->status === 'ON',
                 ],
                 'assignment' => ['employee_position_id' => (int) $position?->id, 'foundation_id' => (int) $foundation->id, 'school_id' => $school?->id, 'start_date' => $start, 'end_date' => null, 'decree_number' => null, 'decree_date' => null, 'decree_period' => SidikmaEmployeeData::decreePeriod($legacy->periode), 'status' => 'active', 'is_primary' => true, 'notes' => empty($legacy->tmt) ? 'Tanggal mulai fallback dari created_at SIDIKMA.' : null],
@@ -190,8 +190,33 @@ class MigrateSidikmaEmployees extends Command
                 $employeeId = $row['employee_id'];
                 if ($row['status'] === 'ELIGIBLE') {
                     $employeeId = DB::connection('pgsql')->table('employees')->insertGetId($row['employee'] + ['created_at' => $now, 'updated_at' => $now]);
+                } else {
+                    $employee = DB::connection('pgsql')->table('employees')->where('id', $employeeId)->first();
+                    $updates = [];
+                    foreach (['nuptk', 'gender'] as $field) {
+                        if (blank($employee->{$field} ?? null) && filled($row['employee'][$field] ?? null)) {
+                            $updates[$field] = $row['employee'][$field];
+                        }
+                    }
+                    if ($updates) {
+                        $updates['updated_at'] = $now;
+                        DB::connection('pgsql')->table('employees')->where('id', $employeeId)->update($updates);
+                    }
                 }
-                if (! $row['assignment_exists']) {
+                $assignment = DB::connection('pgsql')->table('employee_assignments')
+                    ->where('employee_id', $employeeId)->where('status', 'active')->orderByDesc('start_date')->first();
+                if ($assignment && $row['assignment_exists']) {
+                    $updates = [];
+                    foreach (['employee_position_id', 'start_date', 'decree_period'] as $field) {
+                        if (blank($assignment->{$field} ?? null) && filled($row['assignment'][$field] ?? null)) {
+                            $updates[$field] = $row['assignment'][$field];
+                        }
+                    }
+                    if ($updates) {
+                        $updates['updated_at'] = $now;
+                        DB::connection('pgsql')->table('employee_assignments')->where('id', $assignment->id)->update($updates);
+                    }
+                } elseif (! $row['assignment_exists']) {
                     DB::connection('pgsql')->table('employee_assignments')->insert($row['assignment'] + ['employee_id' => $employeeId, 'created_at' => $now, 'updated_at' => $now]);
                 }
                 if ($row['employee']['school_id'] && ! $row['membership_exists']) {

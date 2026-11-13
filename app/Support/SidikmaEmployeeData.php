@@ -49,6 +49,17 @@ final class SidikmaEmployeeData
         return $value !== null && preg_match('/^\d{16}$/', $value) === 1 ? $value : null;
     }
 
+    public static function gender(mixed $value): ?string
+    {
+        $value = mb_strtolower(trim((string) $value));
+
+        return match ($value) {
+            'l', 'lk', 'laki-laki', 'laki laki', 'male', 'm', '1' => 'L',
+            'p', 'pr', 'perempuan', 'female', 'f', '2' => 'P',
+            default => null,
+        };
+    }
+
     public static function assignmentStart(mixed ...$dates): ?string
     {
         foreach ($dates as $value) {

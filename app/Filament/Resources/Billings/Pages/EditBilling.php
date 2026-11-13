@@ -4,11 +4,14 @@ namespace App\Filament\Resources\Billings\Pages;
 
 use App\Filament\Pages\EditRecord;
 use App\Filament\Resources\Billings\BillingResource;
+use App\Models\MidtransTransaction;
 use App\Models\PaymentInvoice;
+use App\Models\PaymentTransaction;
 use App\Models\School;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Notifications\Notification;
 
 class EditBilling extends EditRecord
 {
@@ -35,7 +38,27 @@ class EditBilling extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()->label('Delete'),
+            DeleteAction::make()
+                ->label('Delete')
+                ->before(function (PaymentInvoice $record, DeleteAction $action): void {
+                    $hasPaymentHistory = MidtransTransaction::query()
+                        ->where('payment_invoice_id', $record->getKey())
+                        ->exists()
+                        || PaymentTransaction::query()
+                            ->where('payment_invoice_id', $record->getKey())
+                            ->exists();
+
+                    if (! $hasPaymentHistory) {
+                        return;
+                    }
+
+                    Notification::make()
+                        ->title('Pembayaran tidak dapat dihapus')
+                        ->body('Tagihan ini memiliki histori transaksi. Pertahankan histori pembayaran dan ubah status atau datanya melalui Edit.')
+                        ->danger()
+                        ->send();
+                    $action->halt();
+                }),
         ];
     }
 

@@ -3,13 +3,16 @@
 namespace App\Filament\Resources\Billings\Tables;
 
 use App\Filament\Resources\Billings\Pages\ListBillings;
+use App\Models\MidtransTransaction;
 use App\Models\PaymentInvoice;
+use App\Models\PaymentTransaction;
 use App\Models\User;
 use App\Services\Payments\MidtransPaymentService;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -76,7 +79,26 @@ class BillingsTable
                 DeleteAction::make()
                     ->label('Delete')
                     ->color('danger')
-                    ->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false),
+                    ->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)
+                    ->before(function (PaymentInvoice $record, DeleteAction $action): void {
+                        $hasPaymentHistory = MidtransTransaction::query()
+                            ->where('payment_invoice_id', $record->getKey())
+                            ->exists()
+                            || PaymentTransaction::query()
+                                ->where('payment_invoice_id', $record->getKey())
+                                ->exists();
+
+                        if (! $hasPaymentHistory) {
+                            return;
+                        }
+
+                        Notification::make()
+                            ->title('Pembayaran tidak dapat dihapus')
+                            ->body('Tagihan ini memiliki histori transaksi. Pertahankan histori pembayaran dan ubah status atau datanya melalui Edit.')
+                            ->danger()
+                            ->send();
+                        $action->halt();
+                    }),
             ] : [])
             ->contentFooter(fn () => Filament::getCurrentPanel()?->getId() === 'app' ? view('filament.app.resources.billings.checkout-footer') : null)
             ->recordActionsColumnLabel(fn (): ?string => Filament::getCurrentPanel()?->getId() === 'app'

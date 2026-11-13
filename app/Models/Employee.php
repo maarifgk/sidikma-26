@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -51,6 +52,26 @@ class Employee extends Model
     public const GENDER_MALE = 'L';
 
     public const GENDER_FEMALE = 'P';
+
+    public function avatarUrl(): string
+    {
+        $path = trim((string) $this->avatar_path);
+
+        if ($path === '') {
+            return asset('images/default-avatar.svg');
+        }
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+
+        $path = ltrim($path, '/');
+        $path = preg_replace('#^storage/#', '', $path) ?: $path;
+
+        return Storage::disk('public')->exists($path)
+            ? Storage::disk('public')->url($path)
+            : asset('images/default-avatar.svg');
+    }
 
     /** @return array<string, string> */
     public static function employmentStatusOptions(): array

@@ -17,7 +17,6 @@ use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Support\Facades\Storage;
 use UnitEnum;
 
 class Dashboard extends BaseDashboard
@@ -75,9 +74,7 @@ class Dashboard extends BaseDashboard
             ->get()
             ->map(fn (Employee $employee): array => [
                 'name' => $employee->name,
-                'avatarUrl' => filled($employee->avatar_path)
-                    ? Storage::disk('public')->url($employee->avatar_path)
-                    : asset('images/default-avatar.svg'),
+                'avatarUrl' => $employee->avatarUrl(),
                 'position' => $employee->currentAssignment?->position?->name ?? 'Tenaga Pendidik',
                 'status' => $this->employmentStatus($employee->employment_status),
                 'url' => EmployeeResource::getUrl(
@@ -131,9 +128,7 @@ class Dashboard extends BaseDashboard
                 : null,
             'activitiesUrl' => EmployeeActivityRequestResource::getUrl(panel: 'app', isAbsolute: false),
             'currentEmployee' => $currentEmployee,
-            'mobileAvatarUrl' => filled($currentEmployee?->avatar_path)
-                ? Storage::disk('public')->url($currentEmployee->avatar_path)
-                : asset('images/default-avatar.svg'),
+            'mobileAvatarUrl' => $currentEmployee?->avatarUrl() ?? asset('images/default-avatar.svg'),
             'paidAmount' => $invoices->where('status', PaymentInvoice::STATUS_PAID)->sum('amount'),
             'paidInvoiceCount' => $invoices->where('status', PaymentInvoice::STATUS_PAID)->count(),
             'documentCount' => $currentEmployee

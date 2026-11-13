@@ -34,13 +34,14 @@ class MyProfile extends Page
         $employee = $user?->employee()->with(['school', 'currentAssignment.position'])->first();
         $avatarPath = $employee?->avatar_path ?: $user?->avatar_path;
 
-        $avatarUrl = asset('images/default-avatar.svg');
-        if (filled($avatarPath)) {
-            $avatarUrl = str_starts_with((string) $avatarPath, 'http://')
-                || str_starts_with((string) $avatarPath, 'https://')
-                ? (string) $avatarPath
-                : (Storage::disk('public')->exists((string) $avatarPath)
-                    ? Storage::disk('public')->url((string) $avatarPath)
+        $avatarUrl = $employee?->avatarUrl() ?? asset('images/default-avatar.svg');
+        if (! $employee && filled($avatarPath)) {
+            $avatarPath = ltrim((string) $avatarPath, '/');
+            $avatarPath = preg_replace('#^storage/#', '', $avatarPath) ?: $avatarPath;
+            $avatarUrl = filter_var($avatarPath, FILTER_VALIDATE_URL)
+                ? $avatarPath
+                : (Storage::disk('public')->exists($avatarPath)
+                    ? Storage::disk('public')->url($avatarPath)
                     : $avatarUrl);
         }
 

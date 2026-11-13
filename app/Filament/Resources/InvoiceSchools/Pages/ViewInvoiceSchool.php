@@ -23,7 +23,7 @@ class ViewInvoiceSchool extends ViewRecord
 
     public function getTitle(): string
     {
-        return $this->mode === 'class' ? 'Pembayaran Kelas' : 'Detail Invoice';
+        return $this->mode === 'class' ? 'Tagihan' : 'Detail Invoice';
     }
 
     public function content(Schema $schema): Schema

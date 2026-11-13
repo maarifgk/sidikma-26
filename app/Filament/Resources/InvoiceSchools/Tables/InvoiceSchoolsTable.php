@@ -45,7 +45,7 @@ class InvoiceSchoolsTable
                         isAbsolute: false,
                     )),
                 Action::make('class_invoices')
-                    ->label('Pembayaran Kelas')
+                    ->label('Tagihan')
                     ->icon('heroicon-o-banknotes')
                     ->color('success')
                     ->outlined()

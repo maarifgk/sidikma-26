@@ -27,7 +27,7 @@
 
     <div class="fi-section" style="overflow-x: auto;">
         <div style="padding: 1rem 1.25rem; font-weight: 700;">
-            {{ $mode === 'class' ? 'Daftar Pembayaran Kelas' : 'Rincian Invoice Pembayaran' }}
+            {{ $mode === 'class' ? 'Daftar Tagihan' : 'Rincian Invoice Pembayaran' }}
         </div>
         <table style="width: 100%; border-collapse: collapse; min-width: 54rem;">
             <thead>

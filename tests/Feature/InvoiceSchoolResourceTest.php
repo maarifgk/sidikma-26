@@ -91,7 +91,7 @@ class InvoiceSchoolResourceTest extends TestCase
             ->assertSee('MI YAPPI Baleharjo')
             ->assertSee('Tingkat MI')
             ->assertSee('Detail')
-            ->assertSee('Pembayaran Kelas');
+            ->assertSee('Tagihan');
 
         $this->get('/admin')
             ->assertOk()

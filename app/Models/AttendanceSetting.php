@@ -93,7 +93,6 @@ class AttendanceSetting extends Model
                 'check_in_end' => '11:59:00',
                 'check_out_start' => '14:00:00',
                 'check_out_end' => '17:00:00',
-                'check_out_end' => '17:00:00',
                 'radius_meters' => config('attendance.default_radius_meters', 100),
                 'maximum_accuracy_meters' => config('attendance.maximum_accuracy_meters', 100),
                 'require_location' => false,
@@ -114,14 +113,17 @@ class AttendanceSetting extends Model
     /** @return array{check_in_start: string, late_after: string, check_in_end: string, check_out_start: string, check_out_end: string} */
     public function scheduleFor(Carbon $date): array
     {
-        $friday = $date->dayOfWeekIso === 5;
+        $prefix = match ($date->dayOfWeekIso) {
+            5, 6 => 'friday_',
+            default => null,
+        };
 
         return [
-            'check_in_start' => ($friday ? $this->friday_check_in_start : null) ?: $this->check_in_start,
-            'late_after' => ($friday ? $this->friday_late_after : null) ?: $this->late_after,
-            'check_in_end' => ($friday ? $this->friday_check_in_end : null) ?: $this->check_in_end,
-            'check_out_start' => ($friday ? $this->friday_check_out_start : null) ?: $this->check_out_start,
-            'check_out_end' => ($friday ? $this->friday_check_out_end : null) ?: $this->check_out_end,
+            'check_in_start' => ($prefix ? $this->{$prefix.'check_in_start'} : null) ?: $this->check_in_start,
+            'late_after' => ($prefix ? $this->{$prefix.'late_after'} : null) ?: $this->late_after,
+            'check_in_end' => ($prefix ? $this->{$prefix.'check_in_end'} : null) ?: $this->check_in_end,
+            'check_out_start' => ($prefix ? $this->{$prefix.'check_out_start'} : null) ?: $this->check_out_start,
+            'check_out_end' => ($prefix ? $this->{$prefix.'check_out_end'} : null) ?: $this->check_out_end,
         ];
     }
 

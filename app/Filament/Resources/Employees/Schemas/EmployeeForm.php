@@ -29,8 +29,14 @@ class EmployeeForm
                 ImageEntry::make('avatar_path')
                     ->label('Foto Guru/Pegawai')
                     ->disk('public')
-                    ->state(function (?Employee $record): ?string {
+                    ->getStateUsing(function (?Employee $record): ?string {
                         foreach ([$record?->avatar_path, $record?->user?->avatar_path] as $path) {
+                            if (is_string($path) && str_starts_with($path, 'http')) {
+                                $path = parse_url($path, PHP_URL_PATH) ?: $path;
+                            }
+                            $path = ltrim((string) $path, '/');
+                            $path = preg_replace('#^storage/#', '', $path) ?: $path;
+
                             if (filled($path) && Storage::disk('public')->exists($path)) {
                                 return $path;
                             }

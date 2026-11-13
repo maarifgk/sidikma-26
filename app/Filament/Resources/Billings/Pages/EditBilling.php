@@ -11,7 +11,7 @@ use App\Models\School;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
-use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 
 class EditBilling extends EditRecord
 {
@@ -40,24 +40,20 @@ class EditBilling extends EditRecord
         return [
             DeleteAction::make()
                 ->label('Delete')
-                ->before(function (PaymentInvoice $record, DeleteAction $action): void {
-                    $hasPaymentHistory = MidtransTransaction::query()
-                        ->where('payment_invoice_id', $record->getKey())
-                        ->exists()
-                        || PaymentTransaction::query()
+                ->requiresConfirmation()
+                ->modalHeading('Hapus pembayaran dan histori transaksi?')
+                ->modalDescription('Histori pembayaran dan transaksi Midtrans terkait akan ikut dihapus dan tidak dapat dipulihkan.')
+                ->action(function (PaymentInvoice $record): void {
+                    DB::transaction(function () use ($record): void {
+                        PaymentTransaction::query()
                             ->where('payment_invoice_id', $record->getKey())
-                            ->exists();
-
-                    if (! $hasPaymentHistory) {
-                        return;
-                    }
-
-                    Notification::make()
-                        ->title('Pembayaran tidak dapat dihapus')
-                        ->body('Tagihan ini memiliki histori transaksi. Pertahankan histori pembayaran dan ubah status atau datanya melalui Edit.')
-                        ->danger()
-                        ->send();
-                    $action->halt();
+                            ->delete();
+                        MidtransTransaction::query()
+                            ->where('payment_invoice_id', $record->getKey())
+                            ->delete();
+                        $record->delete();
+                    });
+                    $this->redirect(BillingResource::getUrl('index', panel: 'admin'));
                 }),
         ];
     }

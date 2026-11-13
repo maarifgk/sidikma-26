@@ -101,13 +101,6 @@ class EmployeeForm
                 DatePicker::make('birth_date')
                     ->label('Tanggal Lahir')
                     ->maxDate(now()),
-                Select::make('gender')
-                    ->label('Jenis Kelamin')
-                    ->options([
-                        Employee::GENDER_MALE => 'Laki-laki',
-                        Employee::GENDER_FEMALE => 'Perempuan',
-                    ])
-                    ->native(false),
                 TextInput::make('phone')
                     ->label('Nomor Telepon')
                     ->tel()

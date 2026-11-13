@@ -55,7 +55,7 @@ class Employee extends Model
 
     public function avatarUrl(): string
     {
-        $path = trim((string) $this->avatar_path);
+        $path = trim((string) ($this->avatar_path ?: $this->user?->avatar_path));
 
         if ($path === '') {
             return asset('images/default-avatar.svg');
@@ -65,6 +65,7 @@ class Employee extends Model
             return $path;
         }
 
+        $path = str_replace('\\', '/', $path);
         $path = ltrim($path, '/');
         $path = preg_replace('#^storage/#', '', $path) ?: $path;
 

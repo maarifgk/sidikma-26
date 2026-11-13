@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Employees;
 
-use App\Filament\RelationManagers\ApprovalRequestsRelationManager;
-use App\Filament\RelationManagers\DocumentsRelationManager;
 use App\Filament\Resources\Employees\Pages\CreateEmployee;
 use App\Filament\Resources\Employees\Pages\EditEmployee;
 use App\Filament\Resources\Employees\Pages\ListEmployees;
@@ -56,14 +54,6 @@ class EmployeeResource extends Resource
     public static function table(Table $table): Table
     {
         return EmployeesTable::configure($table);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            DocumentsRelationManager::class,
-            ApprovalRequestsRelationManager::class,
-        ];
     }
 
     public static function getPages(): array

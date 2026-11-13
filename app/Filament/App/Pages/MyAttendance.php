@@ -224,13 +224,21 @@ class MyAttendance extends Page
         $currentTime = now(config('attendance.timezone'))->format('H:i:s');
         $today = now(config('attendance.timezone'));
         $schedule = $setting ? $setting->scheduleFor($today) : null;
+        $checkInStart = $schedule['check_in_start'] ?? null;
+        $lateAfter = $schedule['late_after'] ?? null;
         $checkInEnd = $schedule ? ($schedule['check_in_end'] ?: $schedule['check_out_start']) : null;
+        $checkOutStart = $schedule['check_out_start'] ?? null;
+        $checkOutEnd = $schedule['check_out_end'] ?? null;
 
         return [
             'employee' => $employee,
             'todayRecord' => $record,
             'setting' => $setting,
+            'checkInStart' => $checkInStart,
+            'lateAfter' => $lateAfter,
             'checkInEnd' => $checkInEnd,
+            'checkOutStart' => $checkOutStart,
+            'checkOutEnd' => $checkOutEnd,
             'checkInClosed' => $checkInEnd !== null && $currentTime > $checkInEnd,
             'isWorkday' => $setting?->isWorkday($today) ?? false,
             'gpsAccuracyLimit' => $this->gpsAccuracyLimit($setting),

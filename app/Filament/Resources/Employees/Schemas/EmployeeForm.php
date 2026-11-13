@@ -17,6 +17,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class EmployeeForm
@@ -28,6 +29,15 @@ class EmployeeForm
                 ImageEntry::make('avatar_path')
                     ->label('Foto Guru/Pegawai')
                     ->disk('public')
+                    ->state(function (?Employee $record): ?string {
+                        foreach ([$record?->avatar_path, $record?->user?->avatar_path] as $path) {
+                            if (filled($path) && Storage::disk('public')->exists($path)) {
+                                return $path;
+                            }
+                        }
+
+                        return null;
+                    })
                     ->visibility('public')
                     ->imageWidth(240)
                     ->imageHeight(320)

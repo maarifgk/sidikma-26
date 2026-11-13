@@ -38,7 +38,11 @@ class MidtransCheckoutTest extends TestCase
         Http::preventStrayRequests();
         filament()->setCurrentPanel(filament()->getPanel('admin'));
         $this->seed(RolePermissionSeeder::class);
-        $admin = User::factory()->create();
+        $admin = User::factory()->create([
+            'name' => 'Pembayar Test',
+            'email' => 'pembayar@example.test',
+            'phone_number' => '08123456789',
+        ]);
         $admin->assignRole(User::ROLE_ADMIN_INDUK);
         $this->actingAs($admin);
         $foundation = Foundation::query()->create(['name' => Foundation::APPLICATION_NAME, 'code' => Foundation::APPLICATION_CODE, 'is_active' => true]);
@@ -61,6 +65,13 @@ class MidtransCheckoutTest extends TestCase
         $this->assertFalse($first['production']);
         Http::assertSentCount(1);
         Http::assertSent(fn ($request) => $request['transaction_details']['gross_amount'] === 25000
+            && $request['item_details'][0]['id'] === 'invoice-'.$this->invoice->id
+            && $request['item_details'][0]['name'] === 'Pembayaran SK'
+            && $request['item_details'][0]['price'] === 25000
+            && $request['item_details'][0]['quantity'] === 1
+            && $request['customer_details']['first_name'] === 'Pembayar Test'
+            && $request['customer_details']['phone'] === '08123456789'
+            && $request['customer_details']['email'] === 'pembayar@example.test'
             && $request->hasHeader('Authorization', 'Basic '.base64_encode('SB-Mid-server-test:')));
         $this->assertDatabaseCount('midtrans_transactions', 1);
         $this->assertNotSame('test-token', DB::table('midtrans_transactions')->value('snap_token'));

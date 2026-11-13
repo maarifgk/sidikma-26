@@ -59,6 +59,13 @@ class MidtransPaymentService
             try {
                 $response = $this->gateway->create([
                     'transaction_details' => ['order_id' => $transaction->order_id, 'gross_amount' => (int) $transaction->gross_amount],
+                    'item_details' => [[
+                        'id' => Str::limit('invoice-'.$transaction->payment_invoice_id, 50, ''),
+                        'price' => (int) $transaction->gross_amount,
+                        'quantity' => 1,
+                        'name' => Str::limit($invoice->description ?: 'Tagihan '.$invoice->invoice_number, 50, ''),
+                    ]],
+                    'customer_details' => $this->customerDetails($invoice),
                     'credit_card' => ['secure' => true],
                 ]);
                 if (empty($response['token']) || ! is_string($response['token'])) {
@@ -77,6 +84,29 @@ class MidtransPaymentService
             'clientKey' => $settings->client_key,
             'production' => $settings->midtrans_is_production,
         ];
+    }
+
+    /** @return array<string, string> */
+    private function customerDetails(PaymentInvoice $invoice): array
+    {
+        $user = $invoice->user;
+        $employee = $invoice->employee;
+        $name = trim((string) ($user?->name ?: $user?->nama_lengkap ?: $employee?->name));
+        $phone = trim((string) ($user?->phone_number ?: $user?->no_tlp ?: $employee?->phone));
+        $email = trim((string) ($user?->email ?: $employee?->email));
+        $details = [];
+
+        if ($name !== '') {
+            $details['first_name'] = Str::limit($name, 50, '');
+        }
+        if ($phone !== '') {
+            $details['phone'] = Str::limit($phone, 19, '');
+        }
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $details['email'] = Str::limit($email, 50, '');
+        }
+
+        return $details;
     }
 
     public function notification(array $payload): void

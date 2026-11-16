@@ -56,6 +56,7 @@ use App\Policies\TreasuryTransactionPolicy;
 use App\Policies\UserPolicy;
 use Filament\Auth\Notifications\ResetPassword as FilamentResetPassword;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use App\Models\FoundationSkDocument;
 use App\Policies\FoundationSkDocumentPolicy;
@@ -88,6 +89,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // The production deployment is behind an HTTPS reverse proxy, while
+        // APP_ENV may remain local. Force signed Livewire upload URLs to use
+        // the public HTTPS origin so their signatures validate at the proxy.
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceRootUrl(rtrim((string) config('app.url'), '/'));
+            URL::forceScheme('https');
+        }
+
         \Illuminate\Support\Facades\Gate::policy(FoundationSkDocument::class, FoundationSkDocumentPolicy::class);
         Gate::policy(FoundationSkTemplate::class, FoundationSkTemplatePolicy::class);
         Gate::policy(FoundationSkNumberSetting::class, FoundationSkNumberSettingPolicy::class);

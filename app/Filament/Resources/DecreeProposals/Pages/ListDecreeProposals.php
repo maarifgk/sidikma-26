@@ -86,6 +86,7 @@ class ListDecreeProposals extends ListRecords
                             ->columnSpan(5),
                         FileUpload::make('template_path')
                             ->label('File Template Word (.DOC / .DOCX)')
+                            ->preserveFilenames()
                             ->disk('decree-proposals')
                             ->visibility('private')
                             ->directory('templates')
@@ -96,9 +97,9 @@ class ListDecreeProposals extends ListRecords
                                 'application/x-zip-compressed',
                                 'application/octet-stream',
                             ])
-                            ->maxSize(20480)
+                            ->maxSize(819200)
                             ->downloadable()
-                            ->helperText('Format Word DOC atau DOCX, maksimal 20 MB.')
+                            ->helperText('Format Word DOC atau DOCX, maksimal 800 MB.')
                             ->columnSpan(5),
                         Toggle::make('is_active')
                             ->label('Ditampilkan')

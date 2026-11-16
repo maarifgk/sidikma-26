@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // The production site is served through a TLS reverse proxy. Trust
+        // forwarded host/proto headers so Livewire signed upload URLs are
+        // generated and validated against the same HTTPS request URL.
+        $middleware->trustProxies('*');
         $middleware->append(SecurityHeaders::class);
         $middleware->validateCsrfTokens(except: ['payments/midtrans/notification']);
 

@@ -72,7 +72,7 @@ return [
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/decree-proposal-files',
             'visibility' => 'private',
             'throw' => false,
-            'report' => false,
+            'report' => true,
         ],
 
         'sipinter-updates' => [

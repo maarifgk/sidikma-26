@@ -33,7 +33,9 @@ class ImportSidikmaFiles extends Command
             ['attendance_leave_requests', 'legacy_permission_id', 'attendance', ['attachment_path']],
             ['attendance_records', 'id', 'attendance', ['check_in_selfie_path', 'check_out_selfie_path']],
         ];
-        if ($this->option('only') === 'learning-modules') {
+        if ($this->option('only') === 'attendance') {
+            $maps = array_values(array_filter($maps, fn (array $map): bool => $map[0] === 'attendance_leave_requests'));
+        } elseif ($this->option('only') === 'learning-modules') {
             $maps = array_values(array_filter($maps, fn (array $map): bool => $map[0] === 'learning_modules'));
         }
         $targetConnection = $this->option('target-connection') ?: env('SIDIKMA_TARGET_CONNECTION', 'mysql');

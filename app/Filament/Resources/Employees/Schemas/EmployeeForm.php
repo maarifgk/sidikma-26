@@ -72,6 +72,7 @@ class EmployeeForm
                     ->columnSpanFull(),
                 TextInput::make('name')
                     ->label('Nama Lengkap')
+                    ->extraAttributes(['class' => 'employee-resource-marker'])
                     ->required()
                     ->maxLength(255),
                 TextInput::make('employee_code')
@@ -100,6 +101,9 @@ class EmployeeForm
                     ->maxLength(100),
                 DatePicker::make('birth_date')
                     ->label('Tanggal Lahir')
+                    ->native(false)
+                    ->displayFormat('d F Y')
+                    ->locale('id')
                     ->maxDate(now()),
                 TextInput::make('phone')
                     ->label('Nomor Telepon')
@@ -133,6 +137,9 @@ class EmployeeForm
                     ->native(false),
                 DatePicker::make('assignment_start_date')
                     ->label('TMT (Terhitung Mulai Tanggal)')
+                    ->native(false)
+                    ->displayFormat('d F Y')
+                    ->locale('id')
                     ->maxDate(now())
                     ->visible(fn (?Employee $record): bool => $record?->currentAssignment !== null || request()->routeIs('filament.admin.resources.employees.edit')),
                 Select::make('employment_status')

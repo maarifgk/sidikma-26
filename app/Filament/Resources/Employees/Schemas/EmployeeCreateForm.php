@@ -37,6 +37,7 @@ class EmployeeCreateForm
                         : null),
                 TextInput::make('name')
                     ->label('NAMA LENGKAP')
+                    ->extraAttributes(['class' => 'employee-resource-marker'])
                     ->placeholder('Masukan Nama Lengkap')
                     ->required()
                     ->maxLength(255),
@@ -118,9 +119,15 @@ class EmployeeCreateForm
                     ->maxLength(100),
                 DatePicker::make('birth_date')
                     ->label('TANGGAL LAHIR')
+                    ->native(false)
+                    ->displayFormat('d F Y')
+                    ->locale('id')
                     ->maxDate(now()),
                 DatePicker::make('assignment_start_date')
                     ->label('TMT (TERHITUNG MULAI TANGGAL)')
+                    ->native(false)
+                    ->displayFormat('d F Y')
+                    ->locale('id')
                     ->required(),
                 Select::make('position_id')
                     ->label('KETUGASAN')

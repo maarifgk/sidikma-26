@@ -404,4 +404,35 @@
         body:not(:has(.teacher-mobile)) .fi-page:has(.school-head-form) .fi-sc-actions[id*="form-actions"] .fi-btn { flex:1; }
     }
     @media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important; } }
+
+    /* Employee resource only: visual polish without changing field order or behavior. */
+    body:not(:has(.teacher-mobile)) .fi-page:has(.employee-resource-marker) .fi-input-wrp {
+        border-color:#cbd9e4;
+        border-radius:.7rem;
+        background:#fbfdff;
+        box-shadow:0 1px 2px rgba(15,34,59,.035);
+        transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease;
+    }
+    body:not(:has(.teacher-mobile)) .fi-page:has(.employee-resource-marker) .fi-input-wrp:hover { border-color:#9ab8c8; }
+    body:not(:has(.teacher-mobile)) .fi-page:has(.employee-resource-marker) .fi-input-wrp:focus-within {
+        border-color:var(--ui-blue-600);
+        background:#fff;
+        box-shadow:0 0 0 3px rgba(23,104,181,.12);
+    }
+    body:not(:has(.teacher-mobile)) .fi-page:has(.employee-resource-marker) :is(.fi-input,.fi-select-input) {
+        min-height:2.75rem;
+        padding-inline:.875rem;
+        color:#263c58;
+        font-size:.875rem;
+    }
+    body:not(:has(.teacher-mobile)) .fi-page:has(.employee-resource-marker) textarea.fi-input { min-height:6rem;line-height:1.5; }
+    body:not(:has(.teacher-mobile)) .fi-page:has(.employee-resource-marker) .fi-fo-field-label-content {
+        color:#33455e;
+        font-size:.78rem;
+        font-weight:650;
+        letter-spacing:.01em;
+    }
+    @media(max-width:640px) {
+        body:not(:has(.teacher-mobile)) .fi-page:has(.employee-resource-marker) .fi-section-content { padding:.875rem; }
+    }
 </style>

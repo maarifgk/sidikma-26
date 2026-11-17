@@ -78,10 +78,10 @@ class EmployeesTable
                         }
 
                         if ($assignment->start_date) {
-                            $period = $assignment->start_date->format('d M Y');
+                            $period = $assignment->start_date->locale('id')->translatedFormat('d F Y');
 
                             if ($assignment->end_date) {
-                                $period .= ' - '.$assignment->end_date->format('d M Y');
+                                $period .= ' - '.$assignment->end_date->locale('id')->translatedFormat('d F Y');
                             }
 
                             $details[] = $period;

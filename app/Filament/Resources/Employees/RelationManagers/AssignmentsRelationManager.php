@@ -74,15 +74,24 @@ class AssignmentsRelationManager extends RelationManager
                     ->native(false),
                 DatePicker::make('start_date')
                     ->label('Tanggal Mulai')
+                    ->native(false)
+                    ->displayFormat('d F Y')
+                    ->locale('id')
                     ->required(),
                 DatePicker::make('end_date')
                     ->label('Tanggal Selesai')
+                    ->native(false)
+                    ->displayFormat('d F Y')
+                    ->locale('id')
                     ->afterOrEqual('start_date'),
                 TextInput::make('decree_number')
                     ->label('Nomor SK')
                     ->maxLength(100),
                 DatePicker::make('decree_date')
-                    ->label('Tanggal SK'),
+                    ->label('Tanggal SK')
+                    ->native(false)
+                    ->displayFormat('d F Y')
+                    ->locale('id'),
                 Toggle::make('is_primary')
                     ->label('Penugasan Utama')
                     ->default(false),
@@ -113,11 +122,11 @@ class AssignmentsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('start_date')
                     ->label('Mulai')
-                    ->date('d M Y')
+                    ->formatStateUsing(fn ($state): ?string => $state?->locale('id')->translatedFormat('d F Y'))
                     ->sortable(),
                 TextColumn::make('end_date')
                     ->label('Selesai')
-                    ->date('d M Y')
+                    ->formatStateUsing(fn ($state): ?string => $state?->locale('id')->translatedFormat('d F Y'))
                     ->placeholder('Belum ditentukan')
                     ->sortable(),
                 TextColumn::make('status')
@@ -138,7 +147,7 @@ class AssignmentsRelationManager extends RelationManager
                     ->toggleable(),
                 TextColumn::make('decree_date')
                     ->label('Tanggal SK')
-                    ->date('d M Y')
+                    ->formatStateUsing(fn ($state): ?string => $state?->locale('id')->translatedFormat('d F Y'))
                     ->placeholder('-')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

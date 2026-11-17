@@ -29,4 +29,5 @@ $rejectedCount=$requests->where('status','rejected')->count();
 @endforelse
 </tbody></table></div></section>
 <style>.al-actions{display:none!important}.al-table th:last-child,.al-table td:last-child,.al-table th:nth-last-child(2),.al-table td:nth-last-child(2){display:none!important}</style>
+<style>.al-file-link{display:inline-flex;align-items:center;justify-content:center;min-width:92px;padding:7px 10px;border-radius:7px;background:#eaf2ff;color:#164db9;font-size:11.5px;font-weight:700;text-decoration:none;white-space:nowrap}.al-file-link:hover{background:#dbeafe}.al-file-missing{display:inline-flex;align-items:center;justify-content:center;min-width:92px;padding:7px 10px;border-radius:7px;background:#fee2e2;color:#b91c1c;font-size:11.5px;font-weight:700;white-space:nowrap}</style>
 </div>

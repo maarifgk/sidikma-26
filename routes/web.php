@@ -11,6 +11,7 @@ use App\Http\Controllers\DownloadSipinterTemplateController;
 use App\Http\Controllers\MapTileController;
 use App\Http\Controllers\MapProviderTileController;
 use App\Http\Controllers\ViewAttendanceSelfieController;
+use App\Http\Controllers\ViewAttendanceLeaveAttachmentController;
 use App\Http\Controllers\ViewComplaintAttachmentController;
 use App\Models\DecreeCorrectionRequest;
 use App\Http\Controllers\FoundationSkDocumentDownloadController;
@@ -106,6 +107,10 @@ Route::get('/learning-module-files/{learningModule}/download', DownloadLearningM
 Route::get('/attendance-records/{attendanceRecord}/selfie/{slot}', ViewAttendanceSelfieController::class)
     ->middleware('auth')
     ->name('attendance.selfie.view');
+
+Route::get('/attendance/leave-requests/{attendanceLeaveRequest}/attachment', ViewAttendanceLeaveAttachmentController::class)
+    ->middleware('auth')
+    ->name('attendance.leave-requests.attachment');
 Route::get('/map-tiles/{z}/{x}/{y}.png', MapTileController::class)
     ->whereNumber(['z', 'x', 'y'])
     ->middleware('auth')

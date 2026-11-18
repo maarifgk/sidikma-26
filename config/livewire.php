@@ -2,10 +2,10 @@
 
 return [
     'temporary_file_upload' => [
-        // Temporary uploads must use Livewire's local temporary filesystem.
-        // The final FileUpload destination remains the private
-        // `decree-proposals` disk configured on the form component.
-        'disk' => env('LIVEWIRE_UPLOAD_DISK', 'local'),
+        // Keep temporary uploads on the same writable private filesystem as
+        // the final administration templates. This is required on the
+        // production server where the default local storage is not writable.
+        'disk' => 'decree-proposals',
         'rules' => ['required', 'file', 'max:819200'],
         'directory' => 'livewire-tmp',
         'middleware' => 'throttle:120,10',

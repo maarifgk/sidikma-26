@@ -2,10 +2,12 @@
 
 return [
     'temporary_file_upload' => [
-        // Keep temporary uploads on the same writable private filesystem as
-        // the final administration templates. This is required on the
-        // production server where the default local storage is not writable.
-        'disk' => 'decree-proposals',
+        // Temporary Livewire files must use the normal private local disk.
+        // The final template is moved to the dedicated private disk by the
+        // form component after the request is submitted. Using the served
+        // final disk here can make Livewire preview/signature requests fail
+        // with 403 on private filesystems.
+        'disk' => 'local',
         'rules' => ['required', 'file', 'max:819200'],
         'directory' => 'livewire-tmp',
         'middleware' => 'throttle:120,10',

@@ -37,15 +37,17 @@ class CreateDecreeSubmission extends CreateRecord
         if (! app(DecreeSubmissionEligibility::class)->schoolCanSubmit($school)) {
             throw ValidationException::withMessages(['payment' => app(DecreeSubmissionEligibility::class)->message()]);
         }
-        $employee = Employee::query()->whereKey($data['employee_id'])->where('school_id', $school->getKey())->where('employee_type', Employee::TYPE_GURU)->where('is_active', true)->first();
-        if (! $employee) {
+        $employee = filled($data['employee_id'] ?? null)
+            ? Employee::query()->whereKey($data['employee_id'])->where('school_id', $school->getKey())->where('employee_type', Employee::TYPE_GURU)->where('is_active', true)->first()
+            : null;
+        if (! $employee && blank($data['candidate_name'] ?? null)) {
             throw ValidationException::withMessages(['employee_id' => 'Guru yang dipilih tidak berasal dari sekolah/madrasah Anda.']);
         }
         DecreeSubmissionType::query()->whereKey($data['decree_submission_type_id'])->where('is_active', true)->firstOrFail();
 
         $submission = DB::transaction(function () use ($data, $actor, $school, $employee): DecreeSubmission {
             $submission = DecreeSubmission::query()->create([
-                'submission_number' => DecreeSubmission::generateSubmissionNumber(), 'submission_date' => $data['submission_date'], 'school_id' => $school->getKey(), 'employee_id' => $employee->getKey(), 'decree_submission_type_id' => $data['decree_submission_type_id'], 'purpose' => $data['purpose'] ?? null, 'status' => DecreeSubmission::STATUS_UNDER_REVIEW, 'submitted_by' => $actor->getKey(),
+                'submission_number' => DecreeSubmission::generateSubmissionNumber(), 'submission_date' => $data['submission_date'], 'school_id' => $school->getKey(), 'employee_id' => $employee?->getKey(), 'candidate_name' => $data['candidate_name'] ?? null, 'decree_submission_type_id' => $data['decree_submission_type_id'], 'purpose' => $data['purpose'] ?? null, 'status' => DecreeSubmission::STATUS_UNDER_REVIEW, 'submitted_by' => $actor->getKey(),
             ]);
             $submission->statusHistories()->create(['from_status' => null, 'to_status' => DecreeSubmission::STATUS_UNDER_REVIEW, 'notes' => null, 'changed_by' => $actor->getKey()]);
 

@@ -22,7 +22,7 @@ class DecreeSubmissionsTable
             TextColumn::make('submission_number')->label('Nomor Pengajuan')->searchable()->sortable(),
             TextColumn::make('submission_date')->label('Tanggal Pengajuan')->date('d M Y')->sortable(),
             TextColumn::make('school.name')->label('Sekolah/Madrasah')->searchable()->sortable(),
-            TextColumn::make('employee.name')->label('Nama Guru')->searchable()->sortable(),
+            TextColumn::make('employee.name')->label('Nama Guru')->state(fn (DecreeSubmission $record): string => $record->employee?->name ?? $record->candidate_name ?? '-')->searchable(),
             TextColumn::make('type.name')->label('Jenis SK')->sortable(),
             TextColumn::make('status')->label('Status')->badge()->formatStateUsing(fn (string $state): string => DecreeSubmission::statusOptions()[$state] ?? $state)->color(fn (string $state): string => match ($state) {
                 DecreeSubmission::STATUS_COMPLETED => 'success', DecreeSubmission::STATUS_REJECTED => 'danger', DecreeSubmission::STATUS_REVISION_REQUIRED => 'warning', DecreeSubmission::STATUS_PROCESSING => 'info', default => 'gray'

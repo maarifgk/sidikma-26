@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['submission_number', 'submission_date', 'school_id', 'employee_id', 'decree_submission_type_id', 'purpose', 'status', 'admin_notes', 'result_file_path', 'result_original_name', 'result_mime_type', 'completed_at', 'submitted_by', 'updated_by'])]
+#[Fillable(['submission_number', 'submission_date', 'school_id', 'employee_id', 'candidate_name', 'decree_submission_type_id', 'purpose', 'status', 'admin_notes', 'result_file_path', 'result_original_name', 'result_mime_type', 'completed_at', 'submitted_by', 'updated_by'])]
 class DecreeSubmission extends Model
 {
     use SoftDeletes;

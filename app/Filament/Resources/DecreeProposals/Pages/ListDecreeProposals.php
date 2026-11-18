@@ -86,20 +86,19 @@ class ListDecreeProposals extends ListRecords
                             ->columnSpan(5),
                         FileUpload::make('template_path')
                             ->label('File Template Word (.DOC / .DOCX)')
-                            ->preserveFilenames()
                             ->disk('decree-proposals')
                             ->visibility('private')
                             ->directory('templates')
                             ->acceptedFileTypes([
                                 'application/msword',
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                'application/zip',
-                                'application/x-zip-compressed',
-                                'application/octet-stream',
                             ])
-                            ->maxSize(819200)
+                            // Keep this below the server's current upload_max_filesize (2 MB).
+                            // The mimes rule also handles browsers that report a generic MIME type.
+                            ->rules(['nullable', 'file', 'mimes:doc,docx', 'max:1536'])
+                            ->maxSize(1536)
                             ->downloadable()
-                            ->helperText('Format Word DOC atau DOCX, maksimal 800 MB.')
+                            ->helperText('Format Word DOC atau DOCX, maksimal 1,5 MB.')
                             ->columnSpan(5),
                         Toggle::make('is_active')
                             ->label('Ditampilkan')

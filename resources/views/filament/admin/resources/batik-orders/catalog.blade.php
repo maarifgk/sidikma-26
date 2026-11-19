@@ -5,6 +5,8 @@
                 <img
                     src="{{ $product['imageUrl'] }}"
                     alt="{{ $product['name'] }}"
+                    loading="eager"
+                    decoding="async"
                     style="display: block; width: 100%; height: 12.5rem; object-fit: cover;"
                 >
             @else

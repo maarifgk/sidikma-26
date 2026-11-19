@@ -15,9 +15,9 @@ class BatikProductImageController extends Controller
 
         abort_unless(filled($path) && $disk->exists($path), 404);
 
-        return response($disk->get($path), 200, [
+        return response()->file($disk->path($path), [
             'Content-Type' => $disk->mimeType($path) ?: 'application/octet-stream',
-            'Cache-Control' => 'private, max-age=3600',
+            'Cache-Control' => 'public, max-age=86400',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }

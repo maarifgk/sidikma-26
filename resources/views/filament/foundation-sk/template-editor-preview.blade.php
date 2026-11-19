@@ -85,6 +85,9 @@
     };
     document.addEventListener('input', syncSkFonts);
     document.addEventListener('change', syncSkFonts);
+    document.addEventListener('livewire:navigated', syncSkFonts);
+    document.addEventListener('livewire:init', () => Livewire.hook('morph.updated', syncSkFonts));
+    new MutationObserver(syncSkFonts).observe(document.body, { childList: true, subtree: true });
     queueMicrotask(syncSkFonts);
 })();
 </script>

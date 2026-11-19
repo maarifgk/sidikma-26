@@ -19,16 +19,14 @@
         .preview-document { box-shadow: 0 2px 14px rgba(0,0,0,.2) !important; margin: 0 auto !important; transform: none !important; }
         /* Dompdf belum mendukung CSS grid/:has seperti browser. Gunakan tabel
            untuk mempertahankan kolom label, titik dua, dan isi tetap sejajar. */
-        .sk-section-row { display: table !important; width: 100% !important; table-layout: fixed !important; margin: 3px 0 !important; }
-        .sk-section-row > span { display: table-cell !important; vertical-align: top !important; }
-        .sk-section-row > .sk-section-label { width: 16% !important; text-align: left !important; }
-        .sk-section-row > .sk-section-colon { width: 3% !important; text-align: center !important; }
-        .sk-section-row > .sk-section-content { width: 81% !important; text-align: justify !important; }
-        .sk-data-row { display: table !important; width: 100% !important; table-layout: fixed !important; margin: 1px 0 !important; }
-        .sk-data-row > span { display: table-cell !important; vertical-align: top !important; }
-        .sk-data-row > span:first-child { width: 24% !important; }
-        .sk-data-row > span:nth-child(2) { width: 3% !important; text-align: center !important; }
-        .sk-data-row > span:last-child { width: 73% !important; }
+        .sk-section-row { display: block !important; position: relative !important; width: 100% !important; margin: 3px 0 !important; padding-left: 19% !important; }
+        .sk-section-row > .sk-section-label { position: absolute !important; left: 0 !important; top: 0 !important; width: 16% !important; text-align: left !important; }
+        .sk-section-row > .sk-section-colon { position: absolute !important; left: 16% !important; top: 0 !important; width: 3% !important; text-align: center !important; }
+        .sk-section-row > .sk-section-content { display: block !important; width: 100% !important; text-align: justify !important; }
+        .sk-data-row { display: block !important; position: relative !important; width: 100% !important; margin: 1px 0 !important; padding-left: 27% !important; }
+        .sk-data-row > span:first-child { position: absolute !important; left: 0 !important; top: 0 !important; width: 24% !important; }
+        .sk-data-row > span:nth-child(2) { position: absolute !important; left: 24% !important; top: 0 !important; width: 3% !important; text-align: center !important; }
+        .sk-data-row > span:last-child { display: block !important; width: 100% !important; }
         .sk-signature-preview { display: table !important; table-layout: fixed !important; }
         .sk-signature-preview > div { display: table-row !important; }
         .sk-signature-preview > div > span, .sk-signature-preview > div > b { display: table-cell !important; vertical-align: top !important; }

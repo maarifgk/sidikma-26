@@ -4,7 +4,7 @@ namespace App\Filament\Resources\FoundationSkTemplates;
 
 use App\Models\FoundationSkTemplate;
 use Filament\Actions\{Action, ActionGroup, DeleteAction, EditAction};
-use Filament\Forms\Components\{FileUpload, Hidden, Select, Textarea, TextInput, Toggle};
+use Filament\Forms\Components\{FileUpload, Select, Textarea, TextInput, Toggle};
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\{Grid, Section, View};
 use Filament\Schemas\Schema;
@@ -40,7 +40,6 @@ class FoundationSkTemplateResource extends Resource
                         TextInput::make('document_title')->label('Judul Dokumen / Nama File PDF')->required(),
                         ]),
                     ])->columns(1),
-                    Hidden::make('slug')->default(fn (): string => 'template-'.uniqid())->required()->unique(ignoreRecord: true),
                     Section::make('Informasi Dasar Template')->description('Isi informasi utama terlebih dahulu, kemudian lanjutkan ke bagian isi SK.')->schema([
                         Textarea::make('description')->label('Deskripsi')->live(debounce: 500),
                         Grid::make(2)->schema([

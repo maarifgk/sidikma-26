@@ -26,8 +26,9 @@ class DecreeProposalsTable
         return $table
             ->columns([
                 TextColumn::make('row_number')
-                    ->label('No')
-                    ->rowIndex(),
+                    ->label('#')
+                    ->rowIndex()
+                    ->width('3rem'),
                 TextColumn::make('employee.employee_code')
                     ->label('EWANUGK')
                     ->state(fn (DecreeProposal $record): string => $record->employee?->employee_code ?? '-')
@@ -38,13 +39,17 @@ class DecreeProposalsTable
                     ->label('Nama Lengkap')
                     ->state(fn (DecreeProposal $record): string => $record->employee?->name ?? $record->candidate_name ?? '-')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold')
+                    ->description(fn (DecreeProposal $record): string => $record->employee?->employee_code ?? '-'),
                 TextColumn::make('employee.school.name')
                     ->label('Asal Madrasah/Sekolah')
                     ->state(fn (DecreeProposal $record): string => $record->employee?->school?->name ?? $record->candidate_school ?? '-')
                     ->placeholder('-')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap()
+                    ->lineClamp(2),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -57,6 +62,11 @@ class DecreeProposalsTable
                         default => 'warning',
                     })
                     ->sortable(),
+                TextColumn::make('created_at')
+                    ->label('Diajukan')
+                    ->date('d M Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -167,6 +177,8 @@ class DecreeProposalsTable
                     ->label('Delete'),
             ])
             ->defaultSort('created_at', 'desc')
+            ->striped()
+            ->searchPlaceholder('Cari nama, EWANUGK, atau madrasah...')
             ->paginationPageOptions([10, 25, 50, 100])
             ->defaultPaginationPageOption(10)
             ->emptyStateHeading('Belum ada usulan SK baru')

@@ -38,7 +38,7 @@
                 @foreach (['menimbang'=>'Menimbang','mengingat'=>'Mengingat','memutuskan'=>'Memutuskan','menetapkan'=>'Menetapkan'] as $key=>$label)
                     @if (!empty($sections[$key]))
                         @foreach (array_filter(array_map('trim', explode(';', $sections[$key]))) as $partIndex => $part)
-                            <div class="sk-section-row" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $partIndex === 0 ? $label : '' }}</span><span class="sk-section-colon">:</span><span class="sk-section-content" style="text-align:justify">{{ $part }}@if (!$loop->last);@endif</span></div>
+                            <div class="sk-section-row {{ $key === 'mengingat' ? 'sk-mengingat-row' : '' }}" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $partIndex === 0 ? $label : '' }}</span><span class="sk-section-colon">{{ $key === 'mengingat' && $partIndex > 0 ? '' : ':' }}</span><span class="sk-section-content" style="text-align:justify">@if ($key === 'mengingat'){{ $partIndex + 1 }}. @endif{{ $part }}@if (!$loop->last);@endif</span></div>
                         @endforeach
                     @endif
                 @endforeach

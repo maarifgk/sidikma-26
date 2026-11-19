@@ -128,9 +128,9 @@ class FoundationSkTemplateResource extends Resource
                         Textarea::make('builder_data.sections.menetapkan')->label('Teks Penetapan')->rows(8)->helperText('Gunakan format terstruktur: Pertama : isi data diri; Kedua : isi keputusan berikutnya; Ketiga : isi penutup. Pisahkan setiap bagian dengan tanda titik koma (;).')->placeholder("Pertama : Guru tersebut di bawah ini :\n1. Nama : {{nama_lengkap}}\n2. Tempat, tanggal lahir : {{tempat_lahir}}, {{tgl_lahir}}\n3. NUPTK/NPK : {{nuptk}}\n4. EWANUGK : {{nis}}\nKedua : Keputusan ini berlaku mulai {{tanggal_mulai}}; Ketiga : Asli surat keputusan ini diberikan kepada yang bersangkutan.")->live(debounce: 500),
                         TextInput::make('builder_data.fonts.data_user')->label('Ukuran Font Data Guru')->numeric()->default(11)->live(),
                     ])->columns(2),
-                    Section::make('Area Tanda Tangan')->description('Bagian ini hanya area teks penetapan, tanpa gambar tanda tangan.')->schema([
-                        TextInput::make('builder_data.signature.ditetapkan_di')->label('Ditetapkan Di')->live(debounce: 500),
-                        TextInput::make('builder_data.signature.label_tanggal')->label('Label Tanggal')->live(debounce: 500),
+                    Section::make('Area Tanda Tangan')->description('Atur lokasi, tanggal, pengurus, jabatan, cap, dan nama penanda tangan.')->schema([
+                        TextInput::make('builder_data.signature.ditetapkan_di')->label('Lokasi Ditetapkan')->placeholder('Gunungkidul')->live(debounce: 500),
+                        TextInput::make('builder_data.signature.label_tanggal')->label('Label Tanggal')->default('Pada Tanggal')->placeholder('Pada Tanggal')->live(debounce: 500),
                         TextInput::make('builder_data.signature.tanggal_penetapan')->label('Tanggal Penetapan')->live(debounce: 500),
                         TextInput::make('builder_data.signature.baris_pengurus')->label('Baris Pengurus')->live(debounce: 500),
                         TextInput::make('builder_data.signature.jabatan')->label('Jabatan')->live(debounce: 500),

@@ -28,6 +28,10 @@
     if (is_array($stampPath)) $stampPath = array_values($stampPath)[0] ?? null;
     if (filled($stampPath) && ! str_contains($stampPath, '/')) $stampPath = 'foundation-sk/signature-stamps/'.$stampPath;
     $stampUrl = filled($stampPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($stampPath) ? route('foundation-sk.template-asset', ['path' => $stampPath]) : null;
+    $signatureLocation = $builder['signature']['ditetapkan_di'] ?? null;
+    if (! filled($signatureLocation) || str_contains(strtolower((string) $signatureLocation), 'ditetapkan')) $signatureLocation = $builder['signature']['label_tanggal'] ?? 'Gunungkidul';
+    $signatureDateLabel = $builder['signature']['label_tanggal'] ?? null;
+    if (! filled($signatureDateLabel) || $signatureDateLabel === $signatureLocation || str_contains(strtolower((string) $signatureDateLabel), 'gunungkidul')) $signatureDateLabel = 'Pada Tanggal';
     $dimensions = match ($size) { 'F4' => [816, 1248], 'Legal', 'LEGAL' => [816, 1344], 'LETTER' => [816, 1056], default => [794, 1123] }; if ($orientation === 'landscape') $dimensions = [$dimensions[1], $dimensions[0]];
 @endphp
 <div x-data="{ zoom: 100, zoomIn() { this.zoom = Math.min(200, this.zoom + 10) }, zoomOut() { this.zoom = Math.max(50, this.zoom - 10) }, reset() { this.zoom = 100 } }" class="foundation-sk-preview flex min-h-[700px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -60,8 +64,8 @@
                 @endforeach
             @endif
             <div class="sk-signature-preview" style="font-size:{{ $builder['fonts']['signature'] ?? $bodyFont }}px!important">
-                <div><span>{{ $builder['signature']['ditetapkan_di'] ?: 'Ditetapkan di' }}</span><b>:</b><span>{{ $builder['signature']['label_tanggal'] ?: 'Gunungkidul' }}</span></div>
-                <div><span>{{ $builder['signature']['label_tanggal'] ?: 'Pada Tanggal' }}</span><b>:</b><span>{{ $builder['signature']['tanggal_penetapan'] ?: '<<Tanggal Penetapan>>' }}</span></div>
+                <div><span>Ditetapkan di</span><b>:</b><span>{{ $signatureLocation }}</span></div>
+                <div><span>{{ $signatureDateLabel }}</span><b>:</b><span>{{ $builder['signature']['tanggal_penetapan'] ?: '<<Tanggal Penetapan>>' }}</span></div>
                 <div><span>{{ $builder['signature']['baris_pengurus'] ?: 'Pengurus LP Ma’arif NU Kab. Gunungkidul' }}</span></div>
                 <div><span>{{ $builder['signature']['jabatan'] ?: 'Ketua,' }}</span></div>
                 @if ($stampUrl)<img class="sk-signature-stamp" src="{{ $stampUrl }}" alt="Cap tanda tangan">@endif

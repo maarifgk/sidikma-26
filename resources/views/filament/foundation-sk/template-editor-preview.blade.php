@@ -55,6 +55,13 @@
                     @endif
                 @endforeach
             @endif
+            <div class="sk-signature-preview" style="font-size:{{ $builder['fonts']['signature'] ?? $bodyFont }}px!important">
+                <div><span>{{ $builder['signature']['ditetapkan_di'] ?: 'Ditetapkan di' }}</span><b>:</b><span>{{ $builder['signature']['label_tanggal'] ?: 'Gunungkidul' }}</span></div>
+                <div><span>{{ $builder['signature']['label_tanggal'] ?: 'Pada Tanggal' }}</span><b>:</b><span>{{ $builder['signature']['tanggal_penetapan'] ?: '<<Tanggal Penetapan>>' }}</span></div>
+                <div><span>{{ $builder['signature']['baris_pengurus'] ?: 'Pengurus LP Ma’arif NU Kab. Gunungkidul' }}</span></div>
+                <div><span>{{ $builder['signature']['jabatan'] ?: 'Ketua,' }}</span></div>
+                <div class="sk-signature-name">{{ $builder['signature']['nama'] ?: 'Drs. H. Sangkin, M.Pd.' }}</div>
+            </div>
             <p>Nama: <strong>Nama Lengkap Contoh</strong><br>NIS/NIP/NUPTK: 0000000000<br>Sekolah: Sekolah Contoh</p>
         </div>
     </div></div>
@@ -85,6 +92,7 @@
 .sk-section-row{margin-top:3px!important;margin-bottom:3px!important}.sk-section-content{line-height:1.35!important}
 .sk-data-row{display:grid;grid-template-columns:250px 16px minmax(0,1fr);column-gap:0;text-align:left;line-height:1.35;margin:1px 0!important;white-space:normal}.sk-data-row>span:nth-child(2){text-align:center}.sk-data-row>span:last-child{text-align:left}
 .sk-section-content:has(.sk-data-row){white-space:normal!important;line-height:1.35!important}
+.sk-signature-preview{width:58%;margin:28px 0 0 auto;line-height:1.25}.sk-signature-preview>div{display:grid;grid-template-columns:155px 16px minmax(0,1fr);text-align:left}.sk-signature-preview>div:nth-child(3),.sk-signature-preview>div:nth-child(4){display:block}.sk-signature-name{font-weight:700;margin-top:34px!important}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $builder['fonts']['body'] ?? 11 }}px!important}.sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important}.sk-section-row{font-size:{{ $builder['fonts']['section_title'] ?? 11 }}px!important}
 .sk-preview-page hr+div+div{font-size:{{ $decision['font_number'] ?? 12 }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $decision['font_opening'] ?? 11 }}px!important}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $bodyFont }}px!important}.sk-section-row{font-size:{{ $sectionFont }}px!important}.sk-preview-page hr+div{font-size:{{ $titleFont }}px!important}.sk-preview-page hr+div+div{font-size:{{ $numberFont }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $openingFont }}px!important}

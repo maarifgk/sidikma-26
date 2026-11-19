@@ -21,14 +21,14 @@
            untuk mempertahankan kolom label, titik dua, dan isi tetap sejajar. */
         .sk-section-row { display: table !important; width: 100% !important; table-layout: fixed !important; margin: 3px 0 !important; }
         .sk-section-row > span { display: table-cell !important; vertical-align: top !important; }
-        .sk-section-row > .sk-section-label { width: 100px !important; text-align: left !important; }
-        .sk-section-row > .sk-section-colon { width: 16px !important; text-align: center !important; }
-        .sk-section-row > .sk-section-content { width: auto !important; text-align: justify !important; }
+        .sk-section-row > .sk-section-label { width: 16% !important; text-align: left !important; }
+        .sk-section-row > .sk-section-colon { width: 3% !important; text-align: center !important; }
+        .sk-section-row > .sk-section-content { width: 81% !important; text-align: justify !important; }
         .sk-data-row { display: table !important; width: 100% !important; table-layout: fixed !important; margin: 1px 0 !important; }
         .sk-data-row > span { display: table-cell !important; vertical-align: top !important; }
-        .sk-data-row > span:first-child { width: 180px !important; }
-        .sk-data-row > span:nth-child(2) { width: 16px !important; text-align: center !important; }
-        .sk-data-row > span:last-child { width: auto !important; }
+        .sk-data-row > span:first-child { width: 24% !important; }
+        .sk-data-row > span:nth-child(2) { width: 3% !important; text-align: center !important; }
+        .sk-data-row > span:last-child { width: 73% !important; }
         .sk-signature-preview { display: table !important; table-layout: fixed !important; }
         .sk-signature-preview > div { display: table-row !important; }
         .sk-signature-preview > div > span, .sk-signature-preview > div > b { display: table-cell !important; vertical-align: top !important; }

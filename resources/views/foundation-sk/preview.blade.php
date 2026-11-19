@@ -17,6 +17,21 @@
         .preview-scroll-area { overflow: visible !important; border: 0 !important; background: transparent !important; padding: 0 !important; }
         .preview-scroll-area > div { width: auto !important; height: auto !important; }
         .preview-document { box-shadow: 0 2px 14px rgba(0,0,0,.2) !important; margin: 0 auto !important; transform: none !important; }
+        /* Dompdf belum mendukung CSS grid/:has seperti browser. Gunakan tabel
+           untuk mempertahankan kolom label, titik dua, dan isi tetap sejajar. */
+        .sk-section-row { display: table !important; width: 100% !important; table-layout: fixed !important; margin: 3px 0 !important; }
+        .sk-section-row > span { display: table-cell !important; vertical-align: top !important; }
+        .sk-section-row > .sk-section-label { width: 100px !important; text-align: left !important; }
+        .sk-section-row > .sk-section-colon { width: 16px !important; text-align: center !important; }
+        .sk-section-row > .sk-section-content { width: auto !important; text-align: justify !important; }
+        .sk-data-row { display: table !important; width: 100% !important; table-layout: fixed !important; margin: 1px 0 !important; }
+        .sk-data-row > span { display: table-cell !important; vertical-align: top !important; }
+        .sk-data-row > span:first-child { width: 180px !important; }
+        .sk-data-row > span:nth-child(2) { width: 16px !important; text-align: center !important; }
+        .sk-data-row > span:last-child { width: auto !important; }
+        .sk-signature-preview { display: table !important; table-layout: fixed !important; }
+        .sk-signature-preview > div { display: table-row !important; }
+        .sk-signature-preview > div > span, .sk-signature-preview > div > b { display: table-cell !important; vertical-align: top !important; }
         @media print { html, body { background: #fff; } body { padding: 0; } .preview-document { box-shadow: none !important; } }
         /* The old renderer rules are intentionally replaced below. */
         /*

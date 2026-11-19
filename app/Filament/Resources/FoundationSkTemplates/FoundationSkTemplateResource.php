@@ -61,7 +61,19 @@ class FoundationSkTemplateResource extends Resource
                             TextInput::make('builder_data.header.font_contact')->label('Ukuran Font Kontak')->numeric()->default(11)->live(debounce: 500),
                             TextInput::make('builder_data.header.email')->label('Email Kop Surat')->live(debounce: 500),
                         ]),
-                        FileUpload::make('builder_data.header.logo_path')->label('Upload Logo Kop Surat')->image()->disk('public')->directory('foundation-sk/logos')->preserveFilenames()->maxSize(2048),
+                        FileUpload::make('builder_data.header.logo_path')
+                            ->label('Logo Kop Surat')
+                            ->helperText('Gunakan PNG, JPG, JPEG, atau WEBP. Maksimal 1,5 MB.')
+                            ->image()
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('foundation-sk/logos')
+                            ->preserveFilenames()
+                            ->maxSize(1536)
+                            ->downloadable()
+                            ->openable()
+                            ->reorderable(false),
                     ])->columns(1),
                     Section::make('Judul Keputusan')->description('Atur judul, nomor, dan kalimat pembuka SK.')->schema([
                         TextInput::make('builder_data.decision.title')->label('Judul SK')->live(debounce: 500),

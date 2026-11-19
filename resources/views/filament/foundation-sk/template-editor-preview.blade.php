@@ -48,7 +48,7 @@
                         @else
                             @if ($key === 'menetapkan')<div class="sk-section-row sk-menetapkan-heading" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">Menetapkan</span><span class="sk-section-colon">:</span><span class="sk-section-content"></span></div>@endif
                             @foreach (array_values(array_filter(array_map(static fn ($part) => preg_replace('/^:\s*/', '', trim($part)), explode(';', $sections[$key])))) as $partIndex => $part)
-                                @php $cleanPart = $key === 'menetapkan' ? preg_replace('/^(?:Pertama|Kedua|Ketiga)\s*:\s*/i', '', $part) : $part; @endphp
+                                @php $cleanPart = $key === 'menetapkan' ? preg_replace('/^(?:Pertama|Kedua|Ketiga)\s*:\s*/i', '', $part) : $part; $cleanPart = preg_replace("/\\n{2,}/", "\\n", (string) $cleanPart); @endphp
                                 <div class="sk-section-row {{ $key === 'mengingat' ? 'sk-mengingat-row' : '' }}" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $key === 'menetapkan' ? (['Pertama','Kedua','Ketiga'][$partIndex] ?? ($partIndex + 1).'.') : ($partIndex === 0 ? $label : '') }}</span><span class="sk-section-colon">{{ $key === 'mengingat' && $partIndex > 0 ? '' : ':' }}</span><span class="sk-section-content" style="text-align:justify">@if ($key === 'mengingat'){{ $partIndex + 1 }}. @endif{{ $cleanPart }}@if (!$loop->last);@endif</span></div>
                             @endforeach
                         @endif
@@ -82,6 +82,7 @@
 .sk-section-row{display:grid;grid-template-columns:100px 16px minmax(0,1fr);column-gap:0;text-align:left;margin:4px 0;line-height:1.4}.sk-section-label{text-align:left}.sk-section-colon{text-align:center}.sk-section-content{min-width:0;text-align:justify;white-space:pre-line}
 .sk-decision-heading{text-align:center;font-weight:800!important;margin:14px 0 8px;text-transform:uppercase}
 .sk-section-row:has(.sk-section-label:first-child){align-items:start}.sk-section-row .sk-section-content{overflow-wrap:anywhere}.sk-section-row.sk-mengingat-row{margin-top:2px}.sk-section-row:not(.sk-mengingat-row){margin-bottom:5px}
+.sk-section-row{margin-top:1px!important;margin-bottom:1px!important}.sk-section-content{line-height:1.25!important}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $builder['fonts']['body'] ?? 11 }}px!important}.sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important}.sk-section-row{font-size:{{ $builder['fonts']['section_title'] ?? 11 }}px!important}
 .sk-preview-page hr+div+div{font-size:{{ $decision['font_number'] ?? 12 }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $decision['font_opening'] ?? 11 }}px!important}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $bodyFont }}px!important}.sk-section-row{font-size:{{ $sectionFont }}px!important}.sk-preview-page hr+div{font-size:{{ $titleFont }}px!important}.sk-preview-page hr+div+div{font-size:{{ $numberFont }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $openingFont }}px!important}

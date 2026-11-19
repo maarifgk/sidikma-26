@@ -43,6 +43,6 @@
 .sk-preview-page hr{margin-top:4px!important}
 .sk-preview-logo{max-width:190px!important;max-height:165px!important;top:38px!important}
 .sk-preview-page hr~div,.sk-preview-page hr~p,.sk-preview-page hr~div p,.sk-preview-page hr~div table{font-family:Cambria,Georgia,"Times New Roman",serif!important;font-stretch:normal!important;letter-spacing:.1px!important;line-height:1.4!important;font-size:13px!important}.sk-preview-page hr+div{font-family:Georgia,"Times New Roman",serif!important;font-size:16px!important;font-weight:700!important;font-stretch:normal!important;letter-spacing:.15px!important;text-decoration:underline;line-height:1.25!important;transform:none!important}
-.sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important;letter-spacing:.4px!important;font-variant-ligatures:none!important}
+.sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important;letter-spacing:-.15px!important;font-variant-ligatures:none!important;transform:scaleX(1.04);transform-origin:center}
 .whatsapp-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='1.6' d='M12 4a8 8 0 0 0-6.8 12.2L4 20l3.9-1.1A8 8 0 1 0 12 4Z'/%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-width='1.8' d='M9 8.5c-.4.1-.6.5-.5.9.4 1.8 1.8 3.5 3.5 4.1.4.2.9 0 1.1-.4l.3-.6-1.3-.7-.6.6c-.8-.4-1.4-1-1.8-1.8l.6-.6-.7-1.4-.6-.1Z'/%3E%3C/svg%3E") center/13px 13px no-repeat}
 </style>

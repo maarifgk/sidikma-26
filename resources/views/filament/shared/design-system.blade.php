@@ -453,4 +453,27 @@
     body:has(.decree-process-section) .decree-process-section :is(.fi-input, .fi-select-input) {
         color: #111827;
     }
+
+    /* Template SK editor: clear field hierarchy and a responsive two-pane layout. */
+    body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-input-wrp {
+        border: 1px solid #cbd5e1;
+        border-radius: .65rem;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+    }
+    body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-input-wrp:focus-within {
+        border-color: #0f766e;
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, .12);
+    }
+    body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-fo-field-label-content {
+        color: #334155;
+        font-weight: 650;
+    }
+    body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-section {
+        border-color: #dbe5e2;
+        box-shadow: 0 5px 16px rgba(15, 23, 42, .04);
+    }
+    @media (max-width: 1279px) {
+        body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-sc > * { grid-column: 1 / -1 !important; }
+    }
 </style>

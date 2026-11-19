@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\FoundationSkTemplates;
 
 use App\Models\FoundationSkTemplate;
-use Filament\Actions\{Action, DeleteAction, EditAction};
+use Filament\Actions\{Action, ActionGroup, DeleteAction, EditAction};
 use Filament\Forms\Components\{FileUpload, Hidden, Select, Textarea, TextInput, Toggle};
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\{Grid, Section, View};
@@ -30,7 +30,9 @@ class FoundationSkTemplateResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Grid::make(2)->schema([
+            Grid::make(['default' => 1, 'xl' => 2])
+                ->extraAttributes(['class' => 'foundation-sk-template-form'])
+                ->schema([
                 Grid::make(1)->schema([
                     Grid::make(2)->schema([
                         TextInput::make('name')->label('Nama Template')->required(),
@@ -39,7 +41,7 @@ class FoundationSkTemplateResource extends Resource
                     Hidden::make('slug')->default(fn (): string => 'template-'.uniqid())->required()->unique(ignoreRecord: true),
                     Section::make('Buat Template SK')->description('Atur identitas dan format dasar template.')->schema([
                         Textarea::make('description')->label('Deskripsi'),
-                        Grid::make(3)->schema([
+                        Grid::make(2)->schema([
                             Select::make('paper_size')->label('Ukuran Kertas')->options(['A4' => 'A4', 'LEGAL' => 'LEGAL', 'LETTER' => 'LETTER'])->required()->live(),
                             Select::make('orientation')->label('Orientasi')->options(['portrait' => 'Portrait', 'landscape' => 'Landscape'])->required()->live(),
                         ]),
@@ -107,18 +109,26 @@ class FoundationSkTemplateResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns([
-            TextColumn::make('name')->label('Nama Template')->searchable(),
-            TextColumn::make('document_title')->label('Judul Dokumen')->searchable(),
-            TextColumn::make('paper_size')->label('Kertas'),
-            TextColumn::make('is_active')->label('Status')->badge()->formatStateUsing(fn ($state): string => $state ? 'Aktif' : 'Nonaktif'),
-            TextColumn::make('created_at')->label('Dibuat')->dateTime(),
-        ])->actions([
-            Action::make('preview')->label('Preview')->url(fn (FoundationSkTemplate $record): string => route('foundation-sk.templates.preview', ['template' => $record->getKey()]))->openUrlInNewTab(),
-            Action::make('generate')->label('Generate')->visible(fn (): bool => static::canCreate())->modalHeading('Generate PDF SK')->modalContent(fn (FoundationSkTemplate $record) => view('filament.foundation-sk.generate-template', ['template' => $record]))->modalSubmitAction(false),
-            Action::make('toggle')->label(fn (FoundationSkTemplate $record): string => $record->is_active ? 'Nonaktifkan' : 'Aktifkan')->visible(fn (): bool => static::canCreate())->action(fn (FoundationSkTemplate $record) => $record->update(['is_active' => ! $record->is_active])),
-            EditAction::make(), DeleteAction::make(),
-        ]);
+        return $table
+            ->columns([
+                TextColumn::make('name')->label('Template')->searchable()->sortable()->weight('bold')->description(fn (FoundationSkTemplate $record): string => $record->document_title ?: 'Tanpa judul dokumen'),
+                TextColumn::make('paper_size')->label('Format')->formatStateUsing(fn (?string $state, FoundationSkTemplate $record): string => strtoupper($state ?: 'A4').' · '.($record->orientation === 'landscape' ? 'Landscape' : 'Portrait'))->badge()->color('gray'),
+                TextColumn::make('is_active')->label('Status')->badge()->formatStateUsing(fn ($state): string => $state ? 'Aktif' : 'Nonaktif')->color(fn ($state): string => $state ? 'success' : 'gray'),
+                TextColumn::make('created_at')->label('Dibuat')->date('d M Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->searchPlaceholder('Cari nama atau judul template...')
+            ->recordActions([
+                ActionGroup::make([
+                    Action::make('preview')->label('Preview')->icon('heroicon-o-eye')->url(fn (FoundationSkTemplate $record): string => route('foundation-sk.templates.preview', ['template' => $record->getKey()]))->openUrlInNewTab(),
+                    Action::make('generate')->label('Generate PDF')->icon('heroicon-o-document-arrow-down')->visible(fn (): bool => static::canCreate())->modalHeading('Generate PDF SK')->modalContent(fn (FoundationSkTemplate $record) => view('filament.foundation-sk.generate-template', ['template' => $record]))->modalSubmitAction(false),
+                    Action::make('toggle')->label(fn (FoundationSkTemplate $record): string => $record->is_active ? 'Nonaktifkan' : 'Aktifkan')->icon('heroicon-o-power')->visible(fn (): bool => static::canCreate())->action(fn (FoundationSkTemplate $record) => $record->update(['is_active' => ! $record->is_active])),
+                    EditAction::make()->label('Edit'),
+                    DeleteAction::make()->label('Hapus'),
+                ])->label('Aksi')->iconButton(),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->striped()
+            ->paginationPageOptions([10, 25, 50]);
     }
 
     public static function getPages(): array

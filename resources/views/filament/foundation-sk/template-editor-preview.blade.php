@@ -18,7 +18,7 @@
     $mediaDataUrl = static function (?string $path): ?string { if (! filled($path) || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) return null; $mime = mime_content_type(\Illuminate\Support\Facades\Storage::disk('public')->path($path)) ?: 'application/octet-stream'; return 'data:'.$mime.';base64,'.base64_encode(\Illuminate\Support\Facades\Storage::disk('public')->get($path)); };
     $logoPath = $header['logo_path'] ?? null; if (is_array($logoPath)) $logoPath = array_values($logoPath)[0] ?? null; if (filled($logoPath) && ! str_contains($logoPath, '/')) $logoPath = 'foundation-sk/logos/'.$logoPath;
     $logoUrl = $mediaDataUrl($logoPath);
-    $contactLogo = static function ($path): ?string {
+    $contactLogo = static function ($path) use ($mediaDataUrl): ?string {
         if (is_array($path)) $path = array_values($path)[0] ?? null;
         if (filled($path) && ! str_contains($path, '/')) $path = 'foundation-sk/contact-logos/'.$path;
         return $mediaDataUrl($path);

@@ -26,7 +26,16 @@
             <div class="sk-preview-address">{{ $header['address'] ?: 'Alamat lembaga' }}</div>
             @if ($header['whatsapp'] || $header['email'])<div class="sk-preview-contacts">@if ($header['whatsapp'])<div><span>{{ $header['whatsapp'] }}</span><span class="contact-icon whatsapp-icon">◉</span></div>@endif @if ($header['email'])<div><span>{{ $header['email'] }}</span><span class="contact-icon email-icon">✉</span></div>@endif</div>@endif
             <hr><div style="text-align:center;font-weight:700;font-size:{{ $decision['font_title'] ?? 13 }}px">{{ $decision['title'] ?: 'SURAT KEPUTUSAN' }}</div><div style="text-align:center">{{ $decision['number'] ?: 'Nomor: 0001/SK/YYS/2026' }}</div>
-            @if (filled($content))<div>{!! $content !!}</div>@else<p>{{ $decision['opening'] ?: 'Dengan ini menetapkan keputusan sebagai berikut:' }}</p>@foreach (['menimbang'=>'Menimbang','mengingat'=>'Mengingat','memutuskan'=>'Memutuskan','menetapkan'=>'Menetapkan'] as $key=>$label)@if (!empty($sections[$key]))<p><strong>{{ $label }}:</strong> {{ $sections[$key] }}</p>@endif @endforeach @endif
+            @if (filled($content))
+                <div>{!! $content !!}</div>
+            @else
+                <p>{{ $decision['opening'] ?: 'Dengan ini menetapkan keputusan sebagai berikut:' }}</p>
+                @foreach (['menimbang'=>'Menimbang','mengingat'=>'Mengingat','memutuskan'=>'Memutuskan','menetapkan'=>'Menetapkan'] as $key=>$label)
+                    @if (!empty($sections[$key]))
+                        <div class="sk-section-row"><span class="sk-section-label">{{ $label }}</span><span class="sk-section-colon">:</span><span class="sk-section-content">{{ $sections[$key] }}</span></div>
+                    @endif
+                @endforeach
+            @endif
             <p>Nama: <strong>Nama Lengkap Contoh</strong><br>NIS/NIP/NUPTK: 0000000000<br>Sekolah: Sekolah Contoh</p>
         </div>
     </div></div>
@@ -51,5 +60,6 @@
 .sk-preview-page hr~p,.sk-preview-page hr~div p{padding-left:0!important}.sk-preview-page hr~p strong,.sk-preview-page hr~div p strong{width:140px!important}
 .sk-preview-page hr~p:has(strong),.sk-preview-page hr~div p:has(strong){display:grid!important;grid-template-columns:180px minmax(0,1fr)!important;column-gap:0!important;padding-left:0!important;text-indent:0!important}.sk-preview-page hr~p:has(strong) strong,.sk-preview-page hr~div p:has(strong) strong{width:180px!important;display:block!important;text-align:right!important;padding-right:12px!important;font-weight:400!important}
 .sk-preview-page hr~p:has(strong) strong,.sk-preview-page hr~div p:has(strong) strong{text-align:left!important}
+.sk-section-row{display:grid;grid-template-columns:180px 16px minmax(0,1fr);column-gap:0;text-align:left;margin:4px 0;line-height:1.4}.sk-section-label{text-align:left}.sk-section-colon{text-align:center}.sk-section-content{min-width:0}
 .whatsapp-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='1.6' d='M12 4a8 8 0 0 0-6.8 12.2L4 20l3.9-1.1A8 8 0 1 0 12 4Z'/%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-width='1.8' d='M9 8.5c-.4.1-.6.5-.5.9.4 1.8 1.8 3.5 3.5 4.1.4.2.9 0 1.1-.4l.3-.6-1.3-.7-.6.6c-.8-.4-1.4-1-1.8-1.8l.6-.6-.7-1.4-.6-.1Z'/%3E%3C/svg%3E") center/13px 13px no-repeat}
 </style>

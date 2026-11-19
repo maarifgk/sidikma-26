@@ -42,7 +42,7 @@
                             <div class="sk-decision-heading" style="font-size:{{ $builder['fonts']['judul_tengah'] ?? $sectionFont }}px!important">{{ $sections['judul_tengah'] ?: 'MEMUTUSKAN' }}</div>
                         @else
                             @foreach (array_filter(array_map('trim', explode(';', $sections[$key]))) as $partIndex => $part)
-                                @php $cleanPart = $key === 'menetapkan' && $partIndex === 0 ? preg_replace('/^Pertama\s*:\s*/i', '', $part) : $part; @endphp
+                                @php $cleanPart = $key === 'menetapkan' && $partIndex === 0 ? preg_replace('/^(?:Pertama\s*:\s*)+/i', '', $part) : $part; @endphp
                                 <div class="sk-section-row {{ $key === 'mengingat' ? 'sk-mengingat-row' : '' }}" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $key === 'menetapkan' ? ($partIndex === 0 ? 'Menetapkan' : '') : ($partIndex === 0 ? $label : '') }}</span><span class="sk-section-colon">{{ $key === 'mengingat' && $partIndex > 0 ? '' : ':' }}</span><span class="sk-section-content" style="text-align:justify">@if ($key === 'mengingat'){{ $partIndex + 1 }}. @elseif ($key === 'menetapkan'){{ ['Pertama','Kedua','Ketiga'][$partIndex] ?? ($partIndex + 1).'.' }} : @endif{{ $cleanPart }}@if (!$loop->last);@endif</span></div>
                             @endforeach
                         @endif

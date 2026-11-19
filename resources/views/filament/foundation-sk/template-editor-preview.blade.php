@@ -32,12 +32,12 @@
             @if ($header['whatsapp'] || $header['email'])<div class="sk-preview-contacts">@if ($header['whatsapp'])<div><span>{{ $header['whatsapp'] }}</span><span class="contact-icon whatsapp-icon">◉</span></div>@endif @if ($header['email'])<div><span>{{ $header['email'] }}</span><span class="contact-icon email-icon">✉</span></div>@endif</div>@endif
             <hr><div style="text-align:center;font-weight:700;font-size:{{ $titleFont }}px!important">{{ $decision['title'] ?: 'SURAT KEPUTUSAN' }}</div><div style="text-align:center;font-size:{{ $numberFont }}px!important">{{ $decision['number'] ?: 'Nomor: 0001/SK/YYS/2026' }}</div>
             @if (filled($content))
-                <div>{!! $content !!}</div>
+                <div style="font-size:{{ $bodyFont }}px!important">{!! $content !!}</div>
             @else
                 <p>{{ $decision['opening'] ?: 'Dengan ini menetapkan keputusan sebagai berikut:' }}</p>
                 @foreach (['menimbang'=>'Menimbang','mengingat'=>'Mengingat','memutuskan'=>'Memutuskan','menetapkan'=>'Menetapkan'] as $key=>$label)
                     @if (!empty($sections[$key]))
-                        <div class="sk-section-row"><span class="sk-section-label">{{ $label }}</span><span class="sk-section-colon">:</span><span class="sk-section-content">{{ $sections[$key] }}</span></div>
+                        <div class="sk-section-row" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $label }}</span><span class="sk-section-colon">:</span><span class="sk-section-content">{{ $sections[$key] }}</span></div>
                     @endif
                 @endforeach
             @endif
@@ -76,12 +76,17 @@
     const syncSkFonts = () => {
         const titleInput = document.querySelector('input[name*="font_title"]');
         const numberInput = document.querySelector('input[name*="font_number"]');
+        const bodyInput = document.querySelector('input[name*="fonts][body"]');
+        const sectionInput = document.querySelector('input[name*="fonts][section_title"]');
         const page = document.querySelector('.sk-preview-page');
         if (!page) return;
         const title = page.querySelector('hr + div');
         const number = page.querySelector('hr + div + div');
         if (title && titleInput && Number(titleInput.value) > 0) title.style.setProperty('font-size', `${titleInput.value}px`, 'important');
         if (number && numberInput && Number(numberInput.value) > 0) number.style.setProperty('font-size', `${numberInput.value}px`, 'important');
+        document.querySelectorAll('.sk-section-row').forEach((row) => { if (sectionInput && Number(sectionInput.value) > 0) row.style.setProperty('font-size', `${sectionInput.value}px`, 'important'); });
+        const content = page.querySelector('hr ~ div:not(.sk-section-row)');
+        if (content && bodyInput && Number(bodyInput.value) > 0) content.style.setProperty('font-size', `${bodyInput.value}px`, 'important');
     };
     document.addEventListener('input', syncSkFonts);
     document.addEventListener('change', syncSkFonts);

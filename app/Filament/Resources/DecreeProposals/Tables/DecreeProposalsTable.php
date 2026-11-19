@@ -95,6 +95,7 @@ class DecreeProposalsTable
                         Section::make('Identitas Pengusul')
                             ->icon('heroicon-o-user-circle')
                             ->description('Data utama guru atau pegawai yang mengajukan SK.')
+                            ->extraAttributes(['class' => 'decree-process-section'])
                             ->schema([
                                 TextInput::make('employee_code')->label('EWANUGK')->required()->maxLength(50),
                                 TextInput::make('name')->label('Nama lengkap')->required()->maxLength(255),
@@ -112,6 +113,7 @@ class DecreeProposalsTable
                         Section::make('Data Pribadi dan Ketugasan')
                             ->icon('heroicon-o-identification')
                             ->description('Pastikan tanggal, posisi, dan pendidikan sudah sesuai dokumen pendukung.')
+                            ->extraAttributes(['class' => 'decree-process-section'])
                             ->schema([
                                 TextInput::make('birth_place')->label('Tempat lahir')->required()->maxLength(100),
                                 DatePicker::make('birth_date')->label('Tanggal lahir')->required()->maxDate(now()),

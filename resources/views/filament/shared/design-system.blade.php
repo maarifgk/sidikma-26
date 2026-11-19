@@ -435,4 +435,22 @@
     @media(max-width:640px) {
         body:not(:has(.teacher-mobile)) .fi-page:has(.employee-resource-marker) .fi-section-content { padding:.875rem; }
     }
+
+    /* Usulan SK: stronger field outlines inside the process modal. */
+    body:has(.decree-process-section) .decree-process-section .fi-input-wrp {
+        border: 1px solid #1f2937;
+        border-radius: .55rem;
+        background: #fff;
+        box-shadow: none;
+    }
+    body:has(.decree-process-section) .decree-process-section .fi-input-wrp:hover {
+        border-color: #111827;
+    }
+    body:has(.decree-process-section) .decree-process-section .fi-input-wrp:focus-within {
+        border-color: #111827;
+        box-shadow: 0 0 0 2px rgba(31, 41, 55, .12);
+    }
+    body:has(.decree-process-section) .decree-process-section :is(.fi-input, .fi-select-input) {
+        color: #111827;
+    }
 </style>

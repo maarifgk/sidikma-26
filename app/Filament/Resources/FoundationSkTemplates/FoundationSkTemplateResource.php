@@ -123,9 +123,9 @@ class FoundationSkTemplateResource extends Resource
                     Section::make('Isi Keputusan')->schema([
                         TextInput::make('builder_data.sections.judul_tengah')->label('Judul Tengah')->live(debounce: 500),
                         TextInput::make('builder_data.fonts.judul_tengah')->label('Ukuran Font Judul')->numeric()->default(11)->live(),
-                        Textarea::make('builder_data.sections.memutuskan')->label('Teks Keputusan')->rows(3)->live(debounce: 500),
+                        Textarea::make('builder_data.sections.memutuskan')->label('Teks Keputusan')->rows(3)->helperText('Isi konsideran keputusan. Gunakan tanda titik koma (;) untuk memisahkan paragraf.')->placeholder('Contoh: MEMUTUSKAN')->live(debounce: 500),
                         TextInput::make('builder_data.fonts.body')->label('Ukuran Font Isi')->numeric()->default(11)->live(),
-                        Textarea::make('builder_data.sections.menetapkan')->label('Teks Penetapan')->rows(3)->live(debounce: 500),
+                        Textarea::make('builder_data.sections.menetapkan')->label('Teks Penetapan')->rows(8)->helperText('Gunakan format terstruktur: Pertama : isi data diri; Kedua : isi keputusan berikutnya; Ketiga : isi penutup. Pisahkan setiap bagian dengan tanda titik koma (;).')->placeholder("Pertama : Guru tersebut di bawah ini :\n1. Nama : {{nama_lengkap}}\n2. Tempat, tanggal lahir : {{tempat_lahir}}, {{tgl_lahir}}\n3. NUPTK/NPK : {{nuptk}}\n4. EWANUGK : {{nis}}\nKedua : Keputusan ini berlaku mulai {{tanggal_mulai}}; Ketiga : Asli surat keputusan ini diberikan kepada yang bersangkutan.")->live(debounce: 500),
                         TextInput::make('builder_data.fonts.data_user')->label('Ukuran Font Data Guru')->numeric()->default(11)->live(),
                     ])->columns(2),
                     Section::make('Area Tanda Tangan')->description('Bagian ini hanya area teks penetapan, tanpa gambar tanda tangan.')->schema([

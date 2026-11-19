@@ -15,19 +15,20 @@
     $numberFont = $value('builder_data.decision.font_number', data_get($builder, 'decision.font_number', 12));
     $openingFont = $value('builder_data.decision.font_opening', data_get($builder, 'decision.font_opening', 11));
     $size = $value('paper_size', $record?->paper_size ?? 'A4'); $orientation = $value('orientation', $record?->orientation ?? 'portrait');
+    $mediaDataUrl = static function (?string $path): ?string { if (! filled($path) || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) return null; $mime = mime_content_type(\Illuminate\Support\Facades\Storage::disk('public')->path($path)) ?: 'application/octet-stream'; return 'data:'.$mime.';base64,'.base64_encode(\Illuminate\Support\Facades\Storage::disk('public')->get($path)); };
     $logoPath = $header['logo_path'] ?? null; if (is_array($logoPath)) $logoPath = array_values($logoPath)[0] ?? null; if (filled($logoPath) && ! str_contains($logoPath, '/')) $logoPath = 'foundation-sk/logos/'.$logoPath;
-    $logoUrl = filled($logoPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath) ? route('foundation-sk.template-asset', ['path' => $logoPath]) : null;
+    $logoUrl = $mediaDataUrl($logoPath);
     $contactLogo = static function ($path): ?string {
         if (is_array($path)) $path = array_values($path)[0] ?? null;
         if (filled($path) && ! str_contains($path, '/')) $path = 'foundation-sk/contact-logos/'.$path;
-        return filled($path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? route('foundation-sk.template-asset', ['path' => $path]) : null;
+        return $mediaDataUrl($path);
     };
     $whatsappLogoUrl = $contactLogo($header['whatsapp_logo_path'] ?? null);
     $emailLogoUrl = $contactLogo($header['email_logo_path'] ?? null);
     $stampPath = $builder['signature']['stamp_path'] ?? null;
     if (is_array($stampPath)) $stampPath = array_values($stampPath)[0] ?? null;
     if (filled($stampPath) && ! str_contains($stampPath, '/')) $stampPath = 'foundation-sk/signature-stamps/'.$stampPath;
-    $stampUrl = filled($stampPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($stampPath) ? route('foundation-sk.template-asset', ['path' => $stampPath]) : null;
+    $stampUrl = $mediaDataUrl($stampPath);
     $signatureLocation = trim((string) ($builder['signature']['ditetapkan_di'] ?? ''));
     if (preg_match('/:\s*(.+)$/', $signatureLocation, $locationMatch)) $signatureLocation = trim($locationMatch[1]);
     if (! filled($signatureLocation) || str_contains(strtolower($signatureLocation), 'pada tanggal')) $signatureLocation = 'Gunungkidul';

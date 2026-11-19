@@ -46,5 +46,6 @@
 .sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important;letter-spacing:-.15px!important;font-variant-ligatures:none!important;font-weight:800!important;line-height:1.35!important;transform:scale(1.04,1.14);transform-origin:center}
 .sk-preview-contacts .whatsapp-icon,.sk-preview-contacts .email-icon{width:14px!important;height:14px!important;background-size:10px 10px!important}
 .sk-preview-page hr+div+div{margin-bottom:16px!important}
+.sk-preview-page hr~p{padding-left:150px!important;text-indent:-150px!important;text-align:left!important;margin:4px 0!important}.sk-preview-page hr~p strong{display:inline-block;width:140px!important;font-weight:400!important}.sk-preview-page hr~div p{padding-left:150px!important;text-indent:-150px!important;text-align:left!important}.sk-preview-page hr~div p strong{display:inline-block;width:140px!important}
 .whatsapp-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='1.6' d='M12 4a8 8 0 0 0-6.8 12.2L4 20l3.9-1.1A8 8 0 1 0 12 4Z'/%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-width='1.8' d='M9 8.5c-.4.1-.6.5-.5.9.4 1.8 1.8 3.5 3.5 4.1.4.2.9 0 1.1-.4l.3-.6-1.3-.7-.6.6c-.8-.4-1.4-1-1.8-1.8l.6-.6-.7-1.4-.6-.1Z'/%3E%3C/svg%3E") center/13px 13px no-repeat}
 </style>

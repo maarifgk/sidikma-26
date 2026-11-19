@@ -24,6 +24,10 @@
     };
     $whatsappLogoUrl = $contactLogo($header['whatsapp_logo_path'] ?? null);
     $emailLogoUrl = $contactLogo($header['email_logo_path'] ?? null);
+    $stampPath = $builder['signature']['stamp_path'] ?? null;
+    if (is_array($stampPath)) $stampPath = array_values($stampPath)[0] ?? null;
+    if (filled($stampPath) && ! str_contains($stampPath, '/')) $stampPath = 'foundation-sk/signature-stamps/'.$stampPath;
+    $stampUrl = filled($stampPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($stampPath) ? route('foundation-sk.template-asset', ['path' => $stampPath]) : null;
     $dimensions = match ($size) { 'F4' => [816, 1248], 'Legal', 'LEGAL' => [816, 1344], 'LETTER' => [816, 1056], default => [794, 1123] }; if ($orientation === 'landscape') $dimensions = [$dimensions[1], $dimensions[0]];
 @endphp
 <div x-data="{ zoom: 100, zoomIn() { this.zoom = Math.min(200, this.zoom + 10) }, zoomOut() { this.zoom = Math.max(50, this.zoom - 10) }, reset() { this.zoom = 100 } }" class="foundation-sk-preview flex min-h-[700px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -60,6 +64,7 @@
                 <div><span>{{ $builder['signature']['label_tanggal'] ?: 'Pada Tanggal' }}</span><b>:</b><span>{{ $builder['signature']['tanggal_penetapan'] ?: '<<Tanggal Penetapan>>' }}</span></div>
                 <div><span>{{ $builder['signature']['baris_pengurus'] ?: 'Pengurus LP Ma’arif NU Kab. Gunungkidul' }}</span></div>
                 <div><span>{{ $builder['signature']['jabatan'] ?: 'Ketua,' }}</span></div>
+                @if ($stampUrl)<img class="sk-signature-stamp" src="{{ $stampUrl }}" alt="Cap tanda tangan">@endif
                 <div class="sk-signature-name">{{ $builder['signature']['nama'] ?: 'Drs. H. Sangkin, M.Pd.' }}</div>
             </div>
             <p>Nama: <strong>Nama Lengkap Contoh</strong><br>NIS/NIP/NUPTK: 0000000000<br>Sekolah: Sekolah Contoh</p>
@@ -93,6 +98,7 @@
 .sk-data-row{display:grid;grid-template-columns:250px 16px minmax(0,1fr);column-gap:0;text-align:left;line-height:1.35;margin:1px 0!important;white-space:normal}.sk-data-row>span:nth-child(2){text-align:center}.sk-data-row>span:last-child{text-align:left}
 .sk-section-content:has(.sk-data-row){white-space:normal!important;line-height:1.35!important}
 .sk-signature-preview{width:58%;margin:28px 0 0 auto;line-height:1.25}.sk-signature-preview>div{display:grid;grid-template-columns:155px 16px minmax(0,1fr);text-align:left}.sk-signature-preview>div:nth-child(3),.sk-signature-preview>div:nth-child(4){display:block}.sk-signature-name{font-weight:700;margin-top:34px!important}
+.sk-signature-stamp{display:block;max-width:90px;max-height:70px;object-fit:contain;margin:2px 0 -20px 40px;position:relative;z-index:1}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $builder['fonts']['body'] ?? 11 }}px!important}.sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important}.sk-section-row{font-size:{{ $builder['fonts']['section_title'] ?? 11 }}px!important}
 .sk-preview-page hr+div+div{font-size:{{ $decision['font_number'] ?? 12 }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $decision['font_opening'] ?? 11 }}px!important}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $bodyFont }}px!important}.sk-section-row{font-size:{{ $sectionFont }}px!important}.sk-preview-page hr+div{font-size:{{ $titleFont }}px!important}.sk-preview-page hr+div+div{font-size:{{ $numberFont }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $openingFont }}px!important}

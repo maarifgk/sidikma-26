@@ -136,6 +136,19 @@ class FoundationSkTemplateResource extends Resource
                         TextInput::make('builder_data.signature.jabatan')->label('Jabatan')->live(debounce: 500),
                         TextInput::make('builder_data.signature.nama')->label('Nama Penanda Tangan')->live(debounce: 500),
                         TextInput::make('builder_data.fonts.signature')->label('Ukuran Font Tanda Tangan')->numeric()->default(11)->live(debounce: 500)->columnStart(2),
+                        FileUpload::make('builder_data.signature.stamp_path')
+                            ->label('Upload Cap Tanda Tangan')
+                            ->helperText('Gunakan PNG transparan atau JPG. Maksimal 1,5 MB.')
+                            ->image()
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('foundation-sk/signature-stamps')
+                            ->maxSize(1536)
+                            ->dehydrateStateUsing(fn (mixed $state): ?string => is_array($state) ? ((array_values($state)[0] ?? null) ? 'foundation-sk/signature-stamps/'.array_values($state)[0] : null) : ($state ?: null))
+                            ->downloadable()
+                            ->openable()
+                            ->reorderable(false),
                     ])->columns(2),
                     Section::make('Tembusan')->description('Opsional. Buka bagian ini jika dokumen memiliki daftar tembusan.')->schema([
                         TextInput::make('builder_data.copies.title')->label('Judul Tembusan')->live(debounce: 500),

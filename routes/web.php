@@ -87,6 +87,12 @@ Route::get('/foundation-sk/documents/{document}/download', FoundationSkDocumentD
 Route::get('/foundation-sk/templates/{template}/preview', [FoundationSkTemplateController::class, 'preview'])->middleware('auth')->name('foundation-sk.templates.preview');
 Route::post('/foundation-sk/templates/{template}/generate', [FoundationSkTemplateController::class, 'generate'])->middleware('auth')->name('foundation-sk.templates.generate');
 Route::post('/foundation-sk/templates/{template}/batch', [FoundationSkTemplateController::class, 'batch'])->middleware('auth')->name('foundation-sk.templates.batch');
+Route::get('/foundation-sk/template-assets/{path}', function (string $path) {
+    $disk = Storage::disk('public');
+    abort_unless($disk->exists($path), 404);
+
+    return response()->file($disk->path($path));
+})->where('path', '.*')->middleware('auth')->name('foundation-sk.template-asset');
 
 Route::get('/sipinter/template-surat-permohonan', DownloadSipinterTemplateController::class)
     ->middleware('auth')

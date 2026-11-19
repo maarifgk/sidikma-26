@@ -11,7 +11,7 @@
     if (is_array($logoPath)) $logoPath = array_values($logoPath)[0] ?? null;
     if (filled($logoPath) && ! str_contains($logoPath, '/')) $logoPath = 'foundation-sk/logos/'.$logoPath;
     $logoUrl = filled($logoPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath)
-        ? asset('storage/'.ltrim($logoPath, '/'))
+        ? route('foundation-sk.template-asset', ['path' => $logoPath])
         : null;
     $dimensions = match ($size) { 'F4' => [816, 1248], 'Legal', 'LEGAL' => [816, 1344], 'LETTER' => [816, 1056], default => [794, 1123] };
     if ($orientation === 'landscape') $dimensions = [$dimensions[1], $dimensions[0]];

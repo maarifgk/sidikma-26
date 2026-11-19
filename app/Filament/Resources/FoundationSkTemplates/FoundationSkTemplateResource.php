@@ -4,7 +4,7 @@ namespace App\Filament\Resources\FoundationSkTemplates;
 
 use App\Models\FoundationSkTemplate;
 use Filament\Actions\{Action, ActionGroup, DeleteAction, EditAction};
-use Filament\Forms\Components\{FileUpload, Select, Textarea, TextInput, Toggle};
+use Filament\Forms\Components\{FileUpload, Hidden, Select, Textarea, TextInput, Toggle};
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\{Grid, Section, View};
 use Filament\Schemas\Schema;
@@ -34,6 +34,7 @@ class FoundationSkTemplateResource extends Resource
                 ->extraAttributes(['class' => 'foundation-sk-template-form'])
                 ->schema([
                 Grid::make(1)->extraAttributes(['class' => 'foundation-sk-editor-fields'])->schema([
+                    Hidden::make('html_template')->default(''),
                     Section::make('Identitas Template')->description('Nama template dan judul file yang akan digunakan saat membuat PDF.')->schema([
                         Grid::make(2)->schema([
                         TextInput::make('name')->label('Nama Template')->required(),

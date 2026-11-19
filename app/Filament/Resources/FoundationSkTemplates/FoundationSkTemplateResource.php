@@ -10,6 +10,9 @@ use Filament\Schemas\Components\{Grid, Section, View};
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
 
 class FoundationSkTemplateResource extends Resource
@@ -69,8 +72,16 @@ class FoundationSkTemplateResource extends Resource
                             ->disk('public')
                             ->visibility('public')
                             ->directory('foundation-sk/logos')
-                            ->preserveFilenames()
                             ->maxSize(1536)
+                            ->saveUploadedFileUsing(function (TemporaryUploadedFile $file): string {
+                                $directory = 'foundation-sk/logos';
+                                $extension = strtolower($file->getClientOriginalExtension() ?: 'png');
+                                $filename = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'-'.Str::random(8).'.'.$extension;
+
+                                Storage::disk('public')->makeDirectory($directory);
+
+                                return $file->storeAs($directory, $filename, 'public');
+                            })
                             ->downloadable()
                             ->openable()
                             ->reorderable(false),
@@ -115,7 +126,6 @@ class FoundationSkTemplateResource extends Resource
                 ]),
                 Grid::make(1)->extraAttributes(['class' => 'foundation-sk-preview-column'])->schema([
                     View::make('filament.foundation-sk.template-editor-preview'),
-                    View::make('filament.foundation-sk.template-editor-user-placeholders'),
                 ])->columnSpan(1),
             ])->columnSpanFull(),
         ]);

@@ -79,6 +79,32 @@ class FoundationSkTemplateResource extends Resource
                             ->downloadable()
                             ->openable()
                             ->reorderable(false),
+                        FileUpload::make('builder_data.header.whatsapp_logo_path')
+                            ->label('Logo WhatsApp')
+                            ->helperText('PNG, JPG, JPEG, atau WEBP. Maksimal 1,5 MB.')
+                            ->image()
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('foundation-sk/contact-logos')
+                            ->maxSize(1536)
+                            ->dehydrateStateUsing(fn (mixed $state): ?string => is_array($state) ? ((array_values($state)[0] ?? null) ? 'foundation-sk/contact-logos/'.array_values($state)[0] : null) : ($state ?: null))
+                            ->downloadable()
+                            ->openable()
+                            ->reorderable(false),
+                        FileUpload::make('builder_data.header.email_logo_path')
+                            ->label('Logo Email')
+                            ->helperText('PNG, JPG, JPEG, atau WEBP. Maksimal 1,5 MB.')
+                            ->image()
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('foundation-sk/contact-logos')
+                            ->maxSize(1536)
+                            ->dehydrateStateUsing(fn (mixed $state): ?string => is_array($state) ? ((array_values($state)[0] ?? null) ? 'foundation-sk/contact-logos/'.array_values($state)[0] : null) : ($state ?: null))
+                            ->downloadable()
+                            ->openable()
+                            ->reorderable(false),
                     ])->columns(1),
                     Section::make('Judul Keputusan')->description('Atur judul, nomor, dan kalimat pembuka SK.')->schema([
                         TextInput::make('builder_data.decision.title')->label('Judul SK')->live(debounce: 500),

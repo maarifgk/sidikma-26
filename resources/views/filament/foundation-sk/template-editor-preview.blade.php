@@ -6,6 +6,13 @@
     $size = $value('paper_size', $record?->paper_size ?? 'A4'); $orientation = $value('orientation', $record?->orientation ?? 'portrait');
     $logoPath = $header['logo_path'] ?? null; if (is_array($logoPath)) $logoPath = array_values($logoPath)[0] ?? null; if (filled($logoPath) && ! str_contains($logoPath, '/')) $logoPath = 'foundation-sk/logos/'.$logoPath;
     $logoUrl = filled($logoPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath) ? route('foundation-sk.template-asset', ['path' => $logoPath]) : null;
+    $contactLogo = static function ($path): ?string {
+        if (is_array($path)) $path = array_values($path)[0] ?? null;
+        if (filled($path) && ! str_contains($path, '/')) $path = 'foundation-sk/contact-logos/'.$path;
+        return filled($path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? route('foundation-sk.template-asset', ['path' => $path]) : null;
+    };
+    $whatsappLogoUrl = $contactLogo($header['whatsapp_logo_path'] ?? null);
+    $emailLogoUrl = $contactLogo($header['email_logo_path'] ?? null);
     $dimensions = match ($size) { 'F4' => [816, 1248], 'Legal', 'LEGAL' => [816, 1344], 'LETTER' => [816, 1056], default => [794, 1123] }; if ($orientation === 'landscape') $dimensions = [$dimensions[1], $dimensions[0]];
 @endphp
 <div x-data="{ zoom: 100, zoomIn() { this.zoom = Math.min(200, this.zoom + 10) }, zoomOut() { this.zoom = Math.max(50, this.zoom - 10) }, reset() { this.zoom = 100 } }" class="foundation-sk-preview flex min-h-[700px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -31,5 +38,6 @@
 .whatsapp-icon{width:24px;height:24px;background:#16b83f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='1.8' d='M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.3-1.2A8.5 8.5 0 1 0 12 3.5Z'/%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-width='1.8' d='M9 8.2c-.5.1-.8.6-.7 1.1.4 2.1 2.3 4 4.4 4.4.5.1 1-.2 1.1-.7l.2-.6-1.4-.7-.7.7c-.9-.4-1.6-1.1-2-2l.7-.7-.7-1.4-.9-.1Z'/%3E%3C/svg%3E") center/17px 17px no-repeat}.email-icon{width:24px;height:24px;background:#087f45 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='4' y='7' width='16' height='11' rx='1' fill='none' stroke='white' stroke-width='1.8'/%3E%3Cpath fill='none' stroke='white' stroke-width='1.8' d='m5 8 7 5 7-5'/%3E%3C/svg%3E") center/17px 17px no-repeat}
 .sk-preview-contacts>div{gap:4px}.whatsapp-icon,.email-icon{width:17px;height:17px;background-size:12px 12px}
 .whatsapp-icon{background-color:#16b83f;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M7.4 4.8c.4-.4 1-.5 1.5-.2l2 1.2c.5.3.7.9.5 1.4l-.7 1.7c.8 1.6 2 2.8 3.6 3.6l1.7-.7c.5-.2 1.1 0 1.4.5l1.2 2c.3.5.2 1.1-.2 1.5l-1.1 1.1c-.6.6-1.5.8-2.3.5-2.4-.9-4.6-2.3-6.4-4.1s-3.2-4-4.1-6.4c-.3-.8-.1-1.7.5-2.3l1.1-1.1Z'/%3E%3C/svg%3E") center/11px 11px no-repeat}
+.whatsapp-icon{background-image:url('{{ $whatsappLogoUrl ?: "" }}');background-size:contain;background-color:transparent}.email-icon{background-image:url('{{ $emailLogoUrl ?: "" }}');background-size:contain;background-color:transparent}
 .whatsapp-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='1.6' d='M12 4a8 8 0 0 0-6.8 12.2L4 20l3.9-1.1A8 8 0 1 0 12 4Z'/%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-width='1.8' d='M9 8.5c-.4.1-.6.5-.5.9.4 1.8 1.8 3.5 3.5 4.1.4.2.9 0 1.1-.4l.3-.6-1.3-.7-.6.6c-.8-.4-1.4-1-1.8-1.8l.6-.6-.7-1.4-.6-.1Z'/%3E%3C/svg%3E") center/13px 13px no-repeat}
 </style>

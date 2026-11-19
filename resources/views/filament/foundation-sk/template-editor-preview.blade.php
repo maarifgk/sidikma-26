@@ -3,7 +3,9 @@
     $builder = $value('builder_data', $record?->builder_data ?? \App\Models\FoundationSkTemplate::defaultBuilderData()) ?: [];
     $header = $builder['header'] ?? []; $decision = $builder['decision'] ?? []; $sections = $builder['sections'] ?? [];
     if (filled($sections['menetapkan'] ?? null)) {
-        $sections['menetapkan'] = preg_replace('/\s+(?=(?:Kedua|Ketiga)\s*:)/i', '; ', (string) $sections['menetapkan']);
+        $sections['menetapkan'] = preg_replace('/;\s*(?::\s*)+/', '; ', (string) $sections['menetapkan']);
+        $sections['menetapkan'] = preg_replace('/:\s*(?=(?:Kedua|Ketiga)\s*:)/i', '; ', $sections['menetapkan']);
+        $sections['menetapkan'] = preg_replace('/\s+(?=(?:Kedua|Ketiga)\s*:)/i', '; ', $sections['menetapkan']);
     }
     $content = $value('content', $record?->content ?? ''); $customCss = $value('custom_css', $record?->custom_css ?? '');
     $content = str_replace(['Pertama : Pertama :', 'Pertama: Pertama:', 'Pertama :  Pertama :'], 'Pertama :', (string) $content);

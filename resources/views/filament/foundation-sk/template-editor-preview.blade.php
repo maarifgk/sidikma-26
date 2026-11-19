@@ -37,7 +37,9 @@
                 <p>{{ $decision['opening'] ?: 'Dengan ini menetapkan keputusan sebagai berikut:' }}</p>
                 @foreach (['menimbang'=>'Menimbang','mengingat'=>'Mengingat','memutuskan'=>'Memutuskan','menetapkan'=>'Menetapkan'] as $key=>$label)
                     @if (!empty($sections[$key]))
-                        <div class="sk-section-row" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $label }}</span><span class="sk-section-colon">:</span><span class="sk-section-content">{{ $sections[$key] }}</span></div>
+                        @foreach (array_filter(array_map('trim', explode(';', $sections[$key]))) as $partIndex => $part)
+                            <div class="sk-section-row" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $partIndex === 0 ? $label : '' }}</span><span class="sk-section-colon">:</span><span class="sk-section-content" style="text-align:justify">{{ $part }}@if (!$loop->last);@endif</span></div>
+                        @endforeach
                     @endif
                 @endforeach
             @endif
@@ -65,7 +67,7 @@
 .sk-preview-page hr~p,.sk-preview-page hr~div p{padding-left:0!important}.sk-preview-page hr~p strong,.sk-preview-page hr~div p strong{width:140px!important}
 .sk-preview-page hr~p:has(strong),.sk-preview-page hr~div p:has(strong){display:grid!important;grid-template-columns:180px minmax(0,1fr)!important;column-gap:0!important;padding-left:0!important;text-indent:0!important}.sk-preview-page hr~p:has(strong) strong,.sk-preview-page hr~div p:has(strong) strong{width:180px!important;display:block!important;text-align:right!important;padding-right:12px!important;font-weight:400!important}
 .sk-preview-page hr~p:has(strong) strong,.sk-preview-page hr~div p:has(strong) strong{text-align:left!important}
-.sk-section-row{display:grid;grid-template-columns:100px 16px minmax(0,1fr);column-gap:0;text-align:left;margin:4px 0;line-height:1.4}.sk-section-label{text-align:left}.sk-section-colon{text-align:center}.sk-section-content{min-width:0}
+.sk-section-row{display:grid;grid-template-columns:100px 16px minmax(0,1fr);column-gap:0;text-align:left;margin:4px 0;line-height:1.4}.sk-section-label{text-align:left}.sk-section-colon{text-align:center}.sk-section-content{min-width:0;text-align:justify}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $builder['fonts']['body'] ?? 11 }}px!important}.sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important}.sk-section-row{font-size:{{ $builder['fonts']['section_title'] ?? 11 }}px!important}
 .sk-preview-page hr+div+div{font-size:{{ $decision['font_number'] ?? 12 }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $decision['font_opening'] ?? 11 }}px!important}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $bodyFont }}px!important}.sk-section-row{font-size:{{ $sectionFont }}px!important}.sk-preview-page hr+div{font-size:{{ $titleFont }}px!important}.sk-preview-page hr+div+div{font-size:{{ $numberFont }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $openingFont }}px!important}

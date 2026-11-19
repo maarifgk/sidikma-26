@@ -473,6 +473,13 @@
         border-color: #dbe5e2;
         box-shadow: 0 5px 16px rgba(15, 23, 42, .04);
     }
+    body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-section-header {
+        padding: .9rem 1rem;
+    }
+    body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-section-content {
+        gap: .9rem;
+        padding: 1rem;
+    }
     @media (max-width: 1279px) {
         body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-sc > * { grid-column: 1 / -1 !important; }
     }
@@ -482,5 +489,15 @@
             top: 1rem;
             max-height: calc(100vh - 2rem);
         }
+        body:has(.foundation-sk-template-form) .foundation-sk-editor-fields {
+            max-height: calc(100vh - 7rem);
+            overflow-y: auto;
+            padding-right: .65rem;
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #f1f5f9;
+        }
+        body:has(.foundation-sk-template-form) .foundation-sk-editor-fields::-webkit-scrollbar { width: 8px; }
+        body:has(.foundation-sk-template-form) .foundation-sk-editor-fields::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 999px; }
+        body:has(.foundation-sk-template-form) .foundation-sk-editor-fields::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 999px; }
     }
 </style>

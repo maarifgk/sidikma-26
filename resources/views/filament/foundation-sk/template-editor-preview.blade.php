@@ -30,7 +30,7 @@
             <div class="sk-preview-institution">{{ $header['institution_name'] ?: 'YAYASAN CONTOH' }}</div>
             <div class="sk-preview-address">{{ $header['address'] ?: 'Alamat lembaga' }}</div>
             @if ($header['whatsapp'] || $header['email'])<div class="sk-preview-contacts">@if ($header['whatsapp'])<div><span>{{ $header['whatsapp'] }}</span><span class="contact-icon whatsapp-icon">◉</span></div>@endif @if ($header['email'])<div><span>{{ $header['email'] }}</span><span class="contact-icon email-icon">✉</span></div>@endif</div>@endif
-            <hr><div style="text-align:center;font-weight:700;font-size:{{ $titleFont }}px">{{ $decision['title'] ?: 'SURAT KEPUTUSAN' }}</div><div style="text-align:center;font-size:{{ $numberFont }}px">{{ $decision['number'] ?: 'Nomor: 0001/SK/YYS/2026' }}</div>
+            <hr><div style="text-align:center;font-weight:700;font-size:{{ $titleFont }}px!important">{{ $decision['title'] ?: 'SURAT KEPUTUSAN' }}</div><div style="text-align:center;font-size:{{ $numberFont }}px!important">{{ $decision['number'] ?: 'Nomor: 0001/SK/YYS/2026' }}</div>
             @if (filled($content))
                 <div>{!! $content !!}</div>
             @else

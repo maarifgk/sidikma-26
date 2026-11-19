@@ -35,8 +35,8 @@
                 <div style="font-size:{{ $bodyFont }}px!important">{!! $content !!}</div>
             @else
                 <p>{{ $decision['opening'] ?: 'Dengan ini menetapkan keputusan sebagai berikut:' }}</p>
-                @foreach (['menimbang'=>'Menimbang','mengingat'=>'Mengingat','memutuskan'=>'Memutuskan','menetapkan'=>'Menetapkan'] as $key=>$label)
-                    @if (!empty($sections[$key]))
+                @foreach (['menimbang'=>'Menimbang','mengingat'=>'Mengingat','memperhatikan'=>'Memperhatikan','memutuskan'=>'Memutuskan','menetapkan'=>'Menetapkan'] as $key=>$label)
+                    @if (!empty($sections[$key]) || $key === 'memperhatikan')
                         @foreach (array_filter(array_map('trim', explode(';', $sections[$key]))) as $partIndex => $part)
                             <div class="sk-section-row {{ $key === 'mengingat' ? 'sk-mengingat-row' : '' }}" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $partIndex === 0 ? $label : '' }}</span><span class="sk-section-colon">{{ $key === 'mengingat' && $partIndex > 0 ? '' : ':' }}</span><span class="sk-section-content" style="text-align:justify">@if ($key === 'mengingat'){{ $partIndex + 1 }}. @endif{{ $part }}@if (!$loop->last);@endif</span></div>
                         @endforeach
@@ -71,6 +71,7 @@
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $builder['fonts']['body'] ?? 11 }}px!important}.sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important}.sk-section-row{font-size:{{ $builder['fonts']['section_title'] ?? 11 }}px!important}
 .sk-preview-page hr+div+div{font-size:{{ $decision['font_number'] ?? 12 }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $decision['font_opening'] ?? 11 }}px!important}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $bodyFont }}px!important}.sk-section-row{font-size:{{ $sectionFont }}px!important}.sk-preview-page hr+div{font-size:{{ $titleFont }}px!important}.sk-preview-page hr+div+div{font-size:{{ $numberFont }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $openingFont }}px!important}
+.sk-preview-page hr~*{color:#111827!important}.sk-preview-page hr~* .contact-icon{color:#fff!important}
 .whatsapp-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='1.6' d='M12 4a8 8 0 0 0-6.8 12.2L4 20l3.9-1.1A8 8 0 1 0 12 4Z'/%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-width='1.8' d='M9 8.5c-.4.1-.6.5-.5.9.4 1.8 1.8 3.5 3.5 4.1.4.2.9 0 1.1-.4l.3-.6-1.3-.7-.6.6c-.8-.4-1.4-1-1.8-1.8l.6-.6-.7-1.4-.6-.1Z'/%3E%3C/svg%3E") center/13px 13px no-repeat}
 </style>
 <script>

@@ -36,9 +36,9 @@
             @else
                 <p>{{ $decision['opening'] ?: 'Dengan ini menetapkan keputusan sebagai berikut:' }}</p>
                 @foreach (['menimbang'=>'Menimbang','mengingat'=>'Mengingat','memperhatikan'=>'Memperhatikan','memutuskan'=>'Memutuskan','menetapkan'=>'Menetapkan'] as $key=>$label)
-                    @if (!empty($sections[$key]) || $key === 'memperhatikan')
+                    @if (!empty($sections[$key]) || $key === 'memperhatikan' || ($key === 'memutuskan' && filled($sections['judul_tengah'] ?? null)))
                         @if ($key === 'memutuskan')
-                            <div class="sk-decision-heading" style="font-size:{{ $builder['fonts']['judul_tengah'] ?? $sectionFont }}px!important">{{ $sections[$key] ?: 'MEMUTUSKAN' }}</div>
+                            <div class="sk-decision-heading" style="font-size:{{ $builder['fonts']['judul_tengah'] ?? $sectionFont }}px!important">{{ $sections['judul_tengah'] ?: 'MEMUTUSKAN' }}</div>
                         @else
                             @foreach (array_filter(array_map('trim', explode(';', $sections[$key]))) as $partIndex => $part)
                                 <div class="sk-section-row {{ $key === 'mengingat' ? 'sk-mengingat-row' : '' }}" style="font-size:{{ $sectionFont }}px!important"><span class="sk-section-label">{{ $key === 'menetapkan' ? '' : ($partIndex === 0 ? $label : '') }}</span><span class="sk-section-colon">{{ $key === 'menetapkan' || ($key === 'mengingat' && $partIndex > 0) ? '' : ':' }}</span><span class="sk-section-content" style="text-align:justify">@if ($key === 'mengingat'){{ $partIndex + 1 }}. @endif{{ $part }}@if (!$loop->last);@endif</span></div>

@@ -3,6 +3,7 @@
     $builder = $value('builder_data', $record?->builder_data ?? \App\Models\FoundationSkTemplate::defaultBuilderData()) ?: [];
     $header = $builder['header'] ?? []; $decision = $builder['decision'] ?? []; $sections = $builder['sections'] ?? [];
     $content = $value('content', $record?->content ?? ''); $customCss = $value('custom_css', $record?->custom_css ?? '');
+    $content = str_replace(['Pertama : Pertama :', 'Pertama: Pertama:', 'Pertama :  Pertama :'], 'Pertama :', (string) $content);
     $bodyFont = $value('builder_data.fonts.body', data_get($builder, 'fonts.body', 11));
     $sectionFont = $value('builder_data.fonts.section_title', data_get($builder, 'fonts.section_title', 11));
     $titleFont = $value('builder_data.decision.font_title', data_get($builder, 'decision.font_title', 13));

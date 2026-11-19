@@ -42,6 +42,7 @@ class FoundationSkPdfService
         $section = fn (string $key, string $label): string => ! empty($sections[$key]) ? '<p><strong>'.$label.':</strong> '.$this->replacePlaceholders($sections[$key], $map).'</p>' : '';
         $logo = $header['logo_path'] ?? '';
         if (is_array($logo)) $logo = array_values($logo)[0] ?? '';
+        if ($logo && ! str_contains($logo, '/')) $logo = 'foundation-sk/logos/'.$logo;
         $logoUrl = $logo && Storage::disk('public')->exists($logo)
             ? asset('storage/'.ltrim($logo, '/'))
             : asset('images/sk-reference-logo.png');

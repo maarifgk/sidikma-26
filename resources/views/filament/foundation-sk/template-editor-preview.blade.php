@@ -9,6 +9,7 @@
     $size = $value('paper_size', $record?->paper_size ?? 'A4'); $orientation = $value('orientation', $record?->orientation ?? 'portrait');
     $logoPath = $header['logo_path'] ?? null;
     if (is_array($logoPath)) $logoPath = array_values($logoPath)[0] ?? null;
+    if (filled($logoPath) && ! str_contains($logoPath, '/')) $logoPath = 'foundation-sk/logos/'.$logoPath;
     $logoUrl = filled($logoPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath)
         ? asset('storage/'.ltrim($logoPath, '/'))
         : null;

@@ -70,9 +70,12 @@ class FoundationSkTemplateResource extends Resource
                             ->visibility('public')
                             ->directory('foundation-sk/logos')
                             ->maxSize(1536)
-                            ->dehydrateStateUsing(fn (mixed $state): ?string => is_array($state)
-                                ? (array_values($state)[0] ?? null)
-                                : ($state ?: null))
+                            ->dehydrateStateUsing(function (mixed $state): ?string {
+                                $path = is_array($state) ? (array_values($state)[0] ?? null) : $state;
+                                if (! filled($path)) return null;
+
+                                return str_contains($path, '/') ? $path : 'foundation-sk/logos/'.$path;
+                            })
                             ->downloadable()
                             ->openable()
                             ->reorderable(false),

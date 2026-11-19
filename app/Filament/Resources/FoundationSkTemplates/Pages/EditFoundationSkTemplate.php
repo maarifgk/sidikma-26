@@ -4,11 +4,23 @@ namespace App\Filament\Resources\FoundationSkTemplates\Pages;
 
 use App\Filament\Resources\FoundationSkTemplates\FoundationSkTemplateResource;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Actions\Action;
 
 class EditFoundationSkTemplate extends EditRecord
 {
     protected static string $resource = FoundationSkTemplateResource::class;
     protected static ?string $title = 'Edit Template';
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('viewPdf')
+                ->label('Lihat PDF')
+                ->icon('heroicon-o-document-text')
+                ->url(fn (): string => route('foundation-sk.templates.preview', ['template' => $this->record->getKey()]))
+                ->openUrlInNewTab(),
+        ];
+    }
 
     public function getSubheading(): ?string
     {

@@ -12,6 +12,7 @@ use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
@@ -69,7 +70,8 @@ class DecreeProposalsTable
                     ->tooltip('Proses usulan SK baru')
                     ->icon('heroicon-o-pencil-square')
                     ->color('warning')
-                    ->modalHeading('Proses Usulan SK Guru/Pegawai Baru')
+                    ->modalHeading('Proses Usulan SK')
+                    ->modalDescription('Periksa data calon guru/pegawai, lengkapi informasi yang diperlukan, lalu simpan status pengajuan.')
                     ->modalSubmitActionLabel('Simpan')
                     ->modalWidth(Width::SevenExtraLarge)
                     ->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)
@@ -90,30 +92,42 @@ class DecreeProposalsTable
                         'status' => $record->status,
                     ])
                     ->schema([
-                        TextInput::make('employee_code')->label('EWANUGK')->required()->maxLength(50),
-                        TextInput::make('name')->label('NAMA LENGKAP')->required()->maxLength(255),
-                        TextInput::make('email')->label('EMAIL')->email()->required()->maxLength(255),
-                        TextInput::make('phone')->label('NOMOR TELEPON')->tel()->required()->maxLength(30),
-                        Select::make('school_id')
-                            ->label('ASAL MADRASAH/SEKOLAH')
-                            ->options(fn (): array => School::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
-                            ->searchable()->preload()->required()->native(false),
-                        Select::make('employment_status')
-                            ->label('STATUS KEPEGAWAIAN')
-                            ->options(Employee::employmentStatusOptions())->required()->native(false),
-                        TextInput::make('birth_place')->label('TEMPAT LAHIR')->required()->maxLength(100),
-                        DatePicker::make('birth_date')->label('TANGGAL LAHIR')->required()->maxDate(now()),
-                        DatePicker::make('assignment_start_date')->label('TMT (TERHITUNG MULAI TANGGAL)')->required(),
-                        Select::make('position_id')
-                            ->label('KETUGASAN')
-                            ->options(fn (): array => EmployeePosition::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
-                            ->searchable()->preload()->required()->native(false),
-                        TextInput::make('nuptk')->label('NUPTK/NPK')->nullable()->maxLength(30),
-                        TextInput::make('last_education')->label('PENDIDIKAN TERAKHIR DAN TAHUN LULUS')->required()->maxLength(100),
-                        TextInput::make('program_study')->label('PROGRAM STUDI')->required()->maxLength(150),
-                        Select::make('status')
-                            ->label('STATUS PENGAJUAN')
-                            ->options(DecreeProposal::statusOptions())->required()->native(false),
+                        Section::make('Identitas Pengusul')
+                            ->icon('heroicon-o-user-circle')
+                            ->description('Data utama guru atau pegawai yang mengajukan SK.')
+                            ->schema([
+                                TextInput::make('employee_code')->label('EWANUGK')->required()->maxLength(50),
+                                TextInput::make('name')->label('Nama lengkap')->required()->maxLength(255),
+                                Select::make('school_id')
+                                    ->label('Asal madrasah/sekolah')
+                                    ->options(fn (): array => School::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
+                                    ->searchable()->preload()->required()->native(false),
+                                Select::make('employment_status')
+                                    ->label('Status kepegawaian')
+                                    ->options(Employee::employmentStatusOptions())->required()->native(false),
+                                TextInput::make('email')->label('Email')->email()->required()->maxLength(255),
+                                TextInput::make('phone')->label('Nomor telepon')->tel()->required()->maxLength(30),
+                            ])
+                            ->columns(2),
+                        Section::make('Data Pribadi dan Ketugasan')
+                            ->icon('heroicon-o-identification')
+                            ->description('Pastikan tanggal, posisi, dan pendidikan sudah sesuai dokumen pendukung.')
+                            ->schema([
+                                TextInput::make('birth_place')->label('Tempat lahir')->required()->maxLength(100),
+                                DatePicker::make('birth_date')->label('Tanggal lahir')->required()->maxDate(now()),
+                                DatePicker::make('assignment_start_date')->label('TMT')->helperText('Terhitung mulai tanggal')->required(),
+                                Select::make('position_id')
+                                    ->label('Ketugasan')
+                                    ->options(fn (): array => EmployeePosition::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
+                                    ->searchable()->preload()->required()->native(false),
+                                TextInput::make('nuptk')->label('NUPTK/NPK')->nullable()->maxLength(30),
+                                TextInput::make('last_education')->label('Pendidikan terakhir & tahun lulus')->required()->maxLength(100),
+                                TextInput::make('program_study')->label('Program studi')->required()->maxLength(150),
+                                Select::make('status')
+                                    ->label('Status pengajuan')
+                                    ->options(DecreeProposal::statusOptions())->required()->native(false),
+                            ])
+                            ->columns(2),
                     ])
                     ->action(function (DecreeProposal $record, array $data): void {
                         DB::transaction(function () use ($record, $data): void {

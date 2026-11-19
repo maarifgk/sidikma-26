@@ -1,11 +1,25 @@
+@php
+    $record = $template;
+    $get = static fn (string $key, mixed $default = null): mixed => data_get($template, $key, $default);
+@endphp
 <!doctype html>
 <html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $template->name }}</title>
+    <title>{{ $template->name }} - Preview</title>
     <style>
         @page { size: A4 portrait; margin: 0; }
+        html, body { margin: 0; min-height: 100%; background: #e5e7eb; }
+        body { padding: 24px; }
+        .foundation-sk-preview { min-height: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; }
+        .foundation-sk-preview > div:first-child { display: none !important; }
+        .preview-scroll-area { overflow: visible !important; border: 0 !important; background: transparent !important; padding: 0 !important; }
+        .preview-scroll-area > div { width: auto !important; height: auto !important; }
+        .preview-document { box-shadow: 0 2px 14px rgba(0,0,0,.2) !important; margin: 0 auto !important; transform: none !important; }
+        @media print { html, body { background: #fff; } body { padding: 0; } .preview-document { box-shadow: none !important; } }
+        /* The old renderer rules are intentionally replaced below. */
+        /*
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; background: #e5e7eb; }
         body { font-family: Arial, sans-serif; color: #111; }
@@ -26,8 +40,10 @@
         .sk-document td:first-child { width: 31%; }
         .signature { margin: 25px 0 25px 56%; white-space: nowrap; }
         @media print { html, body { background: #fff; } .sk-page { margin: 0; box-shadow: none; } }
-        @media (max-width: 640px) { .sk-page { margin: 0 auto; } }
+        @media (max-width: 640px) { .sk-page { margin: 0 auto; } } */
     </style>
 </head>
-<body><main class="sk-page">{!! $html !!}</main></body>
+<body>
+    @include('filament.foundation-sk.template-editor-preview', ['record' => $record, 'get' => $get])
+</body>
 </html>

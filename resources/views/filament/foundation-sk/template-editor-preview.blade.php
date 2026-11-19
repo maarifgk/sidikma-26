@@ -28,10 +28,12 @@
     if (is_array($stampPath)) $stampPath = array_values($stampPath)[0] ?? null;
     if (filled($stampPath) && ! str_contains($stampPath, '/')) $stampPath = 'foundation-sk/signature-stamps/'.$stampPath;
     $stampUrl = filled($stampPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($stampPath) ? route('foundation-sk.template-asset', ['path' => $stampPath]) : null;
-    $signatureLocation = $builder['signature']['ditetapkan_di'] ?? null;
-    if (! filled($signatureLocation) || str_contains(strtolower((string) $signatureLocation), 'ditetapkan')) $signatureLocation = $builder['signature']['label_tanggal'] ?? 'Gunungkidul';
-    $signatureDateLabel = $builder['signature']['label_tanggal'] ?? null;
-    if (! filled($signatureDateLabel) || $signatureDateLabel === $signatureLocation || str_contains(strtolower((string) $signatureDateLabel), 'gunungkidul')) $signatureDateLabel = 'Pada Tanggal';
+    $signatureLocation = trim((string) ($builder['signature']['ditetapkan_di'] ?? ''));
+    if (preg_match('/:\s*(.+)$/', $signatureLocation, $locationMatch)) $signatureLocation = trim($locationMatch[1]);
+    if (! filled($signatureLocation) || str_contains(strtolower($signatureLocation), 'pada tanggal')) $signatureLocation = 'Gunungkidul';
+    $signatureDateLabel = trim((string) ($builder['signature']['label_tanggal'] ?? ''));
+    $signatureDateLabel = rtrim($signatureDateLabel, " :");
+    if (! filled($signatureDateLabel) || str_contains(strtolower($signatureDateLabel), 'gunungkidul')) $signatureDateLabel = 'Pada Tanggal';
     $dimensions = match ($size) { 'F4' => [816, 1248], 'Legal', 'LEGAL' => [816, 1344], 'LETTER' => [816, 1056], default => [794, 1123] }; if ($orientation === 'landscape') $dimensions = [$dimensions[1], $dimensions[0]];
 @endphp
 <div x-data="{ zoom: 100, zoomIn() { this.zoom = Math.min(200, this.zoom + 10) }, zoomOut() { this.zoom = Math.max(50, this.zoom - 10) }, reset() { this.zoom = 100 } }" class="foundation-sk-preview flex min-h-[700px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">

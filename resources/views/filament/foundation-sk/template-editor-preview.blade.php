@@ -3,6 +3,11 @@
     $builder = $value('builder_data', $record?->builder_data ?? \App\Models\FoundationSkTemplate::defaultBuilderData()) ?: [];
     $header = $builder['header'] ?? []; $decision = $builder['decision'] ?? []; $sections = $builder['sections'] ?? [];
     $content = $value('content', $record?->content ?? ''); $customCss = $value('custom_css', $record?->custom_css ?? '');
+    $bodyFont = $value('builder_data.fonts.body', data_get($builder, 'fonts.body', 11));
+    $sectionFont = $value('builder_data.fonts.section_title', data_get($builder, 'fonts.section_title', 11));
+    $titleFont = $value('builder_data.decision.font_title', data_get($builder, 'decision.font_title', 13));
+    $numberFont = $value('builder_data.decision.font_number', data_get($builder, 'decision.font_number', 12));
+    $openingFont = $value('builder_data.decision.font_opening', data_get($builder, 'decision.font_opening', 11));
     $size = $value('paper_size', $record?->paper_size ?? 'A4'); $orientation = $value('orientation', $record?->orientation ?? 'portrait');
     $logoPath = $header['logo_path'] ?? null; if (is_array($logoPath)) $logoPath = array_values($logoPath)[0] ?? null; if (filled($logoPath) && ! str_contains($logoPath, '/')) $logoPath = 'foundation-sk/logos/'.$logoPath;
     $logoUrl = filled($logoPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath) ? route('foundation-sk.template-asset', ['path' => $logoPath]) : null;
@@ -19,7 +24,7 @@
     <div class="mb-4 flex justify-end"><div class="flex items-center gap-1"><button type="button" class="preview-zoom-button" x-on:click="zoomOut()">−</button><span class="min-w-[52px] text-center text-sm font-medium" x-text="`${zoom}%`">100%</span><button type="button" class="preview-zoom-button" x-on:click="zoomIn()">+</button><button type="button" class="preview-reset-button" x-on:click="reset()">Reset</button></div></div>
     <div class="preview-scroll-area min-h-0 flex-1 overflow-auto rounded-lg border border-gray-200 bg-gray-100 p-6"><div class="mx-auto" style="width: {{ $dimensions[0] }}px; height: {{ $dimensions[1] }}px"><div class="preview-document origin-top shadow-lg" style="width: {{ $dimensions[0] }}px; min-height: {{ $dimensions[1] }}px" x-bind:style="`transform: scale(${zoom / 100}); transform-origin: top center`">
         @if ($customCss)<style>{!! $customCss !!}</style>@endif
-        <div class="sk-preview-page" style="position:relative;padding:42px 64px;font-family:serif;font-size:{{ $builder['fonts']['body'] ?? 11 }}px;background:white;min-height:{{ $dimensions[1] }}px;color:#111827">
+            <div class="sk-preview-page" style="position:relative;padding:42px 64px;font-family:serif;font-size:{{ $bodyFont }}px;background:white;min-height:{{ $dimensions[1] }}px;color:#111827">
             @if ($logoUrl)<img class="sk-preview-logo" src="{{ $logoUrl }}" alt="Logo kop surat">@endif
             <div class="sk-preview-top">{{ $header['top_text'] ?: 'KEPALA SURAT YAYASAN' }}</div>
             <div class="sk-preview-institution">{{ $header['institution_name'] ?: 'YAYASAN CONTOH' }}</div>
@@ -60,8 +65,9 @@
 .sk-preview-page hr~p,.sk-preview-page hr~div p{padding-left:0!important}.sk-preview-page hr~p strong,.sk-preview-page hr~div p strong{width:140px!important}
 .sk-preview-page hr~p:has(strong),.sk-preview-page hr~div p:has(strong){display:grid!important;grid-template-columns:180px minmax(0,1fr)!important;column-gap:0!important;padding-left:0!important;text-indent:0!important}.sk-preview-page hr~p:has(strong) strong,.sk-preview-page hr~div p:has(strong) strong{width:180px!important;display:block!important;text-align:right!important;padding-right:12px!important;font-weight:400!important}
 .sk-preview-page hr~p:has(strong) strong,.sk-preview-page hr~div p:has(strong) strong{text-align:left!important}
-.sk-section-row{display:grid;grid-template-columns:120px 16px minmax(0,1fr);column-gap:0;text-align:left;margin:4px 0;line-height:1.4}.sk-section-label{text-align:left}.sk-section-colon{text-align:center}.sk-section-content{min-width:0}
+.sk-section-row{display:grid;grid-template-columns:100px 16px minmax(0,1fr);column-gap:0;text-align:left;margin:4px 0;line-height:1.4}.sk-section-label{text-align:left}.sk-section-colon{text-align:center}.sk-section-content{min-width:0}
 .sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $builder['fonts']['body'] ?? 11 }}px!important}.sk-preview-page hr+div{font-size:{{ $decision['font_title'] ?? 13 }}px!important}.sk-section-row{font-size:{{ $builder['fonts']['section_title'] ?? 11 }}px!important}
 .sk-preview-page hr+div+div{font-size:{{ $decision['font_number'] ?? 12 }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $decision['font_opening'] ?? 11 }}px!important}
+.sk-preview-page hr~div:not(.sk-section-row),.sk-preview-page hr~p,.sk-preview-page hr~div p{font-size:{{ $bodyFont }}px!important}.sk-section-row{font-size:{{ $sectionFont }}px!important}.sk-preview-page hr+div{font-size:{{ $titleFont }}px!important}.sk-preview-page hr+div+div{font-size:{{ $numberFont }}px!important}.sk-preview-page hr~p:first-of-type{font-size:{{ $openingFont }}px!important}
 .whatsapp-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='1.6' d='M12 4a8 8 0 0 0-6.8 12.2L4 20l3.9-1.1A8 8 0 1 0 12 4Z'/%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-width='1.8' d='M9 8.5c-.4.1-.6.5-.5.9.4 1.8 1.8 3.5 3.5 4.1.4.2.9 0 1.1-.4l.3-.6-1.3-.7-.6.6c-.8-.4-1.4-1-1.8-1.8l.6-.6-.7-1.4-.6-.1Z'/%3E%3C/svg%3E") center/13px 13px no-repeat}
 </style>

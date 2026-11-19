@@ -116,17 +116,17 @@ class FoundationSkTemplateResource extends Resource
                     ])->columns(2),
                     Section::make('Konsideran')->description('Boleh memakai placeholder seperti {{nama_kelas}}, {{ketugasan}}, dan lainnya.')->schema([
                         Textarea::make('builder_data.sections.menimbang')->label('Menimbang')->rows(3)->live(debounce: 500),
-                        TextInput::make('builder_data.fonts.section_title')->label('Ukuran Font Konsideran')->numeric()->default(11)->live(debounce: 500),
+                        TextInput::make('builder_data.fonts.section_title')->label('Ukuran Font Konsideran')->numeric()->default(11)->live(),
                         Textarea::make('builder_data.sections.mengingat')->label('Mengingat')->rows(3)->live(debounce: 500),
                         Textarea::make('builder_data.sections.memperhatikan')->label('Memperhatikan')->rows(3)->live(debounce: 500),
                     ])->columns(2),
                     Section::make('Isi Keputusan')->schema([
                         TextInput::make('builder_data.sections.judul_tengah')->label('Judul Tengah')->live(debounce: 500),
-                        TextInput::make('builder_data.fonts.judul_tengah')->label('Ukuran Font Judul')->numeric()->default(11)->live(debounce: 500),
+                        TextInput::make('builder_data.fonts.judul_tengah')->label('Ukuran Font Judul')->numeric()->default(11)->live(),
                         Textarea::make('builder_data.sections.memutuskan')->label('Teks Keputusan')->rows(3)->live(debounce: 500),
-                        TextInput::make('builder_data.fonts.body')->label('Ukuran Font Isi')->numeric()->default(11)->live(debounce: 500),
+                        TextInput::make('builder_data.fonts.body')->label('Ukuran Font Isi')->numeric()->default(11)->live(),
                         Textarea::make('builder_data.sections.menetapkan')->label('Teks Penetapan')->rows(3)->live(debounce: 500),
-                        TextInput::make('builder_data.fonts.data_user')->label('Ukuran Font Data Guru')->numeric()->default(11)->live(debounce: 500),
+                        TextInput::make('builder_data.fonts.data_user')->label('Ukuran Font Data Guru')->numeric()->default(11)->live(),
                     ])->columns(2),
                     Section::make('Area Tanda Tangan')->description('Bagian ini hanya area teks penetapan, tanpa gambar tanda tangan.')->schema([
                         TextInput::make('builder_data.signature.ditetapkan_di')->label('Ditetapkan Di')->live(debounce: 500),

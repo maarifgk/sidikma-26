@@ -476,4 +476,11 @@
     @media (max-width: 1279px) {
         body:has(.foundation-sk-template-form) .foundation-sk-template-form .fi-sc > * { grid-column: 1 / -1 !important; }
     }
+    @media (min-width: 1280px) {
+        body:has(.foundation-sk-template-form) .foundation-sk-template-form .foundation-sk-preview {
+            position: sticky;
+            top: 1rem;
+            max-height: calc(100vh - 2rem);
+        }
+    }
 </style>

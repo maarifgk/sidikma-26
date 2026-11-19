@@ -108,9 +108,9 @@ class FoundationSkTemplateResource extends Resource
                     ])->columns(1),
                     Section::make('Judul Keputusan')->description('Atur judul, nomor, dan kalimat pembuka SK.')->schema([
                         TextInput::make('builder_data.decision.title')->label('Judul SK')->live(debounce: 500),
-                        TextInput::make('builder_data.decision.font_title')->label('Font Judul SK')->numeric()->default(13)->live(debounce: 500),
+                        TextInput::make('builder_data.decision.font_title')->label('Font Judul SK')->numeric()->default(13)->live(),
                         TextInput::make('builder_data.decision.number')->label('Nomor SK')->live(debounce: 500),
-                        TextInput::make('builder_data.decision.font_number')->label('Font Nomor SK')->numeric()->default(12)->live(debounce: 500),
+                        TextInput::make('builder_data.decision.font_number')->label('Font Nomor SK')->numeric()->default(12)->live(),
                         Textarea::make('builder_data.decision.opening')->label('Kalimat Pembuka')->rows(2)->live(debounce: 500),
                         TextInput::make('builder_data.decision.font_opening')->label('Font Pembuka')->numeric()->default(11)->live(debounce: 500),
                     ])->columns(2),

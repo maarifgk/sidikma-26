@@ -11,6 +11,6 @@
     <label>Tahun/Periode</label>
     <input name="periode" required value="{{ now()->year }}" class="fi-input w-full">
     <label>Teks Nomor SK</label>
-    <input name="nomor_text" class="fi-input w-full">
+    <input name="teks_nomor_sk" class="fi-input w-full">
     <button type="submit" class="fi-btn fi-btn-color-primary">Generate PDF</button>
 </form>

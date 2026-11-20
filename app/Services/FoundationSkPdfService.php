@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\{FoundationSkTemplate, User};
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -64,7 +65,41 @@ class FoundationSkPdfService
     private function placeholderMap(?User $user, array $values): array
     {
         $employee = $user?->employee;
-        return array_merge(['nama_lengkap' => $user?->name ?? '-', 'email' => $user?->email ?? '-', 'nis' => $employee?->nis ?? '-', 'nip' => $employee?->nip ?? '-', 'nuptk' => $employee?->nuptk ?? '-', 'nama_sekolah' => $employee?->school?->name ?? '-', 'jabatan' => '-', 'periode' => $values['periode'] ?? '-', 'tahun' => $values['tahun'] ?? now()->year, 'nomor_sk' => $values['nomor_sk'] ?? '0001/SK/YYS/2026', 'teks_nomor_sk' => $values['teks_nomor_sk'] ?? '-'], $values);
+        $assignment = $employee?->currentAssignment;
+        $school = $assignment?->school ?: $employee?->school;
+        $date = static function (mixed $value, string $format = 'd-m-Y'): string {
+            if (blank($value)) return '-';
+            try { return Carbon::parse($value)->format($format); } catch (\Throwable) { return (string) $value; }
+        };
+        $name = $employee?->name ?: $user?->name ?: $user?->nama_lengkap;
+        $employeeCode = $employee?->employee_code;
+        $period = $values['periode'] ?? '-';
+        $year = $values['tahun'] ?? (preg_match('/(20\d{2}|19\d{2})/', (string) $period, $match) ? (int) $match[1] : now()->year);
+
+        return array_merge([
+            'nama_lengkap' => $name, 'nama' => $name, 'name' => $name,
+            'email' => $employee?->email ?: $user?->email,
+            'nik' => $employee?->nik,
+            'nis' => $employeeCode, 'employee_code' => $employeeCode, 'ewanugk' => $employeeCode,
+            'nip' => $employee?->nip, 'nuptk' => $employee?->nuptk, 'nuptk_npk' => $employee?->nuptk,
+            'tempat_lahir' => $employee?->birth_place,
+            'tanggal_lahir' => $date($employee?->birth_date),
+            'tempat_tanggal_lahir' => trim(($employee?->birth_place ?: '-').' / '.$date($employee?->birth_date)),
+            'jabatan' => $assignment?->position?->name,
+            'tmt' => $date($assignment?->start_date), 'tmt_pertama' => $date($assignment?->start_date),
+            'tanggal_mulai' => $date($assignment?->start_date), 'tanggal_berakhir' => $date($assignment?->end_date),
+            'pendidikan' => $employee?->last_education, 'pendidikan_terakhir' => $employee?->last_education,
+            'program_studi' => $employee?->program_study,
+            'status_kepegawaian' => $employee ? $employee::employmentStatusLabel($employee->employment_status) : null,
+            'jenis_pegawai' => $employee?->employee_type,
+            'nama_sekolah' => $school?->name, 'alamat_sekolah' => $school?->address,
+            'npsn' => $school?->npsn, 'jenjang_sekolah' => $school?->school_level,
+            'periode' => $period, 'tahun' => $year,
+            'nomor_sk' => $values['nomor_sk'] ?? '0001/SK/YYS/'.$year,
+            'teks_nomor_sk' => $values['teks_nomor_sk'] ?? '-',
+            'tanggal_penetapan' => $values['tanggal_penetapan'] ?? now()->format('d-m-Y'),
+            'tanggal_sk' => $values['tanggal_sk'] ?? now()->format('d-m-Y'),
+        ], $values);
     }
 
     private function replacePlaceholders(string $text, array $map): string { return preg_replace_callback('/\{\{\s*([a-z0-9_]+)\s*\}\}/i', fn ($m) => $this->escape((string) ($map[$m[1]] ?? '-')), $text); }

@@ -10,6 +10,9 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EditEmployee extends EditRecord
 {
@@ -53,28 +56,63 @@ class EditEmployee extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $record->fill($data);
-        $record->save();
+        return DB::transaction(function () use ($record, $data): Model {
+            $record->fill($data);
 
-        if ($record->user_id && array_key_exists('email', $data)) {
-            User::query()
-                ->whereKey($record->user_id)
-                ->update([
-                    'email' => $record->email,
+            if (! $record->user_id && filled($this->newAccountPassword)) {
+                $email = strtolower(trim((string) $record->email));
+
+                if ($email === '') {
+                    throw ValidationException::withMessages([
+                        'email' => 'Email wajib diisi sebelum membuat akun SIDIKMA.',
+                    ]);
+                }
+
+                $account = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
+
+                if ($account) {
+                    throw ValidationException::withMessages([
+                        'email' => 'Email ini sudah memiliki akun SIDIKMA. Pilih akun tersebut pada field Akun User.',
+                    ]);
+                }
+
+                $account = User::query()->create([
+                    'name' => $record->name,
+                    'nama_lengkap' => $record->name,
+                    'email' => $email,
+                    'password' => Hash::make($this->newAccountPassword),
+                    'is_active' => true,
+                    'created_by' => auth()->id(),
                     'updated_by' => auth()->id(),
                 ]);
-        }
+                $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
+                $record->user_id = $account->getKey();
+            }
 
-        return $record->refresh();
+            $record->save();
+
+            if ($record->user_id && array_key_exists('email', $data)) {
+                User::query()
+                    ->whereKey($record->user_id)
+                    ->update([
+                        'email' => strtolower(trim((string) $record->email)),
+                        'updated_by' => auth()->id(),
+                    ]);
+            }
+
+            return $record->refresh();
+        });
     }
 
     protected function afterSave(): void
     {
         if (filled($this->newAccountPassword) && $this->record->user) {
             $this->record->user->update([
-                'password' => $this->newAccountPassword,
+                'password' => Hash::make($this->newAccountPassword),
+                'is_active' => true,
                 'updated_by' => auth()->id(),
             ]);
+            $this->record->user->syncWithoutDetaching([User::ROLE_GURU_PEGAWAI]);
         }
 
         if (blank($this->positionId)) {

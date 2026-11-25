@@ -7,14 +7,13 @@ use App\Filament\Pages\CreateRecord;
 use App\Filament\Resources\DecreeProposals\DecreeProposalResource;
 use App\Models\DecreeProposal;
 use App\Models\Employee;
-use App\Models\EmployeeAssignment;
 use App\Models\EmployeePosition;
-use App\Models\Membership;
 use App\Models\School;
 use App\Models\User;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CreateDecreeProposal extends CreateRecord
 {
@@ -32,91 +31,110 @@ class CreateDecreeProposal extends CreateRecord
 
         abort_unless($actor instanceof User, 403);
 
+        abort_unless($actor->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH), 403);
+
         return DB::connection('sidikma_induk')->transaction(function () use ($data, $actor): DecreeProposal {
+            $schoolIds = $actor->memberships()
+                ->active()
+                ->whereNotNull('school_id')
+                ->pluck('school_id')
+                ->unique()
+                ->values();
+
+            if ($schoolIds->count() !== 1) {
+                throw ValidationException::withMessages([
+                    'form' => 'Akun Admin Sekolah/Madrasah harus memiliki tepat satu sekolah aktif sebelum mengajukan usulan.',
+                ]);
+            }
+
             $school = School::query()
-                ->accessibleTo($actor)
-                ->findOrFail($data['school_id']);
-            $position = EmployeePosition::query()->findOrFail($data['position_id']);
+                ->whereKey($schoolIds->first())
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->first();
 
-            $account = User::query()->create([
-                'nama_lengkap' => $data['name'],
-                'nuptk' => $data['nuptk'] ?? $data['employee_code'],
-                'ptt_lulus' => $data['last_education'] ?? '-',
-                'p_studi' => $data['program_study'] ?? '-',
-                'email' => $data['email'],
-                'nama_kelas' => '-',
-                'nama_jurusan' => '-',
-                'tempat_lahir' => $data['birth_place'] ?? '-',
-                'skbfr2025' => '-',
-                'no_tlp' => $data['phone'],
-                'password' => $data['application_password'],
-                'role' => 0,
-                'thn_pelajaran' => (string) now()->year,
-                'kelas1' => 0,
-                'kelas2' => 0,
-                'kelas3' => 0,
-                'kelas4' => 0,
-                'kelas5' => 0,
-                'kelas6' => 0,
-                'kelas7' => 0,
-                'kelas8' => 0,
-                'kelas9' => 0,
-                'jumlahsiswa' => 0,
-                'akreditasi' => '-',
-                'masaakreditasi' => '-',
-                'statustanah' => '-',
-                'luastanah' => '0',
-                'sertifikat' => '-',
-                'atasnama' => '-',
-                'phbnu' => '-',
-                'created_by' => $actor->getKey(),
-                'updated_by' => $actor->getKey(),
-            ]);
-            $account->syncRoles([User::ROLE_GURU_PEGAWAI]);
+            if (! $school instanceof School) {
+                throw ValidationException::withMessages([
+                    'form' => 'Sekolah/madrasah aktif untuk akun ini tidak ditemukan.',
+                ]);
+            }
 
-            $employee = Employee::query()->create([
-                'foundation_id' => $school->foundation_id,
-                'school_id' => $school->getKey(),
-                'user_id' => $account->getKey(),
-                'employee_code' => $data['employee_code'],
-                'name' => $data['name'],
-                'nuptk' => $data['nuptk'] ?? null,
-                'nip' => Employee::isPnsStatus($data['employment_status']) ? $data['nip'] : null,
-                'rank' => Employee::isPnsStatus($data['employment_status']) ? $data['rank'] : null,
-                'grade' => Employee::isPnsStatus($data['employment_status']) ? $data['grade'] : null,
-                'employee_type' => $this->resolveEmployeeType($data['employment_status'], $position),
-                'employment_status' => $data['employment_status'],
-                'last_education' => $data['last_education'],
-                'program_study' => $data['program_study'],
-                'birth_place' => $data['birth_place'],
-                'birth_date' => $data['birth_date'],
-                'phone' => $data['phone'],
-                'email' => $data['email'],
-                'avatar_path' => null,
-                'is_active' => true,
-            ]);
+            $email = strtolower(trim($data['email']));
+            $employeeCode = strtoupper(trim($data['employee_code']));
+            $nuptk = filled($data['nuptk'] ?? null) ? strtoupper(trim($data['nuptk'])) : null;
 
-            Membership::query()->create([
-                'user_id' => $account->getKey(),
-                'foundation_id' => $school->foundation_id,
-                'school_id' => $school->getKey(),
-                'status' => 'active',
-                'start_date' => $data['assignment_start_date'],
-            ]);
+            $duplicate = DecreeProposal::query()
+                ->where('status', DecreeProposal::STATUS_SUBMITTED)
+                ->where(function ($query) use ($email, $employeeCode, $nuptk): void {
+                    $query->where('candidate_email', $email)
+                        ->orWhereJsonContains('legacy_snapshot->employee_code', $employeeCode);
 
-            $employee->assignments()->create([
-                'employee_position_id' => $position->getKey(),
-                'foundation_id' => $school->foundation_id,
-                'school_id' => $school->getKey(),
-                'start_date' => $data['assignment_start_date'],
-                'status' => EmployeeAssignment::STATUS_ACTIVE,
-                'is_primary' => true,
-            ]);
+                    if ($nuptk !== null) {
+                        $query->orWhereJsonContains('legacy_snapshot->nuptk', $nuptk);
+                    }
+                })
+                ->exists();
+
+            if ($duplicate) {
+                throw ValidationException::withMessages([
+                    'form' => 'Pengajuan aktif dengan email, EWANUGK, atau NUPTK yang sama sudah tersedia.',
+                ]);
+            }
+
+            if (User::query()->where('email', $email)->exists()
+                || Employee::query()->where(function ($query) use ($email, $employeeCode, $nuptk): void {
+                    $query->where('email', $email)->orWhere('employee_code', $employeeCode);
+
+                    if ($nuptk !== null) {
+                        $query->orWhere('nuptk', $nuptk);
+                    }
+                })->exists()) {
+                throw ValidationException::withMessages([
+                    'form' => 'Email, EWANUGK, atau NUPTK sudah terdaftar pada data yang ada.',
+                ]);
+            }
+
+            $position = EmployeePosition::query()
+                ->whereKey($data['position_id'])
+                ->where('is_active', true)
+                ->first();
+
+            if (! $position instanceof EmployeePosition) {
+                throw ValidationException::withMessages([
+                    'position_id' => 'Ketugasan yang dipilih tidak aktif atau tidak ditemukan.',
+                ]);
+            }
 
             return DecreeProposal::query()->create([
-                'employee_id' => $employee->getKey(),
+                'employee_id' => null,
+                'candidate_name' => $data['name'],
+                'candidate_email' => $email,
+                'candidate_phone' => $data['phone'],
+                'candidate_school' => $school->name,
                 'partner_admin_number' => $data['partner_admin_number'] ?? null,
                 'status' => DecreeProposal::STATUS_SUBMITTED,
+                'legacy_snapshot' => [
+                    'employee_code' => $employeeCode,
+                    'name' => $data['name'],
+                    'email' => $email,
+                    'phone' => $data['phone'],
+                    'school_id' => $school->getKey(),
+                    'school_name' => $school->name,
+                    'school_npsn' => $school->npsn,
+                    'foundation_id' => $school->foundation_id,
+                    'employment_status' => $data['employment_status'],
+                    'nip' => Employee::isPnsStatus($data['employment_status']) ? ($data['nip'] ?? null) : null,
+                    'rank' => Employee::isPnsStatus($data['employment_status']) ? ($data['rank'] ?? null) : null,
+                    'grade' => Employee::isPnsStatus($data['employment_status']) ? ($data['grade'] ?? null) : null,
+                    'birth_date' => $data['birth_date'],
+                    'birth_place' => $data['birth_place'],
+                    'position_id' => $position->getKey(),
+                    'position_name' => $position->name,
+                    'assignment_start_date' => $data['assignment_start_date'],
+                    'last_education' => $data['last_education'],
+                    'nuptk' => $nuptk,
+                    'program_study' => $data['program_study'],
+                ],
                 'photo_path' => $data['photo_path'],
                 'diploma_path' => $data['diploma_path'],
                 'application_letter_path' => $data['application_letter_path'],
@@ -146,13 +164,4 @@ class CreateDecreeProposal extends CreateRecord
         return 'Usulan SK baru berhasil diajukan';
     }
 
-    private function resolveEmployeeType(string $employmentStatus, EmployeePosition $position): string
-    {
-        if (in_array($employmentStatus, ['GTY', 'GTT'], true)
-            || $position->category === EmployeePosition::CATEGORY_TEACHING) {
-            return Employee::TYPE_GURU;
-        }
-
-        return Employee::TYPE_PEGAWAI;
-    }
 }

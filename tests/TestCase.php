@@ -14,7 +14,7 @@ abstract class TestCase extends BaseTestCase
         $database = $app['config']->get("database.connections.{$connection}.database");
 
         $databaseIsTestingSqlite = $connection === 'sqlite'
-            && in_array($database, [':memory:', 'database/testing.sqlite'], true);
+            && in_array($database, [':memory:', 'database/testing.sqlite', 'database/testing-step9a.sqlite'], true);
 
         if (! $databaseIsTestingSqlite) {
             throw new \RuntimeException(
@@ -25,8 +25,9 @@ abstract class TestCase extends BaseTestCase
         }
 
         // Domain models use the named sidikma_induk connection in production.
-        // During tests it must point at the same in-memory SQLite database so
-        // RefreshDatabase migrates and resets one schema for every test.
+        // During tests it must point at the same SQLite file, but retain a
+        // separate PDO. Filament opens a transaction on the default connection
+        // while proposal creation opens its own transaction on sidikma_induk.
         $app['config']->set(
             'database.connections.sidikma_induk',
             $app['config']->get('database.connections.sqlite'),
@@ -35,11 +36,8 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('database.connections.sqlite.journal_mode', 'WAL');
         $app['config']->set('database.connections.sidikma_induk.journal_mode', 'WAL');
 
-        $sqlite = $app['db']->connection('sqlite');
         $app['db']->purge('sidikma_induk');
-        $sidikma = $app['db']->connection('sidikma_induk');
-        $sidikma->setPdo($sqlite->getPdo());
-        $sidikma->setReadPdo($sqlite->getReadPdo());
+        $app['db']->connection('sidikma_induk');
 
         return $app;
     }

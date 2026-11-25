@@ -1,0 +1,23 @@
+*** Begin Patch
+*** Update File: routes/web.php
+@@
+ use App\Http\Controllers\FoundationSkDocumentDownloadController;
++use App\Http\Controllers\DecreeProposalDocumentController;
+ use App\Http\Controllers\FoundationSkTemplateController;
+@@
+ Route::get('/foundation-sk/documents/{document}/download', FoundationSkDocumentDownloadController::class)
+     ->middleware('auth')
+     ->name('foundation-sk.documents.download');
++Route::get('/decree-proposals/{proposal}/documents/{document}', DecreeProposalDocumentController::class)
++    ->whereIn('document', [
++        'photo_path',
++        'diploma_path',
++        'application_letter_path',
++        'mwc_recommendation_request_path',
++        'service_statement_path',
++        'teaching_certificate_path',
++        'educator_certificate_path',
++        'task_assignment_certificate_path',
++    ])
++    ->middleware('auth')
++    ->name('decree-proposals.documents.view');

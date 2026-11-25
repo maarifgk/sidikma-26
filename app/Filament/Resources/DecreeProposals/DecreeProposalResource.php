@@ -58,13 +58,17 @@ class DecreeProposalResource extends Resource
 
         $schoolIds = $user->accessibleSchoolIds();
 
-        return $query->where(function (Builder $proposalQuery) use ($schoolIds, $user): void {
+        return $query->where(function (Builder $proposalQuery) use ($schoolIds): void {
             $proposalQuery
                 ->whereHas(
                     'employee',
                     fn (Builder $employeeQuery): Builder => $employeeQuery->whereIn('school_id', $schoolIds),
                 )
-                ->orWhere('submitted_by', $user->getKey());
+                ->orWhere(function (Builder $snapshotQuery) use ($schoolIds): void {
+                    foreach ($schoolIds as $schoolId) {
+                        $snapshotQuery->orWhereJsonContains('legacy_snapshot->school_id', (int) $schoolId);
+                    }
+                });
         });
     }
 

@@ -6,11 +6,14 @@ use App\Models\DecreeProposal;
 use App\Models\Employee;
 use App\Models\EmployeePosition;
 use App\Models\School;
+use App\Services\DecreeProposalApprovalService;
+use App\Services\DecreeProposalRejectionService;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Notifications\Notification;
@@ -31,21 +34,34 @@ class DecreeProposalsTable
                     ->rowIndex(),
                 TextColumn::make('employee.employee_code')
                     ->label('EWANUGK')
-                    ->state(fn (DecreeProposal $record): string => $record->employee?->employee_code ?? '-')
+                    ->state(fn (DecreeProposal $record): string => $record->displayEmployeeCode())
                     ->placeholder('-')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('employee.name')
                     ->label('Nama Lengkap')
-                    ->state(fn (DecreeProposal $record): string => $record->employee?->name ?? $record->candidate_name ?? '-')
-                    ->searchable()
+                    ->state(fn (DecreeProposal $record): string => $record->displayName())
+                    ->searchable(['employee.name', 'candidate_name'])
                     ->sortable(),
                 TextColumn::make('employee.school.name')
                     ->label('Asal Madrasah/Sekolah')
-                    ->state(fn (DecreeProposal $record): string => $record->employee?->school?->name ?? $record->candidate_school ?? '-')
+                    ->state(fn (DecreeProposal $record): string => $record->displaySchoolName())
                     ->placeholder('-')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('candidate_email')
+                    ->label('Email')
+                    ->state(fn (DecreeProposal $record): string => $record->displayEmail())
+                    ->placeholder('-')
+                    ->searchable(['candidate_email', 'employee.email']),
+                TextColumn::make('candidate_phone')
+                    ->label('Telepon')
+                    ->state(fn (DecreeProposal $record): string => $record->displayPhone())
+                    ->placeholder('-'),
+                TextColumn::make('candidate_position')
+                    ->label('Ketugasan')
+                    ->state(fn (DecreeProposal $record): string => $record->displayPositionName())
+                    ->placeholder('-'),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -65,6 +81,76 @@ class DecreeProposalsTable
                     ->options(DecreeProposal::statusOptions()),
             ])
             ->recordActions([
+                Action::make('approve')
+                    ->label('Simpan / Setujui')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->tooltip('Akan diaktifkan setelah workflow STEP 6 selesai')
+                    ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
+                        && $record->status === DecreeProposal::STATUS_SUBMITTED
+                        && $record->employee_id === null)
+                    ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
+                    ->requiresConfirmation()
+                    ->modalHeading('Setujui Usulan SK Baru')
+                    ->modalDescription(fn (DecreeProposal $record): string => implode("\n", [
+                        'Persetujuan akan membuat akun guru, data pegawai, keanggotaan sekolah, dan ketugasan.',
+                        'Nama: '.$record->displayName(),
+                        'Sekolah: '.$record->displaySchoolName(),
+                        'Email: '.$record->displayEmail(),
+                        'Ketugasan: '.$record->displayPositionName(),
+                        'Status: '.(DecreeProposal::statusOptions()[$record->status] ?? $record->status),
+                    ]))
+                    ->modalSubmitActionLabel('Ya, Simpan dan Setujui')
+                    ->action(function (DecreeProposal $record): void {
+                        abort_unless(auth()->user()?->can('update', $record), 403);
+
+                        $result = app(DecreeProposalApprovalService::class)->approve($record, auth()->user());
+
+                        $notification = Notification::make()
+                            ->title('Pengajuan SK baru berhasil disetujui')
+                            ->body('Akun guru dan data pegawai telah berhasil dibuat.');
+
+                        if ($result['reset_status'] !== \Illuminate\Support\Facades\Password::RESET_LINK_SENT) {
+                            $notification
+                                ->warning()
+                                ->body('Akun dan data pegawai berhasil dibuat. Link pengaturan password belum terkirim; guru dapat menggunakan fitur Lupa Password.');
+                        } else {
+                            $notification->success();
+                        }
+
+                        $notification->send();
+                    }),
+                Action::make('reject')
+                    ->label('Tolak')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
+                        && $record->status === DecreeProposal::STATUS_SUBMITTED
+                        && $record->employee_id === null)
+                    ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
+                    ->requiresConfirmation()
+                    ->modalHeading('Tolak Usulan SK Baru')
+                    ->modalDescription(fn (DecreeProposal $record): string => implode("\n", [
+                        'Silakan masukkan alasan penolakan pengajuan SK baru. Keterangan ini akan ditampilkan kepada Admin Sekolah/Madrasah yang mengajukan.',
+                        'Nama: '.$record->displayName(),
+                        'Sekolah: '.$record->displaySchoolName(),
+                        'Email: '.$record->displayEmail(),
+                        'Ketugasan: '.$record->displayPositionName(),
+                    ]))
+                    ->schema([
+                        Textarea::make('reason')
+                            ->label('Keterangan Penolakan')
+                            ->placeholder('Contoh: Dokumen ijazah belum sesuai atau surat permohonan belum ditandatangani.')
+                            ->required()
+                            ->maxLength(65535)
+                            ->rows(5),
+                    ])
+                    ->modalSubmitActionLabel('Konfirmasi Penolakan')
+                    ->action(function (DecreeProposal $record, array $data): void {
+                        abort_unless(auth()->user()?->can('update', $record), 403);
+                        app(DecreeProposalRejectionService::class)->reject($record, auth()->user(), (string) ($data['reason'] ?? ''));
+                        Notification::make()->title('Pengajuan SK baru berhasil ditolak')->body('Keterangan penolakan telah disimpan.')->success()->send();
+                    }),
                 Action::make('process')
                     ->label('Proses')
                     ->tooltip('Proses usulan SK baru')
@@ -74,7 +160,9 @@ class DecreeProposalsTable
                     ->modalDescription('Periksa data calon guru/pegawai, lengkapi informasi yang diperlukan, lalu simpan status pengajuan.')
                     ->modalSubmitActionLabel('Simpan')
                     ->modalWidth(Width::SevenExtraLarge)
-                    ->visible(fn (): bool => auth()->user()?->isAdminInduk() ?? false)
+                    ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
+                        && false)
+                    ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->fillForm(fn (DecreeProposal $record): array => [
                         'employee_code' => $record->employee?->employee_code,
                         'name' => $record->employee?->name,
@@ -132,6 +220,8 @@ class DecreeProposalsTable
                             ->columns(2),
                     ])
                     ->action(function (DecreeProposal $record, array $data): void {
+                        abort_unless(auth()->user()?->can('update', $record), 403);
+
                         DB::transaction(function () use ($record, $data): void {
                             $employee = $record->employee()->lockForUpdate()->firstOrFail();
                             $position = EmployeePosition::query()->findOrFail($data['position_id']);
@@ -178,7 +268,8 @@ class DecreeProposalsTable
                     ->tooltip('Lihat detail pengajuan')
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->modalHeading('Detail Usulan SK'),
+                    ->modalHeading('Detail Usulan SK')
+                    ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('view', $record) ?? false),
                 DeleteAction::make()
                     ->label('Delete'),
             ])

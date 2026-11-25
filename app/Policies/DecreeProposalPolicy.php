@@ -3,13 +3,15 @@
 namespace App\Policies;
 
 use App\Models\DecreeProposal;
+use App\Models\School;
 use App\Models\User;
 
 class DecreeProposalPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('approval.view');
+        return $user->can('approval.view')
+            && ($user->isAdminInduk() || $user->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH));
     }
 
     public function view(User $user, DecreeProposal $decreeProposal): bool
@@ -18,8 +20,7 @@ class DecreeProposalPolicy
             return false;
         }
 
-        return $user->isAdminInduk()
-            || $user->accessibleSchoolIds()->contains($decreeProposal->employee?->school_id);
+        return $user->isAdminInduk() || $this->belongsToAccessibleSchool($user, $decreeProposal);
     }
 
     public function create(User $user): bool
@@ -52,7 +53,26 @@ class DecreeProposalPolicy
 
     private function canAccessProposal(User $user, DecreeProposal $decreeProposal): bool
     {
-        return $user->isAdminInduk()
-            || $user->accessibleSchoolIds()->contains($decreeProposal->employee?->school_id);
+        return $user->isAdminInduk() || $this->belongsToAccessibleSchool($user, $decreeProposal);
+    }
+
+    private function belongsToAccessibleSchool(User $user, DecreeProposal $proposal): bool
+    {
+        $schoolId = $proposal->employee?->school_id ?? $proposal->candidateSchoolId();
+
+        if ($schoolId === null || ! $user->accessibleSchoolIds()->contains($schoolId)) {
+            return false;
+        }
+
+        $snapshotFoundationId = $proposal->candidateFoundationId();
+
+        if ($snapshotFoundationId === null || $proposal->candidateSchoolId() === null) {
+            return true;
+        }
+
+        return School::query()
+            ->whereKey($schoolId)
+            ->where('foundation_id', $snapshotFoundationId)
+            ->exists();
     }
 }

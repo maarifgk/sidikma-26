@@ -15,6 +15,7 @@ use App\Http\Controllers\ViewAttendanceLeaveAttachmentController;
 use App\Http\Controllers\ViewComplaintAttachmentController;
 use App\Models\DecreeCorrectionRequest;
 use App\Http\Controllers\FoundationSkDocumentDownloadController;
+use App\Http\Controllers\DecreeProposalDocumentController;
 use App\Http\Controllers\FoundationSkTemplateController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -84,6 +85,19 @@ Route::get('/decree-submissions/{decreeSubmission}/download', DownloadDecreeSubm
 Route::get('/foundation-sk/documents/{document}/download', FoundationSkDocumentDownloadController::class)
     ->middleware('auth')
     ->name('foundation-sk.documents.download');
+Route::get('/decree-proposals/{proposal}/documents/{document}', DecreeProposalDocumentController::class)
+    ->whereIn('document', [
+        'photo_path',
+        'diploma_path',
+        'application_letter_path',
+        'mwc_recommendation_request_path',
+        'service_statement_path',
+        'teaching_certificate_path',
+        'educator_certificate_path',
+        'task_assignment_certificate_path',
+    ])
+    ->middleware('auth')
+    ->name('decree-proposals.documents.view');
 Route::get('/foundation-sk/templates/{template}/preview', [FoundationSkTemplateController::class, 'preview'])->middleware('auth')->name('foundation-sk.templates.preview');
 Route::post('/foundation-sk/templates/{template}/generate', [FoundationSkTemplateController::class, 'generate'])->middleware('auth')->name('foundation-sk.templates.generate');
 Route::post('/foundation-sk/templates/{template}/batch', [FoundationSkTemplateController::class, 'batch'])->middleware('auth')->name('foundation-sk.templates.batch');

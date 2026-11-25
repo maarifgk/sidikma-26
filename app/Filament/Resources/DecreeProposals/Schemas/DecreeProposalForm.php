@@ -4,7 +4,6 @@ namespace App\Filament\Resources\DecreeProposals\Schemas;
 
 use App\Models\Employee;
 use App\Models\EmployeePosition;
-use App\Models\School;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -77,14 +76,6 @@ class DecreeProposalForm
                         }
                     })
                     ->native(false),
-                Select::make('school_id')
-                    ->label('SEKOLAH/MADRASAH')
-                    ->placeholder('-- Pilih --')
-                    ->options(fn (): array => School::activeOptionsFor())
-                    ->searchable()
-                    ->preload()
-                    ->required()
-                    ->native(false),
                 TextInput::make('nip')
                     ->label('NIP')
                     ->placeholder('Masukkan 18 digit NIP')
@@ -147,29 +138,11 @@ class DecreeProposalForm
                     ->dehydrateStateUsing(fn (?string $state): ?string => filled($state)
                         ? strtoupper(trim($state))
                         : null),
-                TextInput::make('application_password')
-                    ->label('PASSWORD APLIKASI')
-                    ->placeholder('Masukan Password Aplikasi')
-                    ->password()
-                    ->revealable()
-                    ->autocomplete('new-password')
-                    ->required()
-                    ->minLength(8)
-                    ->maxLength(255),
                 TextInput::make('program_study')
                     ->label('PROGRAM STUDI')
                     ->placeholder('Masukan Program Studi')
                     ->required()
                     ->maxLength(150),
-                TextInput::make('application_password_confirmation')
-                    ->label('KONFIRMASI PASSWORD')
-                    ->placeholder('Masukan Ulang Password')
-                    ->password()
-                    ->revealable()
-                    ->autocomplete('new-password')
-                    ->required()
-                    ->same('application_password')
-                    ->dehydrated(false),
                 FileUpload::make('photo_path')
                     ->label('FOTO RESMI')
                     ->disk('decree-proposals')

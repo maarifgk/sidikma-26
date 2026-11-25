@@ -53,11 +53,91 @@ class DecreeProposal extends Model
         return $this->belongsTo(User::class, 'submitted_by');
     }
 
+    public function candidateSchoolId(): ?int
+    {
+        $schoolId = $this->legacy_snapshot['school_id'] ?? null;
+
+        return is_numeric($schoolId) ? (int) $schoolId : null;
+    }
+
+    public function candidateFoundationId(): ?int
+    {
+        $foundationId = $this->legacy_snapshot['foundation_id'] ?? null;
+
+        return is_numeric($foundationId) ? (int) $foundationId : null;
+    }
+
+    public function candidateSnapshotValue(string $key, mixed $default = null): mixed
+    {
+        $snapshot = is_array($this->legacy_snapshot) ? $this->legacy_snapshot : [];
+
+        return data_get($snapshot, $key, $default);
+    }
+
+    public function displayName(): string
+    {
+        return $this->employee?->name ?: ($this->candidate_name ?: '-');
+    }
+
+    public function displayEmail(): string
+    {
+        return $this->employee?->email ?: ($this->candidate_email ?: '-');
+    }
+
+    public function displayPhone(): string
+    {
+        return $this->employee?->phone ?: ($this->candidate_phone ?: '-');
+    }
+
+    public function displaySchoolName(): string
+    {
+        return $this->employee?->school?->name
+            ?: ($this->candidate_school ?: ($this->legacy_snapshot['school_name'] ?? '-'));
+    }
+
+    public function displayEmployeeCode(): string
+    {
+        return $this->employee?->employee_code
+            ?: ($this->legacy_snapshot['employee_code'] ?? '-');
+    }
+
+    public function displayPositionName(): string
+    {
+        return $this->employee?->currentAssignment?->position?->name
+            ?: ($this->legacy_snapshot['position_name'] ?? '-');
+    }
+
+    public function initialNotes(): ?string
+    {
+        if (! is_string($this->notes) || blank($this->notes)) return null;
+        $payload = json_decode($this->notes, true);
+        return is_array($payload) && array_key_exists('initial', $payload)
+            ? (filled($payload['initial']) ? (string) $payload['initial'] : null)
+            : $this->notes;
+    }
+
+    public function rejectionReason(): ?string
+    {
+        if (! is_string($this->notes) || blank($this->notes)) return null;
+        $payload = json_decode($this->notes, true);
+        return is_array($payload) && filled($payload['rejection_reason'] ?? null)
+            ? (string) $payload['rejection_reason']
+            : null;
+    }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'legacy_snapshot' => 'array',
+        ];
+    }
+
     /** @return array<string, string> */
     public static function statusOptions(): array
     {
         return [
-            self::STATUS_SUBMITTED => 'Proses',
+            self::STATUS_SUBMITTED => 'Menunggu Verifikasi',
             self::STATUS_COMPLETED => 'Proses Selesai',
             self::STATUS_REJECTED => 'Ditolak',
         ];

@@ -6,8 +6,11 @@ use App\Models\DecreeProposal;
 use App\Models\Employee;
 use App\Models\EmployeePosition;
 use App\Models\School;
+use App\Models\User;
 use App\Services\DecreeProposalApprovalService;
+use App\Services\DecreeProposalEditService;
 use App\Services\DecreeProposalRejectionService;
+use App\Filament\Resources\DecreeProposals\Schemas\DecreeProposalEditForm;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
@@ -81,96 +84,6 @@ class DecreeProposalsTable
                     ->options(DecreeProposal::statusOptions()),
             ])
             ->recordActions([
-                Action::make('approve')
-                    ->label('Simpan')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->button()
-                    ->tooltip('Simpan dan Setujui Pengajuan')
-                    ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
-                        && (auth()->user()?->can('view', $record) ?? false))
-                    ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
-                        || $record->employee_id !== null
-                        || ! (auth()->user()?->can('update', $record) ?? false))
-                    ->tooltip(fn (DecreeProposal $record): string => ! (auth()->user()?->can('update', $record) ?? false)
-                        ? 'Anda tidak memiliki izin untuk menyetujui pengajuan ini.'
-                        : ($record->employee_id !== null
-                            ? 'Proposal lama sudah terhubung dengan data pegawai.'
-                            : ($record->status === DecreeProposal::STATUS_SUBMITTED
-                                ? 'Simpan dan Setujui Pengajuan'
-                                : 'Pengajuan sudah diproses.')))
-                    ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
-                    ->requiresConfirmation()
-                    ->modalHeading('Setujui Usulan SK Baru')
-                    ->modalDescription(fn (DecreeProposal $record): string => implode("\n", [
-                        'Persetujuan akan membuat akun guru, data pegawai, keanggotaan sekolah, dan ketugasan.',
-                        'Nama: '.$record->displayName(),
-                        'Sekolah: '.$record->displaySchoolName(),
-                        'Email: '.$record->displayEmail(),
-                        'Ketugasan: '.$record->displayPositionName(),
-                        'Status: '.(DecreeProposal::statusOptions()[$record->status] ?? $record->status),
-                    ]))
-                    ->modalSubmitActionLabel('Ya, Simpan dan Setujui')
-                    ->action(function (DecreeProposal $record): void {
-                        abort_unless(auth()->user()?->can('update', $record), 403);
-
-                        $result = app(DecreeProposalApprovalService::class)->approve($record, auth()->user());
-
-                        $notification = Notification::make()
-                            ->title('Pengajuan SK baru berhasil disetujui')
-                            ->body('Akun guru dan data pegawai telah berhasil dibuat.');
-
-                        if ($result['reset_status'] !== \Illuminate\Support\Facades\Password::RESET_LINK_SENT) {
-                            $notification
-                                ->warning()
-                                ->body('Akun dan data pegawai berhasil dibuat. Link pengaturan password belum terkirim; guru dapat menggunakan fitur Lupa Password.');
-                        } else {
-                            $notification->success();
-                        }
-
-                        $notification->send();
-                    }),
-                Action::make('reject')
-                    ->label('Tolak')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->button()
-                    ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
-                        && (auth()->user()?->can('view', $record) ?? false))
-                    ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
-                        || $record->employee_id !== null
-                        || ! (auth()->user()?->can('update', $record) ?? false))
-                    ->tooltip(fn (DecreeProposal $record): string => ! (auth()->user()?->can('update', $record) ?? false)
-                        ? 'Anda tidak memiliki izin untuk menolak pengajuan ini.'
-                        : ($record->employee_id !== null
-                            ? 'Proposal lama memerlukan penanganan khusus.'
-                            : ($record->status === DecreeProposal::STATUS_SUBMITTED
-                                ? 'Tolak Pengajuan'
-                                : 'Pengajuan sudah diproses.')))
-                    ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
-                    ->requiresConfirmation()
-                    ->modalHeading('Tolak Usulan SK Baru')
-                    ->modalDescription(fn (DecreeProposal $record): string => implode("\n", [
-                        'Silakan masukkan alasan penolakan pengajuan SK baru. Keterangan ini akan ditampilkan kepada Admin Sekolah/Madrasah yang mengajukan.',
-                        'Nama: '.$record->displayName(),
-                        'Sekolah: '.$record->displaySchoolName(),
-                        'Email: '.$record->displayEmail(),
-                        'Ketugasan: '.$record->displayPositionName(),
-                    ]))
-                    ->schema([
-                        Textarea::make('reason')
-                            ->label('Keterangan Penolakan')
-                            ->placeholder('Contoh: Dokumen ijazah belum sesuai atau surat permohonan belum ditandatangani.')
-                            ->required()
-                            ->maxLength(65535)
-                            ->rows(5),
-                    ])
-                    ->modalSubmitActionLabel('Konfirmasi Penolakan')
-                    ->action(function (DecreeProposal $record, array $data): void {
-                        abort_unless(auth()->user()?->can('update', $record), 403);
-                        app(DecreeProposalRejectionService::class)->reject($record, auth()->user(), (string) ($data['reason'] ?? ''));
-                        Notification::make()->title('Pengajuan SK baru berhasil ditolak')->body('Keterangan penolakan telah disimpan.')->success()->send();
-                    }),
                 Action::make('process')
                     ->label('Proses')
                     ->tooltip('Proses usulan SK baru')
@@ -290,9 +203,43 @@ class DecreeProposalsTable
                     ->color('info')
                     ->button()
                     ->modalHeading('Detail Usulan SK Baru')
-                    ->modalCancelActionLabel('Tutup')
+                    ->modalDescription('SIDIKMA 26 — Administrasi Kepegawaian')
+                    ->modalIcon('heroicon-o-clipboard-document-list')
+                    ->modalIconColor('success')
+                    ->modalCancelAction(false)
                     ->modalWidth(Width::Screen)
+                    ->extraModalWindowAttributes(['class' => 'decree-proposal-detail-modal'])
                     ->extraModalFooterActions(fn (DecreeProposal $record): array => [
+                        Action::make('closeDetail')
+                            ->label('Tutup')
+                            ->icon('heroicon-o-x-mark')
+                            ->color('gray')
+                            ->button()
+                            ->close(),
+                        Action::make('editFromDetail')
+                            ->label('Edit Data')
+                            ->icon('heroicon-o-pencil-square')
+                            ->color('info')
+                            ->button()
+                            ->tooltip('Perbaiki Data Pengajuan')
+                            ->visible(fn (): bool => auth()->user()?->isAdminInduk() === true
+                                && $record->status === DecreeProposal::STATUS_SUBMITTED
+                                && $record->employee_id === null)
+                            ->authorize(fn (): bool => auth()->user()?->can('update', $record) ?? false)
+                            ->modalHeading('Edit Data Pengajuan')
+                            ->modalDescription('Perbaiki data pengajuan tanpa menyetujui atau mengubah statusnya.')
+                            ->modalWidth(Width::Screen)
+                            ->extraModalWindowAttributes(['class' => 'decree-proposal-detail-modal'])
+                            ->schema(DecreeProposalEditForm::schema())
+                            ->fillForm(fn (DecreeProposal $record): array => self::editFormData($record))
+                            ->modalSubmitActionLabel('Simpan Perubahan')
+                            ->modalCancelActionLabel('Batal')
+                            ->action(function (DecreeProposal $record, array $data): void {
+                                $actor = auth()->user();
+                                abort_unless($actor instanceof User, 403);
+                                app(DecreeProposalEditService::class)->save($record, $actor, $data);
+                                Notification::make()->title('Perubahan data pengajuan berhasil disimpan.')->success()->send();
+                            }),
                         Action::make('rejectFromDetail')
                             ->label('Tolak')
                             ->icon('heroicon-o-x-circle')
@@ -356,5 +303,32 @@ class DecreeProposalsTable
             ->defaultPaginationPageOption(10)
             ->emptyStateHeading('Belum ada usulan SK baru')
             ->emptyStateDescription('Klik Ajukan untuk menambahkan usulan guru atau pegawai baru.');
+    }
+
+    /** @return array<string, mixed> */
+    private static function editFormData(DecreeProposal $record): array
+    {
+        $snapshot = is_array($record->legacy_snapshot) ? $record->legacy_snapshot : [];
+
+        return [
+            'edit_version' => $record->getRawOriginal('updated_at'),
+            'name' => $record->candidate_name ?: ($snapshot['name'] ?? null),
+            'employee_code' => $snapshot['employee_code'] ?? null,
+            'email' => $record->candidate_email ?: ($snapshot['email'] ?? null),
+            'phone' => $record->candidate_phone ?: ($snapshot['phone'] ?? null),
+            'partner_admin_number' => $record->partner_admin_number,
+            'employment_status' => $snapshot['employment_status'] ?? null,
+            'nip' => $snapshot['nip'] ?? null,
+            'rank' => $snapshot['rank'] ?? null,
+            'grade' => $snapshot['grade'] ?? null,
+            'birth_place' => $snapshot['birth_place'] ?? null,
+            'birth_date' => $snapshot['birth_date'] ?? null,
+            'position_id' => $snapshot['position_id'] ?? null,
+            'assignment_start_date' => $snapshot['assignment_start_date'] ?? null,
+            'last_education' => $snapshot['last_education'] ?? null,
+            'nuptk' => $snapshot['nuptk'] ?? null,
+            'program_study' => $snapshot['program_study'] ?? null,
+            'notes' => $record->initialNotes(),
+        ];
     }
 }

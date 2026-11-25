@@ -20,6 +20,9 @@ class DecreeProposalInfolist
             ->inlineLabel()
             ->components([
                 Section::make('Informasi Pengajuan')
+                    ->icon('heroicon-o-identification')
+                    ->iconColor('success')
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
                     ->schema([
                         ImageEntry::make('photo_path')
                             ->label('Foto Calon Guru/Pegawai')
@@ -62,6 +65,9 @@ class DecreeProposalInfolist
                     ->columns(1)
                     ->columnSpanFull(),
                 Section::make('Identitas Pribadi dan Pengajuan')
+                    ->icon('heroicon-o-user')
+                    ->iconColor('success')
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
                     ->schema([
                         TextEntry::make('submittedBy.name')
                             ->label('Diajukan oleh')
@@ -97,6 +103,9 @@ class DecreeProposalInfolist
                     ->columns(1)
                     ->columnSpanFull(),
                 Section::make('Data Pendidikan')
+                    ->icon('heroicon-o-academic-cap')
+                    ->iconColor('info')
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
                     ->schema([
                         TextEntry::make('candidate_snapshot.last_education')
                             ->label('Pendidikan Terakhir')
@@ -112,6 +121,9 @@ class DecreeProposalInfolist
                     ->columns(1)
                     ->columnSpanFull(),
                 Section::make('Data Kepegawaian')
+                    ->icon('heroicon-o-briefcase')
+                    ->iconColor('success')
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
                     ->schema([
                         TextEntry::make('candidate_snapshot.employment_status')
                             ->label('Status Kepegawaian')
@@ -160,6 +172,9 @@ class DecreeProposalInfolist
                     ->columns(1)
                     ->columnSpanFull(),
                 Section::make('Berkas Persyaratan')
+                    ->icon('heroicon-o-folder-open')
+                    ->iconColor('info')
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section decree-proposal-detail-section--documents'])
                     ->schema([
                         self::downloadEntry('photo_path', 'Foto Resmi', true),
                         self::downloadEntry('diploma_path', 'Ijazah Terakhir', true),
@@ -177,6 +192,9 @@ class DecreeProposalInfolist
                     ->columns(1)
                     ->columnSpanFull(),
                 Section::make('Catatan dan Verifikasi')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->iconColor('warning')
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
                     ->schema([
                         TextEntry::make('notes')
                             ->label('Catatan Pengajuan')

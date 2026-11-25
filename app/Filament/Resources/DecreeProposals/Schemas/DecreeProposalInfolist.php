@@ -23,8 +23,8 @@ class DecreeProposalInfolist
                     ->schema([
                         ImageEntry::make('photo_path')
                             ->label('Foto Calon Guru/Pegawai')
-                            ->state(fn (DecreeProposal $record): ?string => filled($record->photo_path)
-                                && Storage::disk('decree-proposals')->exists($record->photo_path)
+                            ->state(fn (DecreeProposal $record): ?string => filled($record->getAttribute('photo_path'))
+                                && Storage::disk('decree-proposals')->exists($record->getAttribute('photo_path'))
                                 ? route('decree-proposals.documents.view', [
                                     'proposal' => $record,
                                     'document' => 'photo_path',
@@ -46,7 +46,7 @@ class DecreeProposalInfolist
                             ->placeholder('-'),
                         TextEntry::make('created_at')
                             ->label('Tanggal Pengajuan')
-                            ->state(fn (DecreeProposal $record): string => self::formatDateTime($record->created_at)),
+                            ->state(fn (DecreeProposal $record): string => self::formatDateTime($record->getAttribute('created_at'))),
                         TextEntry::make('status')
                             ->label('Status Pengajuan')
                             ->badge()

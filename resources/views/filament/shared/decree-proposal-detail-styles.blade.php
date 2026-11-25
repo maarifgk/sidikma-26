@@ -66,6 +66,11 @@
         padding: .8rem 1rem;
     }
 
+    .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header-heading {
+        font-size: 1.1rem;
+        font-weight: 650;
+    }
+
     .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header-heading,
     .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header .fi-icon {
         color: #fff;
@@ -83,13 +88,13 @@
     .decree-proposal-detail-modal .fi-in-entry {
         grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
         gap: 1rem;
-        border-bottom: 1px solid #b9d5c7;
-        padding: .7rem 0;
+        border-bottom: 0;
+        padding: .35rem 0;
     }
 
     .decree-proposal-detail-modal .fi-in-entry-label-col {
-        border-inline-end: 1px solid #cfe2d8;
-        padding-inline-end: 1rem;
+        border-inline-end: 0;
+        padding-inline-end: 0;
     }
 
     .decree-proposal-detail-modal .fi-in-entry-content-col {
@@ -106,16 +111,28 @@
 
     .decree-proposal-detail-modal .fi-in-entry-label {
         color: #315b4c;
-        font-size: .82rem;
+        font-size: 1rem;
         font-weight: 700;
     }
 
     .decree-proposal-detail-modal .fi-in-entry-content {
         min-width: 0;
         color: #183d31;
-        font-size: .88rem;
+        font-size: 1rem;
         line-height: 1.55;
         overflow-wrap: anywhere;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-btn {
+        font-size: 1rem;
+    }
+
+    .decree-proposal-detail-modal .fi-fo-field-wrp-label,
+    .decree-proposal-detail-modal .fi-fo-field-wrp-helper-text,
+    .decree-proposal-detail-modal .fi-input,
+    .decree-proposal-detail-modal .fi-select-input,
+    .decree-proposal-detail-modal .fi-fo-textarea {
+        font-size: 1rem;
     }
 
     @media (max-width: 640px) {
@@ -128,10 +145,6 @@
             gap: .25rem;
         }
 
-        .decree-proposal-detail-modal .fi-in-entry-label-col {
-            border-inline-end: 0;
-            padding-inline-end: 0;
-        }
     }
 
     @media (prefers-reduced-motion: reduce) {

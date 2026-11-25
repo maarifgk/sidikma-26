@@ -85,10 +85,20 @@ class DecreeProposalsTable
                     ->label('Simpan')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
+                    ->button()
                     ->tooltip('Simpan dan Setujui Pengajuan')
                     ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
-                        && $record->status === DecreeProposal::STATUS_SUBMITTED
-                        && $record->employee_id === null)
+                        && (auth()->user()?->can('view', $record) ?? false))
+                    ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
+                        || $record->employee_id !== null
+                        || ! (auth()->user()?->can('update', $record) ?? false))
+                    ->tooltip(fn (DecreeProposal $record): string => ! (auth()->user()?->can('update', $record) ?? false)
+                        ? 'Anda tidak memiliki izin untuk menyetujui pengajuan ini.'
+                        : ($record->employee_id !== null
+                            ? 'Proposal lama sudah terhubung dengan data pegawai.'
+                            : ($record->status === DecreeProposal::STATUS_SUBMITTED
+                                ? 'Simpan dan Setujui Pengajuan'
+                                : 'Pengajuan sudah diproses.')))
                     ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->requiresConfirmation()
                     ->modalHeading('Setujui Usulan SK Baru')
@@ -124,9 +134,19 @@ class DecreeProposalsTable
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
+                    ->button()
                     ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
-                        && $record->status === DecreeProposal::STATUS_SUBMITTED
-                        && $record->employee_id === null)
+                        && (auth()->user()?->can('view', $record) ?? false))
+                    ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
+                        || $record->employee_id !== null
+                        || ! (auth()->user()?->can('update', $record) ?? false))
+                    ->tooltip(fn (DecreeProposal $record): string => ! (auth()->user()?->can('update', $record) ?? false)
+                        ? 'Anda tidak memiliki izin untuk menolak pengajuan ini.'
+                        : ($record->employee_id !== null
+                            ? 'Proposal lama memerlukan penanganan khusus.'
+                            : ($record->status === DecreeProposal::STATUS_SUBMITTED
+                                ? 'Tolak Pengajuan'
+                                : 'Pengajuan sudah diproses.')))
                     ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->requiresConfirmation()
                     ->modalHeading('Tolak Usulan SK Baru')
@@ -264,12 +284,14 @@ class DecreeProposalsTable
                         Notification::make()->title('Usulan SK berhasil diproses')->success()->send();
                     }),
                 ViewAction::make('detail')
-                    ->label('')
+                    ->label('Lihat')
                     ->tooltip('Lihat Detail Pengajuan')
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->modalHeading('Detail Usulan SK')
-                    ->modalWidth(Width::SevenExtraLarge)
+                    ->button()
+                    ->modalHeading('Detail Usulan SK Baru')
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth(Width::Screen)
                     ->extraModalFooterActions(fn (DecreeProposal $record): array => [
                         Action::make('rejectFromDetail')
                             ->label('Tolak')
@@ -315,7 +337,19 @@ class DecreeProposalsTable
                     ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('view', $record) ?? false),
                 DeleteAction::make()
                     ->label('Delete')
-                    ->visible(false),
+                    ->tooltip('Hapus Pengajuan')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->button()
+                    ->outlined()
+                    ->disabled(fn (DecreeProposal $record): bool => $record->employee_id !== null)
+                    ->tooltip(fn (DecreeProposal $record): string => $record->employee_id !== null
+                        ? 'Proposal lama tidak dapat dihapus karena sudah terhubung dengan data pegawai.'
+                        : 'Hapus Pengajuan')
+                    ->requiresConfirmation()
+                    ->modalHeading('Hapus Usulan SK Baru')
+                    ->modalDescription('Pengajuan akan dipindahkan ke arsip. Data User, Employee, Membership, EmployeeAssignment, dan dokumen tidak akan dihapus.')
+                    ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('delete', $record) ?? false),
             ])
             ->defaultSort('created_at', 'desc')
             ->paginationPageOptions([10, 25, 50, 100])

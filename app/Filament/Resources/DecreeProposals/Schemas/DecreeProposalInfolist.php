@@ -4,6 +4,7 @@ namespace App\Filament\Resources\DecreeProposals\Schemas;
 
 use App\Models\DecreeProposal;
 use App\Models\Employee;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -15,8 +16,10 @@ class DecreeProposalInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
+            ->inlineLabel()
             ->components([
-                Section::make('Ringkasan Pengajuan')
+                Section::make('Informasi Pengajuan')
                     ->schema([
                         ImageEntry::make('photo_path')
                             ->label('Foto Calon Guru/Pegawai')
@@ -43,7 +46,7 @@ class DecreeProposalInfolist
                             ->placeholder('-'),
                         TextEntry::make('created_at')
                             ->label('Tanggal Pengajuan')
-                            ->dateTime('j F Y, H:i'),
+                            ->state(fn (DecreeProposal $record): string => self::formatDateTime($record->created_at)),
                         TextEntry::make('status')
                             ->label('Status Pengajuan')
                             ->badge()
@@ -56,31 +59,12 @@ class DecreeProposalInfolist
                                 fn (string $state): string => DecreeProposal::statusOptions()[$state] ?? $state,
                             ),
                     ])
-                    ->columns(3),
+                    ->columns(1)
+                    ->columnSpanFull(),
                 Section::make('Identitas Pribadi dan Pengajuan')
                     ->schema([
-                        TextEntry::make('id')
-                            ->label('Nomor Pengajuan')
-                            ->placeholder('-'),
-                        TextEntry::make('created_at')
-                            ->label('Tanggal Pengajuan')
-                            ->dateTime('d M Y H:i'),
                         TextEntry::make('submittedBy.name')
                             ->label('Diajukan oleh')
-                            ->placeholder('-'),
-                        TextEntry::make('status')
-                            ->label('Status')
-                            ->badge()
-                            ->formatStateUsing(
-                                fn (string $state): string => DecreeProposal::statusOptions()[$state] ?? $state,
-                            ),
-                        TextEntry::make('candidate_school')
-                            ->label('Asal Madrasah/Sekolah')
-                            ->state(fn (DecreeProposal $record): string => $record->displaySchoolName())
-                            ->placeholder('-'),
-                        TextEntry::make('candidate_name')
-                            ->label('Nama Lengkap')
-                            ->state(fn (DecreeProposal $record): string => $record->displayName())
                             ->placeholder('-'),
                         TextEntry::make('candidate_email')
                             ->label('Email')
@@ -106,14 +90,47 @@ class DecreeProposalInfolist
                             ->placeholder('-'),
                         TextEntry::make('candidate_snapshot.birth_date')
                             ->label('Tanggal Lahir')
-                            ->state(fn (DecreeProposal $record): string => (string) ($record->employee?->birth_date?->format('d M Y')
-                                ?: $record->candidateSnapshotValue('birth_date', '-')))
+                            ->state(fn (DecreeProposal $record): string => self::formatDate(
+                                $record->employee?->birth_date ?: $record->candidateSnapshotValue('birth_date'),
+                            )),
+                    ])
+                    ->columns(1)
+                    ->columnSpanFull(),
+                Section::make('Data Pendidikan')
+                    ->schema([
+                        TextEntry::make('candidate_snapshot.last_education')
+                            ->label('Pendidikan Terakhir')
+                            ->state(fn (DecreeProposal $record): string => (string) ($record->employee?->last_education
+                                ?: $record->candidateSnapshotValue('last_education', '-')))
                             ->placeholder('-'),
+                        TextEntry::make('candidate_snapshot.program_study')
+                            ->label('Program Studi')
+                            ->state(fn (DecreeProposal $record): string => (string) ($record->employee?->program_study
+                                ?: $record->candidateSnapshotValue('program_study', '-')))
+                            ->placeholder('-'),
+                    ])
+                    ->columns(1)
+                    ->columnSpanFull(),
+                Section::make('Data Kepegawaian')
+                    ->schema([
                         TextEntry::make('candidate_snapshot.employment_status')
                             ->label('Status Kepegawaian')
                             ->state(fn (DecreeProposal $record): ?string => $record->employee?->employment_status
                                 ?: $record->candidateSnapshotValue('employment_status'))
                             ->formatStateUsing(fn (?string $state): string => Employee::employmentStatusLabel($state))
+                            ->placeholder('-'),
+                        TextEntry::make('candidate_snapshot.position_name')
+                            ->label('Ketugasan')
+                            ->state(fn (DecreeProposal $record): string => $record->displayPositionName())
+                            ->placeholder('-'),
+                        TextEntry::make('candidate_snapshot.assignment_start_date')
+                            ->label('TMT Pertama')
+                            ->state(fn (DecreeProposal $record): string => self::formatDate(
+                                $record->employee?->currentAssignment?->start_date
+                                    ?: $record->candidateSnapshotValue('assignment_start_date'),
+                            )),
+                        TextEntry::make('partner_admin_number')
+                            ->label('Nomor Mitra Admin')
                             ->placeholder('-'),
                         TextEntry::make('employee.nip')
                             ->label('NIP')
@@ -139,40 +156,9 @@ class DecreeProposalInfolist
                             ->visible(fn (DecreeProposal $record): bool => Employee::isPnsStatus(
                                 $record->employee?->employment_status ?: $record->candidateSnapshotValue('employment_status'),
                             )),
-                        TextEntry::make('candidate_snapshot.last_education')
-                            ->label('Pendidikan Terakhir')
-                            ->state(fn (DecreeProposal $record): string => (string) ($record->employee?->last_education
-                                ?: $record->candidateSnapshotValue('last_education', '-')))
-                            ->placeholder('-'),
-                        TextEntry::make('candidate_snapshot.program_study')
-                            ->label('Program Studi')
-                            ->state(fn (DecreeProposal $record): string => (string) ($record->employee?->program_study
-                                ?: $record->candidateSnapshotValue('program_study', '-')))
-                            ->placeholder('-'),
-                        TextEntry::make('candidate_snapshot.position_name')
-                            ->label('Ketugasan')
-                            ->state(fn (DecreeProposal $record): string => $record->displayPositionName())
-                            ->placeholder('-'),
-                        TextEntry::make('candidate_snapshot.assignment_start_date')
-                            ->label('TMT Pertama')
-                            ->state(fn (DecreeProposal $record): string => (string) ($record->employee?->currentAssignment?->start_date?->format('d M Y')
-                                ?: $record->candidateSnapshotValue('assignment_start_date', '-')))
-                            ->placeholder('-'),
-                        TextEntry::make('partner_admin_number')
-                            ->label('Nomor Mitra Admin')
-                            ->placeholder('-'),
-                        TextEntry::make('notes')
-                            ->label('Catatan Pengajuan')
-                            ->state(fn (DecreeProposal $record): ?string => $record->initialNotes())
-                            ->placeholder('-')
-                            ->columnSpanFull(),
-                        TextEntry::make('rejection_reason')
-                            ->label('KETERANGAN PENOLAKAN')
-                            ->state(fn (DecreeProposal $record): string => $record->rejectionReason() ?? 'Keterangan penolakan belum tersedia.')
-                            ->visible(fn (DecreeProposal $record): bool => $record->status === DecreeProposal::STATUS_REJECTED)
-                            ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(1)
+                    ->columnSpanFull(),
                 Section::make('Berkas Persyaratan')
                     ->schema([
                         self::downloadEntry('photo_path', 'Foto Resmi', true),
@@ -188,7 +174,22 @@ class DecreeProposalInfolist
                             true,
                         ),
                     ])
-                    ->columns(2),
+                    ->columns(1)
+                    ->columnSpanFull(),
+                Section::make('Catatan dan Verifikasi')
+                    ->schema([
+                        TextEntry::make('notes')
+                            ->label('Catatan Pengajuan')
+                            ->state(fn (DecreeProposal $record): ?string => $record->initialNotes())
+                            ->placeholder('-'),
+                        TextEntry::make('rejection_reason')
+                            ->label('Keterangan Penolakan')
+                            ->state(fn (DecreeProposal $record): string => $record->rejectionReason()
+                                ?? 'Keterangan penolakan belum tersedia.')
+                            ->visible(fn (DecreeProposal $record): bool => $record->status === DecreeProposal::STATUS_REJECTED),
+                    ])
+                    ->columns(1)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -196,26 +197,81 @@ class DecreeProposalInfolist
     {
         return TextEntry::make($name)
             ->label($label)
+            ->state(fn (DecreeProposal $record): ?string => $record->getAttribute($name))
             ->formatStateUsing(function (?string $state) use ($required): string {
                 if (blank($state)) {
-                    return $required ? 'Belum tersedia' : 'Tidak diunggah (opsional)';
+                    return $required ? 'Belum diunggah' : 'Tidak diunggah (opsional)';
                 }
 
                 return Storage::disk('decree-proposals')->exists($state)
-                    ? 'Lihat / unduh '.basename($state)
-                    : 'Path tercatat, file tidak ditemukan';
+                    ? 'Tersedia'
+                    : 'Belum tersedia';
             })
-            ->icon('heroicon-o-arrow-down-tray')
+            ->icon('heroicon-o-document-text')
             ->color(fn (?string $state): string => blank($state)
                 ? ($required ? 'danger' : 'gray')
                 : (Storage::disk('decree-proposals')->exists($state) ? 'success' : 'warning'))
-            ->url(fn (DecreeProposal $record, ?string $state): ?string => filled($state)
-                && Storage::disk('decree-proposals')->exists($state)
-                ? route('decree-proposals.documents.view', [
-                    'proposal' => $record,
-                    'document' => $name,
-                ])
-                : null)
-            ->openUrlInNewTab();
+            ->suffixActions(fn (TextEntry $entry, DecreeProposal $record): array => self::documentActions(
+                $entry->getState(),
+                $record,
+                $name,
+            ));
+    }
+
+    /** @return array<Action> */
+    private static function documentActions(?string $path, DecreeProposal $record, string $document): array
+    {
+        if (blank($path) || ! Storage::disk('decree-proposals')->exists($path)) {
+            return [];
+        }
+
+        $route = fn (bool $download = false): string => route('decree-proposals.documents.view', [
+            'proposal' => $record,
+            'document' => $document,
+            ...($download ? ['download' => 1] : []),
+        ]);
+
+        return [
+            Action::make('viewDocument')
+                ->label('Lihat')
+                ->icon('heroicon-o-eye')
+                ->color('info')
+                ->button()
+                ->url(fn (): string => $route())
+                ->openUrlInNewTab(),
+            Action::make('downloadDocument')
+                ->label('Unduh')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->button()
+                ->url(fn (): string => $route(true))
+                ->openUrlInNewTab(),
+        ];
+    }
+
+    private static function formatDateTime(mixed $value): string
+    {
+        if (blank($value)) {
+            return '-';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->locale('id')->translatedFormat('j F Y, H:i');
+        } catch (\Throwable) {
+            return (string) $value;
+        }
+    }
+
+    private static function formatDate(mixed $value): string
+    {
+        if (blank($value)) {
+            return '-';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->locale('id')->translatedFormat('j F Y');
+        } catch (\Throwable) {
+            return (string) $value;
+        }
     }
 }

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\DecreeProposals\Schemas;
 
 use App\Models\DecreeProposal;
 use App\Models\Employee;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -15,7 +16,48 @@ class DecreeProposalInfolist
     {
         return $schema
             ->components([
-                Section::make('Detail Usulan SK')
+                Section::make('Ringkasan Pengajuan')
+                    ->schema([
+                        ImageEntry::make('photo_path')
+                            ->label('Foto Calon Guru/Pegawai')
+                            ->state(fn (DecreeProposal $record): ?string => filled($record->photo_path)
+                                && Storage::disk('decree-proposals')->exists($record->photo_path)
+                                ? route('decree-proposals.documents.view', [
+                                    'proposal' => $record,
+                                    'document' => 'photo_path',
+                                ])
+                                : null)
+                            ->circular()
+                            ->size(96),
+                        TextEntry::make('candidate_name')
+                            ->label('Nama Lengkap')
+                            ->state(fn (DecreeProposal $record): string => $record->displayName())
+                            ->weight('bold')
+                            ->size('lg'),
+                        TextEntry::make('candidate_school')
+                            ->label('Asal Madrasah/Sekolah')
+                            ->state(fn (DecreeProposal $record): string => $record->displaySchoolName())
+                            ->placeholder('-'),
+                        TextEntry::make('id')
+                            ->label('Nomor Pengajuan')
+                            ->placeholder('-'),
+                        TextEntry::make('created_at')
+                            ->label('Tanggal Pengajuan')
+                            ->dateTime('j F Y, H:i'),
+                        TextEntry::make('status')
+                            ->label('Status Pengajuan')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                DecreeProposal::STATUS_COMPLETED => 'success',
+                                DecreeProposal::STATUS_REJECTED => 'danger',
+                                default => 'warning',
+                            })
+                            ->formatStateUsing(
+                                fn (string $state): string => DecreeProposal::statusOptions()[$state] ?? $state,
+                            ),
+                    ])
+                    ->columns(3),
+                Section::make('Identitas Pribadi dan Pengajuan')
                     ->schema([
                         TextEntry::make('id')
                             ->label('Nomor Pengajuan')

@@ -82,10 +82,10 @@ class DecreeProposalsTable
             ])
             ->recordActions([
                 Action::make('approve')
-                    ->label('Simpan / Setujui')
+                    ->label('Simpan')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->tooltip('Akan diaktifkan setelah workflow STEP 6 selesai')
+                    ->tooltip('Simpan dan Setujui Pengajuan')
                     ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
                         && $record->status === DecreeProposal::STATUS_SUBMITTED
                         && $record->employee_id === null)
@@ -265,13 +265,57 @@ class DecreeProposalsTable
                     }),
                 ViewAction::make('detail')
                     ->label('')
-                    ->tooltip('Lihat detail pengajuan')
+                    ->tooltip('Lihat Detail Pengajuan')
                     ->icon('heroicon-o-eye')
                     ->color('info')
                     ->modalHeading('Detail Usulan SK')
+                    ->modalWidth(Width::SevenExtraLarge)
+                    ->extraModalFooterActions(fn (DecreeProposal $record): array => [
+                        Action::make('rejectFromDetail')
+                            ->label('Tolak')
+                            ->icon('heroicon-o-x-circle')
+                            ->color('danger')
+                            ->visible(fn (): bool => auth()->user()?->isAdminInduk() === true
+                                && $record->status === DecreeProposal::STATUS_SUBMITTED
+                                && $record->employee_id === null)
+                            ->authorize(fn (): bool => auth()->user()?->can('update', $record) ?? false)
+                            ->requiresConfirmation()
+                            ->modalHeading('Tolak Usulan SK Baru')
+                            ->schema([
+                                Textarea::make('reason')
+                                    ->label('Keterangan Penolakan')
+                                    ->required()
+                                    ->maxLength(65535)
+                                    ->rows(5),
+                            ])
+                            ->action(function (DecreeProposal $record, array $data): void {
+                                app(DecreeProposalRejectionService::class)->reject(
+                                    $record,
+                                    auth()->user(),
+                                    (string) ($data['reason'] ?? ''),
+                                );
+                                Notification::make()->title('Pengajuan SK baru berhasil ditolak')->success()->send();
+                            }),
+                        Action::make('approveFromDetail')
+                            ->label('Simpan / Setujui')
+                            ->icon('heroicon-o-check-circle')
+                            ->color('success')
+                            ->visible(fn (): bool => auth()->user()?->isAdminInduk() === true
+                                && $record->status === DecreeProposal::STATUS_SUBMITTED
+                                && $record->employee_id === null)
+                            ->authorize(fn (): bool => auth()->user()?->can('update', $record) ?? false)
+                            ->requiresConfirmation()
+                            ->modalHeading('Setujui Usulan SK Baru')
+                            ->modalDescription('Sistem akan membuat akun guru/pegawai dan data kepegawaian secara otomatis.')
+                            ->action(function (DecreeProposal $record): void {
+                                app(DecreeProposalApprovalService::class)->approve($record, auth()->user());
+                                Notification::make()->title('Pengajuan SK baru berhasil disetujui')->success()->send();
+                            }),
+                    ])
                     ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('view', $record) ?? false),
                 DeleteAction::make()
-                    ->label('Delete'),
+                    ->label('Delete')
+                    ->visible(false),
             ])
             ->defaultSort('created_at', 'desc')
             ->paginationPageOptions([10, 25, 50, 100])

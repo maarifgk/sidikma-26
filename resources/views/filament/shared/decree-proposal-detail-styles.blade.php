@@ -83,8 +83,17 @@
     .decree-proposal-detail-modal .fi-in-entry {
         grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
         gap: 1rem;
-        border-bottom: 1px solid #e4f0e9;
+        border-bottom: 1px solid #b9d5c7;
         padding: .7rem 0;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-label-col {
+        border-inline-end: 1px solid #cfe2d8;
+        padding-inline-end: 1rem;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-content-col {
+        min-width: 0;
     }
 
     .decree-proposal-detail-modal .fi-in-entry:nth-child(even) {
@@ -117,6 +126,11 @@
         .decree-proposal-detail-modal .fi-in-entry {
             grid-template-columns: 1fr;
             gap: .25rem;
+        }
+
+        .decree-proposal-detail-modal .fi-in-entry-label-col {
+            border-inline-end: 0;
+            padding-inline-end: 0;
         }
     }
 

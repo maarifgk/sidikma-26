@@ -209,7 +209,7 @@ class DecreeProposalsTable
                     ->modalCancelAction(false)
                     ->modalWidth(Width::Screen)
                     ->extraModalWindowAttributes(['class' => 'decree-proposal-detail-modal'])
-                    ->extraModalFooterActions(fn (DecreeProposal $record): array => [
+                    ->modalFooterActions(fn (DecreeProposal $record): array => [
                         Action::make('closeDetail')
                             ->label('Tutup')
                             ->icon('heroicon-o-x-mark')

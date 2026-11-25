@@ -252,12 +252,13 @@ class DecreeProposalsTable
             ->color('info')
             ->button()
             ->tooltip('Perbaiki Data Pengajuan')
-            ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
+            ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk()
+                || auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH))
                 && (auth()->user()?->can('view', $record) ?? false))
             ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
                 || $record->employee_id !== null
-                || ! (auth()->user()?->can('update', $record) ?? false))
-            ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
+                || ! (auth()->user()?->can('edit', $record) ?? false))
+            ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('edit', $record) ?? false)
             ->modalHeading('Edit Data Pengajuan')
             ->modalDescription('Perbaiki data pengajuan tanpa menyetujui atau mengubah statusnya.')
             ->modalWidth(Width::Screen)

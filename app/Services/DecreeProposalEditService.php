@@ -25,7 +25,7 @@ class DecreeProposalEditService
                 throw ValidationException::withMessages(['proposal' => 'Pengajuan tidak ditemukan.']);
             }
 
-            abort_unless($actor->isAdminInduk() && $actor->can('update', $locked), 403);
+            abort_unless($actor->can('edit', $locked), 403);
 
             if ($locked->status !== DecreeProposal::STATUS_SUBMITTED || filled($locked->employee_id)) {
                 throw ValidationException::withMessages([

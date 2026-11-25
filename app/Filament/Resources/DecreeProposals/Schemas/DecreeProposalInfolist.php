@@ -211,11 +211,13 @@ class DecreeProposalInfolist
             ->color(fn (?string $state): string => blank($state)
                 ? ($required ? 'danger' : 'gray')
                 : (Storage::disk('decree-proposals')->exists($state) ? 'success' : 'warning'))
-            ->suffixActions(fn (TextEntry $entry, DecreeProposal $record): array => self::documentActions(
-                $entry->getState(),
-                $record,
-                $name,
-            ));
+            ->suffixActions([
+                fn (TextEntry $entry, DecreeProposal $record): array => self::documentActions(
+                    $entry->getState(),
+                    $record,
+                    $name,
+                ),
+            ]);
     }
 
     /** @return array<Action> */

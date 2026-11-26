@@ -83,7 +83,7 @@
     }
 
     .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header-heading {
-        font-size: 1.25rem;
+        font-size: 1.375rem;
         font-weight: 650;
         line-height: 1.5;
     }
@@ -103,28 +103,34 @@
     }
 
     .decree-proposal-detail-modal .fi-in-entry {
-        grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
-        gap: .5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .25rem;
         border-bottom: 0;
-        padding: .55rem 0;
+        padding: .65rem 0;
+        text-align: center;
     }
 
     .decree-proposal-detail-modal .fi-in-entry-label-col {
         display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
+        align-items: center;
+        justify-content: center;
         border-inline-end: 0;
         padding-inline-end: 0;
+        text-align: center;
     }
 
     .decree-proposal-detail-modal .fi-in-entry-label-col::after {
-        content: ':';
-        color: #315b4c;
-        font-weight: 700;
+        content: none;
     }
 
     .decree-proposal-detail-modal .fi-in-entry-content-col {
         min-width: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        text-align: center;
     }
 
     .decree-proposal-detail-modal .fi-in-entry:nth-child(even) {
@@ -140,14 +146,16 @@
         font-size: 1.125rem;
         font-weight: 700;
         line-height: 1.55;
+        text-align: center;
     }
 
     .decree-proposal-detail-modal .fi-in-entry-content {
         min-width: 0;
         color: #183d31;
-        font-size: 1.125rem;
+        font-size: 1.25rem;
         line-height: 1.55;
         overflow-wrap: anywhere;
+        text-align: center;
     }
 
     .decree-proposal-detail-modal .fi-in-entry-content .fi-btn {
@@ -155,26 +163,37 @@
         line-height: 1.5;
     }
 
-    .decree-proposal-detail-modal .fi-modal-footer .fi-btn {
-        font-size: 1rem;
-        line-height: 1.5;
-    }
-
-    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry {
-        grid-template-columns: 1fr;
-        justify-items: center;
-        text-align: center;
-    }
-
-    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry-label-col,
-    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry-content-col {
-        width: 100%;
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-in-entry-content-ctn,
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-in-text,
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-in-icon,
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-in-badge {
         justify-content: center;
         text-align: center;
     }
 
-    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry-label-col::after {
-        content: none;
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:first-child .fi-in-entry-content,
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:first-child .fi-in-entry-content-col {
+        width: 120px;
+        min-height: 120px;
+        margin-inline: auto;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry-content-col {
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry-content .fi-in-entry-content-ctn {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-footer .fi-btn {
+        font-size: 1rem;
+        line-height: 1.5;
     }
 
     .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry-label {
@@ -183,13 +202,20 @@
 
     .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:nth-child(2) .fi-in-entry-content {
         color: #075b43;
-        font-size: 1.5rem;
+        font-size: 1.625rem;
         font-weight: 750;
     }
 
     .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:nth-child(3) .fi-in-entry-content {
-        font-size: 1.125rem;
+        font-size: 1.25rem;
         font-weight: 650;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:first-child img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        margin-inline: auto;
     }
 
     .decree-proposal-detail-modal .fi-fo-field-wrp-label,
@@ -203,15 +229,6 @@
     @media (max-width: 640px) {
         .decree-proposal-detail-modal .fi-modal-content {
             padding: .75rem 1rem;
-        }
-
-        .decree-proposal-detail-modal .fi-in-entry {
-            grid-template-columns: 1fr;
-            gap: .25rem;
-        }
-
-        .decree-proposal-detail-modal .fi-in-entry-label-col::after {
-            content: none;
         }
 
     }

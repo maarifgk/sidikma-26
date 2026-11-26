@@ -17,7 +17,6 @@ class DecreeProposalInfolist
     {
         return $schema
             ->columns(1)
-            ->inlineLabel()
             ->components([
                 Section::make('Informasi Pengajuan')
                     ->icon('heroicon-o-identification')

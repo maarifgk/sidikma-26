@@ -24,7 +24,11 @@ class DecreeProposalRejectionService
                 throw ValidationException::withMessages(['proposal' => 'Pengajuan ini sudah diproses dan tidak dapat ditolak kembali.']);
             }
             if ($locked->employee_id !== null) {
-                throw ValidationException::withMessages(['proposal' => 'Pengajuan lama dengan data pegawai memerlukan pemeriksaan khusus sebelum ditolak.']);
+                $legacy = app(DecreeProposalApprovalService::class)->legacyEligibility($locked);
+                throw ValidationException::withMessages([
+                    'proposal' => 'Pengajuan legacy tidak dapat ditolak otomatis karena akun/data pegawai yang sudah tersedia harus diputuskan secara manual.'
+                        .($legacy['reasons'] === [] ? '' : ' '.implode(' ', $legacy['reasons'])),
+                ]);
             }
 
             $payload = [

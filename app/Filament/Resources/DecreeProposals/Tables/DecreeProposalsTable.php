@@ -77,8 +77,6 @@ class DecreeProposalsTable
             ])
             ->recordActions([
                 self::editAction(),
-                self::approveAction(),
-                self::rejectAction(),
                 ViewAction::make('detail')
                     ->label('Lihat')
                     ->tooltip('Lihat Detail Pengajuan')
@@ -93,7 +91,7 @@ class DecreeProposalsTable
                     ->modalWidth(Width::Screen)
                     ->extraModalWindowAttributes(['class' => 'decree-proposal-detail-modal'])
                     ->modalFooterActions(fn (DecreeProposal $record): array => [
-                        self::editAction('editFromDetail'),
+                        self::editAction('editFromDetail', true),
                         self::approveAction('approveFromDetail'),
                         self::rejectAction('rejectFromDetail'),
                         Action::make('closeDetail')
@@ -127,7 +125,7 @@ class DecreeProposalsTable
             ->emptyStateDescription('Klik Ajukan untuk menambahkan usulan guru atau pegawai baru.');
     }
 
-    private static function editAction(string $name = 'edit'): Action
+    private static function editAction(string $name = 'edit', bool $detail = false): Action
     {
         return Action::make($name)
             ->label('Edit Data')
@@ -135,8 +133,7 @@ class DecreeProposalsTable
             ->color('info')
             ->button()
             ->tooltip('Perbaiki Data Pengajuan')
-            ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk()
-                || auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH))
+            ->visible(fn (DecreeProposal $record): bool => ($detail || auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH))
                 && (auth()->user()?->can('view', $record) ?? false))
             ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
                 || $record->employee_id !== null
@@ -169,26 +166,33 @@ class DecreeProposalsTable
             ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
                 && (auth()->user()?->can('view', $record) ?? false))
             ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
-                || $record->employee_id !== null
+                || ($record->employee_id !== null
+                    && ! app(DecreeProposalApprovalService::class)->legacyEligibility($record)['eligible'])
                 || ! (auth()->user()?->can('update', $record) ?? false))
             ->tooltip(fn (DecreeProposal $record): string => ! (auth()->user()?->can('update', $record) ?? false)
                 ? 'Anda tidak memiliki izin untuk menyetujui pengajuan ini.'
                 : ($record->employee_id !== null
-                    ? 'Proposal lama sudah terhubung dengan data pegawai.'
+                    ? (app(DecreeProposalApprovalService::class)->legacyEligibility($record)['eligible']
+                        ? 'Proposal legacy valid. Persetujuan akan menggunakan akun dan data pegawai yang sudah tersedia tanpa membuat akun baru.'
+                        : implode(' ', app(DecreeProposalApprovalService::class)->legacyEligibility($record)['reasons']))
                     : ($record->status === DecreeProposal::STATUS_SUBMITTED
                         ? 'Simpan dan Setujui Pengajuan'
                         : 'Pengajuan sudah diproses.')))
             ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
             ->requiresConfirmation()
             ->modalHeading('Setujui Usulan SK Baru')
-            ->modalDescription('Persetujuan akan membuat akun guru/pegawai dan data kepegawaian secara atomik.')
+            ->modalDescription(fn (DecreeProposal $record): string => $record->employee_id !== null
+                ? 'Pengajuan ini telah terhubung dengan data pegawai. Persetujuan akan menggunakan akun dan data pegawai yang sudah tersedia tanpa membuat akun baru.'
+                : 'Persetujuan akan membuat akun guru/pegawai dan data kepegawaian secara atomik.')
             ->modalSubmitActionLabel('Ya, Simpan dan Setujui')
             ->action(function (DecreeProposal $record): void {
                 $actor = auth()->user();
                 abort_unless($actor instanceof User && $actor->can('update', $record), 403);
                 $result = app(DecreeProposalApprovalService::class)->approve($record, $actor);
                 $notification = Notification::make()->title('Pengajuan SK baru berhasil disetujui.');
-                if ($result['reset_status'] !== \Illuminate\Support\Facades\Password::RESET_LINK_SENT) {
+                if ($result['reused_existing']) {
+                    $notification->success()->body('Pengajuan legacy disetujui menggunakan akun dan data pegawai yang sudah tersedia.');
+                } elseif ($result['reset_status'] !== \Illuminate\Support\Facades\Password::RESET_LINK_SENT) {
                     $notification->warning()->body('Akun berhasil dibuat. Link password belum terkirim; guru dapat menggunakan Lupa Password.');
                 } else {
                     $notification->success()->body('Akun guru dan data pegawai telah berhasil dibuat.');
@@ -212,7 +216,7 @@ class DecreeProposalsTable
             ->tooltip(fn (DecreeProposal $record): string => ! (auth()->user()?->can('update', $record) ?? false)
                 ? 'Anda tidak memiliki izin untuk menolak pengajuan ini.'
                 : ($record->employee_id !== null
-                    ? 'Proposal lama memerlukan penanganan khusus.'
+                    ? 'Proposal legacy tidak dapat ditolak otomatis karena akun/data pegawai yang sudah tersedia harus diputuskan secara manual.'
                     : ($record->status === DecreeProposal::STATUS_SUBMITTED
                         ? 'Tolak Pengajuan'
                         : 'Pengajuan sudah diproses.')))

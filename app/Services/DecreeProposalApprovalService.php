@@ -27,13 +27,13 @@ class DecreeProposalApprovalService
         'task_assignment_certificate_path' => true,
     ];
 
-    /** @return array{user: User, reset_status: string} */
+    /** @return array{user: User, reset_status: string, reused_existing: bool} */
     public function approve(DecreeProposal $proposal, User $actor): array
     {
         $this->assertSharedDatabaseConnection();
         $connection = (string) config('database.default');
 
-        $account = DB::connection($connection)->transaction(function () use ($proposal, $actor, $connection): User {
+        $account = DB::connection($connection)->transaction(function () use ($proposal, $actor, $connection): User|array {
             $lockedProposal = DecreeProposal::on($connection)
                 ->whereKey($proposal->getKey())
                 ->lockForUpdate()
@@ -44,6 +44,11 @@ class DecreeProposalApprovalService
             }
 
             abort_unless($actor->can('update', $lockedProposal), 403);
+
+            if (filled($lockedProposal->employee_id)) {
+                return $this->approveLegacy($lockedProposal, $actor, $connection);
+            }
+
             $data = $this->validatedData($lockedProposal);
 
             $account = (new User)->setConnection($connection);
@@ -106,13 +111,165 @@ class DecreeProposalApprovalService
             return $account;
         });
 
+        if (is_array($account)) {
+            return $account;
+        }
+
         try {
             $resetStatus = Password::broker()->sendResetLink(['email' => $account->email]);
         } catch (\Throwable) {
             $resetStatus = 'passwords.mail_failed';
         }
 
-        return ['user' => $account, 'reset_status' => $resetStatus];
+        return ['user' => $account, 'reset_status' => $resetStatus, 'reused_existing' => false];
+    }
+
+    /**
+     * Check whether a submitted legacy proposal can safely reuse its existing records.
+     * This method is read-only and never repairs missing relationships.
+     *
+     * @return array{eligible: bool, reasons: array<int, string>, employee: ?Employee, user: ?User, membership: ?Membership, assignment: ?EmployeeAssignment}
+     */
+    public function legacyEligibility(DecreeProposal $proposal): array
+    {
+        $connection = (string) config('database.default');
+        $reasons = [];
+        $employee = filled($proposal->employee_id)
+            ? Employee::on($connection)->whereKey($proposal->employee_id)->first()
+            : null;
+        $user = $employee?->user_id
+            ? User::on($connection)->whereKey($employee->user_id)->first()
+            : null;
+        $schoolId = $proposal->candidateSchoolId();
+        $foundationId = $proposal->candidateFoundationId();
+        $membership = $user && $foundationId && $schoolId
+            ? Membership::on($connection)->active()->where('user_id', $user->getKey())
+                ->where('foundation_id', $foundationId)->where('school_id', $schoolId)->first()
+            : null;
+        $assignment = $employee && $foundationId && $schoolId
+            ? EmployeeAssignment::on($connection)->where('employee_id', $employee->getKey())
+                ->where('foundation_id', $foundationId)->where('school_id', $schoolId)
+                ->where('status', EmployeeAssignment::STATUS_ACTIVE)->where('is_primary', true)->first()
+            : null;
+
+        if ($proposal->status !== DecreeProposal::STATUS_SUBMITTED) {
+            $reasons[] = 'Pengajuan telah diproses sebelumnya.';
+        }
+        if (! filled($proposal->employee_id)) {
+            $reasons[] = 'Pengajuan ini bukan proposal legacy.';
+        }
+        if (! $employee instanceof Employee) {
+            $reasons[] = 'Data pegawai yang ditautkan tidak ditemukan.';
+        } elseif (! $employee->is_active) {
+            $reasons[] = 'Data pegawai yang ditautkan tidak aktif.';
+        }
+        if (! $user instanceof User) {
+            $reasons[] = 'Akun pengguna yang terhubung tidak ditemukan.';
+        }
+        if ($schoolId === null || $foundationId === null) {
+            $reasons[] = 'Identitas sekolah atau yayasan pada proposal tidak tersedia.';
+        }
+        if (! $membership instanceof Membership) {
+            $reasons[] = 'Membership aktif untuk sekolah dan yayasan tidak ditemukan.';
+        }
+        if (! $assignment instanceof EmployeeAssignment) {
+            $reasons[] = 'Penugasan utama aktif untuk sekolah dan yayasan tidak ditemukan.';
+        }
+
+        if ($employee instanceof Employee) {
+            $this->compareLegacyIdentity($proposal, $employee, $reasons);
+            if ($schoolId !== null && (int) $employee->school_id !== $schoolId) {
+                $reasons[] = 'Sekolah proposal tidak sesuai dengan sekolah pegawai.';
+            }
+            if ($foundationId !== null && (int) $employee->foundation_id !== $foundationId) {
+                $reasons[] = 'Yayasan proposal tidak sesuai dengan yayasan pegawai.';
+            }
+        }
+
+        $disk = Storage::disk('decree-proposals');
+        foreach (self::REQUIRED_DOCUMENTS as $field => $_required) {
+            $path = $proposal->getAttribute($field);
+            if (blank($path) || ! $disk->exists($path)) {
+                $reasons[] = 'Dokumen wajib '.str_replace('_', ' ', $field).' belum tersedia atau file tidak ditemukan.';
+            }
+        }
+
+        $duplicate = DecreeProposal::on($connection)
+            ->whereKeyNot($proposal->getKey())
+            ->where('employee_id', $proposal->employee_id)
+            ->whereIn('status', [DecreeProposal::STATUS_SUBMITTED, DecreeProposal::STATUS_COMPLETED])
+            ->exists();
+        if ($duplicate) {
+            $reasons[] = 'Terdapat pengajuan lain yang menggunakan pegawai yang sama.';
+        }
+
+        return [
+            'eligible' => $reasons === [],
+            'reasons' => array_values(array_unique($reasons)),
+            'employee' => $employee,
+            'user' => $user,
+            'membership' => $membership,
+            'assignment' => $assignment,
+        ];
+    }
+
+    /** @return array{user: User, reset_status: string, reused_existing: bool} */
+    private function approveLegacy(DecreeProposal $proposal, User $actor, string $connection): array
+    {
+        $employee = Employee::on($connection)->whereKey($proposal->employee_id)->lockForUpdate()->first();
+        $user = $employee?->user_id
+            ? User::on($connection)->whereKey($employee->user_id)->lockForUpdate()->first()
+            : null;
+        $membership = $user && $proposal->candidateFoundationId() && $proposal->candidateSchoolId()
+            ? Membership::on($connection)->active()->where('user_id', $user->getKey())
+                ->where('foundation_id', $proposal->candidateFoundationId())
+                ->where('school_id', $proposal->candidateSchoolId())
+                ->lockForUpdate()->first()
+            : null;
+        $assignment = $employee && $proposal->candidateFoundationId() && $proposal->candidateSchoolId()
+            ? EmployeeAssignment::on($connection)->where('employee_id', $employee->getKey())
+                ->where('foundation_id', $proposal->candidateFoundationId())
+                ->where('school_id', $proposal->candidateSchoolId())
+                ->where('status', EmployeeAssignment::STATUS_ACTIVE)
+                ->where('is_primary', true)
+                ->lockForUpdate()->first()
+            : null;
+
+        $legacy = $this->legacyEligibility($proposal);
+        if (! $legacy['eligible'] || ! $employee || ! $user || ! $membership || ! $assignment) {
+            throw ValidationException::withMessages([
+                'employee_id' => implode(' ', $legacy['reasons']),
+            ]);
+        }
+
+        /** @var User $user */
+        $user = $legacy['user'];
+        $proposal->status = DecreeProposal::STATUS_COMPLETED;
+        $proposal->save();
+
+        return ['user' => $user, 'reset_status' => 'legacy_existing', 'reused_existing' => true];
+    }
+
+    private function compareLegacyIdentity(DecreeProposal $proposal, Employee $employee, array &$reasons): void
+    {
+        $values = [
+            'name' => [$proposal->candidate_name ?: $proposal->candidateSnapshotValue('name'), $employee->name],
+            'email' => [$proposal->candidate_email ?: $proposal->candidateSnapshotValue('email'), $employee->email],
+            'employee_code' => [$proposal->candidateSnapshotValue('employee_code'), $employee->employee_code],
+            'nuptk' => [$proposal->candidateSnapshotValue('nuptk'), $employee->nuptk],
+            'nip' => [$proposal->candidateSnapshotValue('nip'), $employee->nip],
+        ];
+
+        foreach ($values as $field => [$proposalValue, $employeeValue]) {
+            if (blank($proposalValue) || blank($employeeValue)) {
+                continue;
+            }
+            $left = strtolower(trim((string) $proposalValue));
+            $right = strtolower(trim((string) $employeeValue));
+            if ($left !== $right) {
+                $reasons[] = 'Identitas '.$field.' proposal tidak sesuai dengan data pegawai.';
+            }
+        }
     }
 
     public function validateForApproval(DecreeProposal $proposal): void

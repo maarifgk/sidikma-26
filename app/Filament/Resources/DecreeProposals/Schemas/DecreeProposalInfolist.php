@@ -7,6 +7,8 @@ use App\Models\Employee;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -68,6 +70,10 @@ class DecreeProposalInfolist
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
+                Grid::make(2)
+                    ->extraAttributes(['class' => 'decree-proposal-main-layout'])
+                    ->schema([
+                        Group::make([
                 Section::make('Identitas Pribadi dan Pengajuan')
                     ->icon('heroicon-o-user')
                     ->iconColor('success')
@@ -175,6 +181,10 @@ class DecreeProposalInfolist
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
+                        ])
+                            ->extraAttributes(['class' => 'decree-proposal-main-column decree-proposal-main-column--left'])
+                            ->columnSpan(1),
+                        Group::make([
                 Section::make('Berkas Persyaratan')
                     ->icon('heroicon-o-folder-open')
                     ->iconColor('info')
@@ -194,6 +204,11 @@ class DecreeProposalInfolist
                         ),
                     ])
                     ->columns(1)
+                    ->columnSpanFull(),
+                        ])
+                            ->extraAttributes(['class' => 'decree-proposal-main-column decree-proposal-main-column--right'])
+                            ->columnSpan(1),
+                    ])
                     ->columnSpanFull(),
                 Section::make('Catatan dan Verifikasi')
                     ->icon('heroicon-o-clipboard-document-check')

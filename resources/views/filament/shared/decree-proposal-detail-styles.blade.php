@@ -51,8 +51,9 @@
     }
 
     .decree-proposal-detail-modal .fi-modal-content {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
         align-content: start;
         gap: .6rem;
         min-height: 0;
@@ -67,10 +68,10 @@
     }
 
     .decree-proposal-detail-modal .fi-modal-content > * {
-        width: 98%;
+        width: 100%;
         max-width: none;
         min-width: 0;
-        margin-inline: auto;
+        margin-inline: 0;
     }
 
     .decree-proposal-detail-modal .fi-modal-footer {
@@ -129,7 +130,10 @@
     .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content {
         display: grid;
         grid-template-columns: minmax(10rem, .8fr) minmax(18rem, 1.35fr) minmax(15rem, 1fr);
+        grid-template-rows: repeat(3, 4.375rem);
         align-items: stretch;
+        column-gap: .75rem;
+        row-gap: .35rem;
         padding: .65rem 1rem;
     }
 
@@ -139,30 +143,30 @@
         padding: .35rem .8rem;
     }
 
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(1) {
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1) {
         grid-column: 1;
         grid-row: 1 / span 3;
         border-right: 1px solid #c5ddd1;
     }
 
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(2),
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(3) {
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(2),
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(3) {
         grid-column: 2;
     }
 
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(2) { grid-row: 1; }
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(3) { grid-row: 2; }
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(2) { grid-row: 1; }
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(3) { grid-row: 2; }
 
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(4),
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(5),
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(6) {
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(4),
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(5),
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(6) {
         grid-column: 3;
         border-left: 1px solid #c5ddd1;
     }
 
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(4) { grid-row: 1; }
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(5) { grid-row: 2; }
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(6) { grid-row: 3; }
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(4) { grid-row: 1; }
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(5) { grid-row: 2; }
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(6) { grid-row: 3; }
 
     .decree-proposal-detail-modal .fi-in-entry {
         display: flex;
@@ -227,15 +231,15 @@
         font-weight: 700;
     }
 
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:first-child .fi-in-entry-content,
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:first-child .fi-in-entry-content-col {
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1) .fi-in-entry-content,
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1) .fi-in-entry-content-col {
         width: 150px;
         min-height: 200px;
         margin-inline: auto;
     }
 
     .decree-proposal-detail-modal .decree-proposal-photo-entry .decree-proposal-photo,
-    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:first-child img {
+    .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1) img {
         width: 150px;
         height: 200px;
         aspect-ratio: 3 / 4;
@@ -313,8 +317,13 @@
     }
 
     .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-section-content {
+        display: block;
         counter-reset: decree-document-row;
         padding: .15rem .35rem .3rem;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-section-content > .fi-grid-col {
+        margin: 0;
     }
 
     .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry {
@@ -440,44 +449,33 @@
         outline-offset: 2px;
     }
 
+    .decree-proposal-detail-modal .decree-proposal-main-layout {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-main-layout > .fi-sc {
+        width: 100%;
+        min-width: 0;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-main-layout > .fi-sc > .fi-sc-component,
+    .decree-proposal-detail-modal .decree-proposal-main-column,
+    .decree-proposal-detail-modal .decree-proposal-main-column > .fi-sc {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+    }
+
     @media (min-width: 1280px) {
         .decree-proposal-detail-modal .fi-modal-content {
-            grid-template-columns: repeat(12, minmax(0, 1fr));
             gap: .55rem;
         }
 
-        .decree-proposal-detail-modal .fi-modal-content > * {
-            width: auto;
-        }
-
-        .decree-proposal-detail-modal .decree-proposal-hero-section {
-            grid-column: 1 / -1;
-            grid-row: 1;
-        }
-
-        .decree-proposal-detail-modal .decree-proposal-identity-section {
-            grid-column: 1 / span 7;
-            grid-row: 2;
-        }
-
-        .decree-proposal-detail-modal .decree-proposal-detail-section--documents {
-            grid-column: 8 / -1;
-            grid-row: 2 / span 3;
-        }
-
-        .decree-proposal-detail-modal .decree-proposal-education-section {
-            grid-column: 1 / span 7;
-            grid-row: 3;
-        }
-
-        .decree-proposal-detail-modal .decree-proposal-employment-section {
-            grid-column: 1 / span 7;
-            grid-row: 4;
-        }
-
-        .decree-proposal-detail-modal .decree-proposal-notes-section {
-            grid-column: 1 / -1;
-            grid-row: 5;
+        .decree-proposal-detail-modal .decree-proposal-main-layout > .fi-sc {
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr) !important;
         }
     }
 
@@ -506,16 +504,17 @@
 
         .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content {
             padding-block: .35rem;
+            grid-template-rows: repeat(3, 3.75rem);
         }
 
         .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry {
             padding-block: .2rem;
         }
 
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:first-child .fi-in-entry-content,
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:first-child .fi-in-entry-content-col,
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1) .fi-in-entry-content,
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1) .fi-in-entry-content-col,
         .decree-proposal-detail-modal .decree-proposal-photo-entry .decree-proposal-photo,
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:first-child img {
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1) img {
             width: 135px;
             min-height: 180px;
             height: 180px;
@@ -556,28 +555,33 @@
 
     @media (max-width: 1279px) {
         .decree-proposal-detail-modal .fi-modal-content > * {
-            width: 96%;
+            width: 100%;
+        }
+
+        .decree-proposal-detail-modal .decree-proposal-main-layout > .fi-sc {
+            grid-template-columns: minmax(0, 1fr) !important;
         }
 
         .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content {
             grid-template-columns: minmax(10rem, .75fr) minmax(16rem, 1.25fr);
+            grid-template-rows: repeat(5, 4.375rem);
         }
 
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(1) {
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1) {
             grid-row: 1 / span 2;
         }
 
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(4),
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(5),
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(6) {
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(4),
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(5),
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(6) {
             grid-column: 2;
             border-left: 0;
             border-top: 1px solid #c5ddd1;
         }
 
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(4) { grid-row: 3; }
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(5) { grid-row: 4; }
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(6) { grid-row: 5; }
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(4) { grid-row: 3; }
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(5) { grid-row: 4; }
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(6) { grid-row: 5; }
 
         .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry {
             grid-template-columns: 1.85rem minmax(0, 1fr);
@@ -617,7 +621,7 @@
         }
 
         .decree-proposal-detail-modal .fi-modal-content > * {
-            width: calc(100% - .8rem);
+            width: 100%;
             margin-bottom: .55rem;
         }
 
@@ -640,6 +644,11 @@
             display: block;
         }
 
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content {
+            grid-template-rows: none;
+            row-gap: 0;
+        }
+
         .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry,
         .decree-proposal-detail-modal .decree-proposal-identity-section .fi-in-entry,
         .decree-proposal-detail-modal .decree-proposal-education-section .fi-in-entry,
@@ -649,12 +658,12 @@
             border-bottom: 1px solid #c5ddd1;
         }
 
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(1),
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(2),
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(3),
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(4),
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(5),
-        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-in-entry:nth-child(6) {
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(1),
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(2),
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(3),
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(4),
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(5),
+        .decree-proposal-detail-modal .decree-proposal-hero-section .fi-section-content > .fi-grid-col:nth-child(6) {
             display: flex;
             grid-column: auto;
             grid-row: auto;

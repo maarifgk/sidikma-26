@@ -67,7 +67,11 @@ class DecreeProposalApprovalService
                 'atasnama' => '-', 'phbnu' => '-', 'is_active' => true,
                 'created_by' => $actor->getKey(), 'updated_by' => $actor->getKey(),
             ];
-            $userColumns = array_flip(Schema::connection($connection)->getColumnListing('users'));
+            $userColumns = collect(Schema::connection($connection)->getColumns('users'))
+                ->reject(fn (array $column): bool => filled($column['generation'] ?? null))
+                ->pluck('name')
+                ->flip()
+                ->all();
             $account->fill(array_intersect_key($accountAttributes, $userColumns));
             $account->save();
             $account->syncRoles([User::ROLE_GURU_PEGAWAI]);

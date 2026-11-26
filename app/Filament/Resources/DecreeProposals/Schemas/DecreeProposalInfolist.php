@@ -21,7 +21,7 @@ class DecreeProposalInfolist
                 Section::make('Informasi Pengajuan')
                     ->icon('heroicon-o-identification')
                     ->iconColor('success')
-                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section decree-proposal-hero-section'])
                     ->schema([
                         ImageEntry::make('photo_path')
                             ->label('Foto Calon Guru/Pegawai')
@@ -71,7 +71,7 @@ class DecreeProposalInfolist
                 Section::make('Identitas Pribadi dan Pengajuan')
                     ->icon('heroicon-o-user')
                     ->iconColor('success')
-                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section decree-proposal-identity-section'])
                     ->schema([
                         TextEntry::make('submittedBy.name')
                             ->label('Diajukan oleh')
@@ -109,7 +109,7 @@ class DecreeProposalInfolist
                 Section::make('Data Pendidikan')
                     ->icon('heroicon-o-academic-cap')
                     ->iconColor('info')
-                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section decree-proposal-education-section'])
                     ->schema([
                         TextEntry::make('candidate_snapshot.last_education')
                             ->label('Pendidikan Terakhir')
@@ -127,7 +127,7 @@ class DecreeProposalInfolist
                 Section::make('Data Kepegawaian')
                     ->icon('heroicon-o-briefcase')
                     ->iconColor('success')
-                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section decree-proposal-employment-section'])
                     ->schema([
                         TextEntry::make('candidate_snapshot.employment_status')
                             ->label('Status Kepegawaian')
@@ -198,7 +198,7 @@ class DecreeProposalInfolist
                 Section::make('Catatan dan Verifikasi')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->iconColor('warning')
-                    ->extraAttributes(['class' => 'decree-proposal-detail-section'])
+                    ->extraAttributes(['class' => 'decree-proposal-detail-section decree-proposal-notes-section'])
                     ->schema([
                         TextEntry::make('notes')
                             ->label('Catatan Pengajuan')

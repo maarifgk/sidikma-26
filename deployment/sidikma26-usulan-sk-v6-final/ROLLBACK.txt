@@ -1,0 +1,12 @@
+ROLLBACK SIDIKMA 26 - Usulan SK Baru v6
+
+1. Hentikan upload atau deployment manual yang sedang berjalan.
+2. Gunakan backup file yang dibuat sebelum pemasangan v6.
+3. Pulihkan hanya file fitur Usulan SK Baru yang sebelumnya diganti.
+4. Pastikan file berikut kembali ke versi sebelumnya jika update v5 sudah terpasang:
+   - app/Filament/Resources/DecreeProposals/Schemas/DecreeProposalInfolist.php
+   - resources/views/filament/shared/decree-proposal-detail-styles.blade.php
+5. Jalankan prosedur cache/view clear yang disetujui pengelola hosting.
+6. Verifikasi halaman secara read-only.
+
+Rollback tidak memerlukan migration, seeder, perubahan database, penghapusan proposal, atau perubahan permission. Jangan menjalankan perintah destruktif tanpa backup yang tervalidasi.

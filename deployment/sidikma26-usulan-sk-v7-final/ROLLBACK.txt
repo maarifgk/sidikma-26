@@ -1,0 +1,12 @@
+ROLLBACK SIDIKMA 26 - Usulan SK Baru v7
+
+Jika v6 sudah terpasang:
+1. Hentikan upload atau deployment manual yang sedang berjalan.
+2. Pulihkan backup sebelumnya untuk:
+   resources/views/filament/shared/decree-proposal-detail-styles.blade.php
+3. Jalankan prosedur cache/view clear yang disetujui pengelola hosting.
+4. Verifikasi halaman secara read-only.
+
+Jika paket fitur lengkap dipasang, pulihkan file fitur dari backup sesuai relative path paket.
+
+Rollback tidak memerlukan migration, seeder, perubahan database, penghapusan proposal, atau perubahan permission. Jangan menjalankan perintah destruktif tanpa backup tervalidasi.

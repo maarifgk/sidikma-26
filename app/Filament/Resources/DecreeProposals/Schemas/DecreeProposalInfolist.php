@@ -32,8 +32,13 @@ class DecreeProposalInfolist
                                     'document' => 'photo_path',
                                 ])
                                 : null)
-                            ->circular()
-                            ->size(96),
+                            ->imageWidth(180)
+                            ->imageHeight(240)
+                            ->extraAttributes(['class' => 'decree-proposal-photo-entry'])
+                            ->extraImgAttributes([
+                                'class' => 'decree-proposal-photo',
+                                'style' => 'object-fit: contain; background: #eef2ef;',
+                            ]),
                         TextEntry::make('candidate_name')
                             ->label('Nama Lengkap')
                             ->state(fn (DecreeProposal $record): string => $record->displayName())
@@ -217,11 +222,11 @@ class DecreeProposalInfolist
             ->state(fn (DecreeProposal $record): ?string => $record->getAttribute($name))
             ->formatStateUsing(function (?string $state) use ($required): string {
                 if (blank($state)) {
-                    return $required ? 'Belum diunggah' : 'Tidak diunggah (opsional)';
+                    return $required ? 'Belum diunggah' : 'Belum diunggah (opsional)';
                 }
 
                 return Storage::disk('decree-proposals')->exists($state)
-                    ? 'Tersedia'
+                    ? 'Dokumen tersedia'
                     : 'Belum tersedia';
             })
             ->icon('heroicon-o-document-text')
@@ -252,14 +257,14 @@ class DecreeProposalInfolist
 
         return [
             Action::make('viewDocument')
-                ->label('Lihat')
+                ->label('Lihat Dokumen')
                 ->icon('heroicon-o-eye')
                 ->color('info')
                 ->button()
                 ->url(fn (): string => $route())
                 ->openUrlInNewTab(),
             Action::make('downloadDocument')
-                ->label('Unduh')
+                ->label('Unduh Dokumen')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
                 ->button()

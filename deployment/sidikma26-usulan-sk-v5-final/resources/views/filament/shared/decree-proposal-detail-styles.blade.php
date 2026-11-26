@@ -1,0 +1,360 @@
+<style>
+    .decree-proposal-detail-modal {
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        border: 0;
+        border-radius: 0;
+        background: #f4f8f6;
+        font-family: Cambria, "Times New Roman", Georgia, serif;
+    }
+
+    .decree-proposal-detail-modal,
+    .decree-proposal-detail-modal * {
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-header {
+        flex: 0 0 auto;
+        border-bottom: 0;
+        background: linear-gradient(115deg, #075b43 0%, #0b7052 72%, #17618c 140%);
+        color: #fff;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-header .fi-modal-heading,
+    .decree-proposal-detail-modal .fi-modal-header .fi-modal-description,
+    .decree-proposal-detail-modal .fi-modal-header .fi-icon {
+        color: #fff;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-header .fi-modal-heading {
+        font-size: clamp(1.35rem, 1.2rem + .45vw, 1.625rem);
+        font-weight: 700;
+        line-height: 1.4;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-header .fi-modal-description {
+        color: rgba(255, 255, 255, .78);
+    }
+
+    .decree-proposal-detail-modal .fi-modal-content {
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: #f4f8f6;
+        padding: clamp(1rem, 2vw, 1.75rem) 0;
+        scrollbar-color: #8abda8 transparent;
+        scrollbar-width: thin;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-content > * {
+        box-sizing: border-box;
+        width: 94%;
+        max-width: 1600px;
+        margin-inline: auto;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        flex: 0 0 auto;
+        border-top: 1px solid #cfe2d8;
+        background: rgba(255, 255, 255, .96);
+        box-shadow: 0 -8px 20px rgba(7, 91, 67, .08);
+        backdrop-filter: blur(10px);
+        overflow-x: auto;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-footer > * {
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section {
+        overflow: hidden;
+        border: 1px solid #cfe2d8;
+        border-radius: .8rem;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(7, 91, 67, .05);
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child {
+        background: #eef8f1;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section + .decree-proposal-detail-section {
+        margin-top: 1.25rem;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header {
+        border-bottom: 1px solid #cfe2d8;
+        background: linear-gradient(90deg, #0b7052, #13815f);
+        padding: .8rem 1rem;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header-heading {
+        font-size: clamp(1.25rem, 1.1rem + .35vw, 1.5rem);
+        font-weight: 700;
+        line-height: 1.4;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header-heading,
+    .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header .fi-icon {
+        color: #fff;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-content {
+        display: block;
+        height: auto;
+        min-height: 0;
+        background: #fbfefc;
+        padding: 1.25rem clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-section-header {
+        background: linear-gradient(90deg, #17618c, #287ca9);
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        min-height: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: .25rem;
+        margin: 0;
+        border-bottom: 0;
+        padding: .7rem 0;
+        text-align: center;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry + .fi-in-entry {
+        margin-top: 1.25rem;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-label-col {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-inline-end: 0;
+        padding-inline-end: 0;
+        text-align: center;
+        width: 100%;
+        max-width: none;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-label-col::after {
+        content: none;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-content-col {
+        min-width: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        text-align: center;
+        max-width: none;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry:nth-child(even) {
+        background: rgba(232, 245, 238, .42);
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry:last-child {
+        border-bottom: 0;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-label {
+        color: #315b4c;
+        font-size: clamp(1.1875rem, 1.05rem + .35vw, 1.375rem);
+        font-weight: 700;
+        line-height: 1.4;
+        text-align: center;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-content {
+        min-width: 0;
+        width: 100%;
+        max-width: none;
+        color: #202b27;
+        font-size: clamp(1.1875rem, 1.05rem + .35vw, 1.375rem);
+        font-weight: 400;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+        text-align: center;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-btn {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-in-entry-content-ctn,
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-in-text,
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-in-icon,
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-in-badge {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:first-child .fi-in-entry-content,
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:first-child .fi-in-entry-content-col {
+        width: 180px;
+        min-height: 240px;
+        margin-inline: auto;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry-content-col {
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry-content .fi-in-entry-content-ctn {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry + .fi-in-entry {
+        margin-top: 1.5rem;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-footer .fi-btn {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry-label {
+        font-size: 1.125rem;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:nth-child(2) .fi-in-entry-content {
+        color: #075b43;
+        font-size: clamp(1.5rem, 1.25rem + .7vw, 1.75rem);
+        font-weight: 700;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:nth-child(3) .fi-in-entry-content {
+        font-size: clamp(1.25rem, 1.1rem + .4vw, 1.5rem);
+        font-weight: 500;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:first-child img {
+        width: 180px;
+        height: 240px;
+        aspect-ratio: 3 / 4;
+        border: 1px solid #b7cfc2;
+        border-radius: 5px;
+        background: #eef2ef;
+        object-fit: contain;
+        margin-inline: auto;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-photo-entry .decree-proposal-photo {
+        width: 180px;
+        height: 240px;
+        aspect-ratio: 3 / 4;
+        border: 1px solid #b7cfc2;
+        border-radius: 5px;
+        background: #eef2ef;
+        object-fit: contain;
+    }
+
+    .decree-proposal-detail-modal .fi-fo-field-wrp-label,
+    .decree-proposal-detail-modal .fi-fo-field-wrp-helper-text,
+    .decree-proposal-detail-modal .fi-input,
+    .decree-proposal-detail-modal .fi-select-input,
+    .decree-proposal-detail-modal .fi-fo-textarea {
+        font-size: clamp(1.0625rem, 1rem + .2vw, 1.1875rem);
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-content .fi-btn,
+    .decree-proposal-detail-modal .fi-modal-footer .fi-btn {
+        font-size: clamp(1rem, .95rem + .12vw, 1.0625rem);
+        line-height: 1.4;
+    }
+
+    @media (max-width: 900px) {
+        .decree-proposal-detail-modal .fi-modal-content > * {
+            width: calc(100% - 2rem);
+        }
+
+        .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:first-child img,
+        .decree-proposal-detail-modal .decree-proposal-photo-entry .decree-proposal-photo {
+            width: 165px;
+            height: 220px;
+        }
+    }
+
+    @media (min-width: 901px) and (max-width: 1500px) {
+        .decree-proposal-detail-modal .fi-modal-header .fi-modal-heading {
+            font-size: 1.5rem;
+        }
+
+        .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header-heading {
+            font-size: 1.375rem;
+        }
+
+        .decree-proposal-detail-modal .fi-in-entry-label,
+        .decree-proposal-detail-modal .fi-in-entry-content {
+            font-size: 1.25rem;
+        }
+
+        .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:nth-child(2) .fi-in-entry-content {
+            font-size: 1.625rem;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .decree-proposal-detail-modal .fi-modal-content > * {
+            width: calc(100% - 1.25rem);
+        }
+
+        .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-content {
+            padding: .75rem;
+        }
+
+        .decree-proposal-detail-modal .fi-in-entry {
+            padding: .55rem 0;
+        }
+
+        .decree-proposal-detail-modal .fi-in-entry + .fi-in-entry {
+            margin-top: .75rem;
+        }
+
+        .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry + .fi-in-entry {
+            margin-top: 1.25rem;
+        }
+
+        .decree-proposal-detail-modal .fi-in-entry-label,
+        .decree-proposal-detail-modal .fi-in-entry-content {
+            font-size: 1.125rem;
+        }
+
+        .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:nth-child(2) .fi-in-entry-content {
+            font-size: 1.375rem;
+        }
+
+        .decree-proposal-detail-modal .decree-proposal-detail-section:first-child .fi-in-entry:first-child img,
+        .decree-proposal-detail-modal .decree-proposal-photo-entry .decree-proposal-photo {
+            width: 135px;
+            height: 180px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .decree-proposal-detail-modal,
+        .decree-proposal-detail-modal * {
+            scroll-behavior: auto;
+        }
+    }
+</style>

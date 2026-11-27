@@ -59,7 +59,9 @@ class DecreeProposalInfolist
                             ->label('Status Pengajuan')
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
+                                DecreeProposal::STATUS_APPROVED,
                                 DecreeProposal::STATUS_COMPLETED => 'success',
+                                DecreeProposal::STATUS_REVISION => 'info',
                                 DecreeProposal::STATUS_REJECTED => 'danger',
                                 default => 'warning',
                             })

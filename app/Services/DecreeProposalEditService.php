@@ -220,7 +220,12 @@ class DecreeProposalEditService
         })->exists()) $errors['identity'] = 'Email, EWANUGK, NUPTK, atau NIP sudah digunakan data pegawai lain.';
 
         $duplicate = DecreeProposal::on($connection)->where('id', '!=', $proposal->getKey())
-            ->whereIn('status', [DecreeProposal::STATUS_SUBMITTED, DecreeProposal::STATUS_COMPLETED])
+            ->whereIn('status', [
+                DecreeProposal::STATUS_SUBMITTED,
+                DecreeProposal::STATUS_APPROVED,
+                DecreeProposal::STATUS_COMPLETED,
+                DecreeProposal::STATUS_REVISION,
+            ])
             ->where(function ($query) use ($data): void {
                 $query->where('candidate_email', $data['email'])
                     ->orWhereJsonContains('legacy_snapshot->employee_code', $data['employee_code']);

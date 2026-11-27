@@ -40,6 +40,10 @@ class DecreeProposal extends Model
 
     public const STATUS_REJECTED = 'rejected';
 
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_REVISION = 'revision';
+
     /** @use HasFactory<DecreeProposalFactory> */
     use HasFactory, SoftDeletes;
 
@@ -147,8 +151,26 @@ class DecreeProposal extends Model
     {
         return [
             self::STATUS_SUBMITTED => 'Menunggu Verifikasi',
-            self::STATUS_COMPLETED => 'Proses Selesai',
+            self::STATUS_APPROVED => 'Disetujui',
+            self::STATUS_COMPLETED => 'Disetujui',
+            self::STATUS_REVISION => 'Perlu Revisi',
             self::STATUS_REJECTED => 'Ditolak',
         ];
+    }
+
+    /** @return array<string, string> */
+    public static function statusFilterOptions(): array
+    {
+        return [
+            self::STATUS_SUBMITTED => 'Menunggu Verifikasi',
+            'approved_group' => 'Disetujui',
+            self::STATUS_REVISION => 'Perlu Revisi',
+            self::STATUS_REJECTED => 'Ditolak',
+        ];
+    }
+
+    public function isHistoricalLegacy(): bool
+    {
+        return filled($this->legacy_proposal_id);
     }
 }

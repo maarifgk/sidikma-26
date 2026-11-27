@@ -18,6 +18,7 @@ use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class DecreeProposalsTable
 {
@@ -65,7 +66,9 @@ class DecreeProposalsTable
                         fn (string $state): string => DecreeProposal::statusOptions()[$state] ?? $state,
                     )
                     ->color(fn (string $state): string => match ($state) {
+                        DecreeProposal::STATUS_APPROVED,
                         DecreeProposal::STATUS_COMPLETED => 'success',
+                        DecreeProposal::STATUS_REVISION => 'info',
                         DecreeProposal::STATUS_REJECTED => 'danger',
                         default => 'warning',
                     })
@@ -74,7 +77,21 @@ class DecreeProposalsTable
             ->filters([
                 SelectFilter::make('status')
                     ->label('Status')
-                    ->options(DecreeProposal::statusOptions()),
+                    ->options(DecreeProposal::statusFilterOptions())
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(filled($data['value'] ?? null), function (Builder $query) use ($data): void {
+                            $value = (string) $data['value'];
+                            if ($value === 'approved_group') {
+                                $query->whereIn('status', [
+                                    DecreeProposal::STATUS_APPROVED,
+                                    DecreeProposal::STATUS_COMPLETED,
+                                ]);
+                                return;
+                            }
+
+                            $query->where('status', $value);
+                        });
+                    }),
             ])
             ->recordActions([
                 self::editAction(),

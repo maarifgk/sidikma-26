@@ -49,6 +49,12 @@ class DecreeProposalApprovalService
                 return $this->approveLegacy($lockedProposal, $actor, $connection);
             }
 
+            if ($lockedProposal->isHistoricalLegacy()) {
+                throw ValidationException::withMessages([
+                    'employee_id' => 'Pengajuan historis belum memiliki relasi pegawai yang tervalidasi; provisioning otomatis dihentikan.',
+                ]);
+            }
+
             $data = $this->validatedData($lockedProposal);
 
             $account = (new User)->setConnection($connection);
@@ -201,7 +207,12 @@ class DecreeProposalApprovalService
         $duplicate = DecreeProposal::on($connection)
             ->whereKeyNot($proposal->getKey())
             ->where('employee_id', $proposal->employee_id)
-            ->whereIn('status', [DecreeProposal::STATUS_SUBMITTED, DecreeProposal::STATUS_COMPLETED])
+            ->whereIn('status', [
+                DecreeProposal::STATUS_SUBMITTED,
+                DecreeProposal::STATUS_APPROVED,
+                DecreeProposal::STATUS_COMPLETED,
+                DecreeProposal::STATUS_REVISION,
+            ])
             ->exists();
         if ($duplicate) {
             $reasons[] = 'Terdapat pengajuan lain yang menggunakan pegawai yang sama.';
@@ -406,7 +417,12 @@ class DecreeProposalApprovalService
 
         $duplicateProposal = DecreeProposal::on($connection)
             ->whereKeyNot($proposal->getKey())
-            ->whereIn('status', [DecreeProposal::STATUS_SUBMITTED, DecreeProposal::STATUS_COMPLETED])
+            ->whereIn('status', [
+                DecreeProposal::STATUS_SUBMITTED,
+                DecreeProposal::STATUS_APPROVED,
+                DecreeProposal::STATUS_COMPLETED,
+                DecreeProposal::STATUS_REVISION,
+            ])
             ->where(function ($query) use ($email, $employeeCode): void {
                 if (filled($email)) {
                     $query->where('candidate_email', $email);

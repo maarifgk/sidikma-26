@@ -12,6 +12,7 @@ use Filament\Actions\RestoreAction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class EditEmployee extends EditRecord
@@ -107,11 +108,7 @@ class EditEmployee extends EditRecord
     protected function afterSave(): void
     {
         if (filled($this->newAccountPassword) && $this->record->user) {
-            $this->record->user->update([
-                'password' => Hash::make($this->newAccountPassword),
-                'is_active' => true,
-                'updated_by' => auth()->id(),
-            ]);
+            $this->updateExistingAccountPassword($this->record->user);
             $this->record->user->syncWithoutDetaching([User::ROLE_GURU_PEGAWAI]);
         }
 
@@ -142,6 +139,36 @@ class EditEmployee extends EditRecord
             'status' => EmployeeAssignment::STATUS_ACTIVE,
             'is_primary' => true,
         ]);
+    }
+
+    private function updateExistingAccountPassword(User $account): void
+    {
+        $connection = $account->getConnectionName() ?: (string) config('database.default');
+        $columns = collect(Schema::connection($connection)->getColumns('users'))
+            ->keyBy('name');
+        $writable = static fn (string $column): bool => isset($columns[$column])
+            && blank($columns[$column]['generation'] ?? null);
+        $attributes = [];
+
+        if ($writable('password')) {
+            $attributes['password'] = Hash::make($this->newAccountPassword);
+        }
+
+        if ($writable('updated_by')) {
+            $attributes['updated_by'] = auth()->id();
+        }
+
+        if ($writable('is_active')) {
+            $attributes['is_active'] = true;
+        } elseif ($writable('status')) {
+            // Legacy MySQL derives is_active from status; preserve the existing
+            // password-update behavior without writing the generated column.
+            $attributes['status'] = 'ON';
+        }
+
+        if ($attributes !== []) {
+            $account->forceFill($attributes)->save();
+        }
     }
 
     protected function getHeaderActions(): array

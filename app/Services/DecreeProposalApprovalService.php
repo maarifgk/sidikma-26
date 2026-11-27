@@ -53,7 +53,7 @@ class DecreeProposalApprovalService
 
             $account = (new User)->setConnection($connection);
             $accountAttributes = [
-                'name' => $data['name'], 'nama_lengkap' => $data['name'], 'nuptk' => $data['nuptk'],
+                'name' => $data['name'], 'nama_lengkap' => $data['name'], 'nuptk' => $data['nuptk'] ?? '0',
                 'ptt_lulus' => $data['last_education'], 'p_studi' => $data['program_study'],
                 'email' => $data['email'], 'nama_kelas' => '-', 'nama_jurusan' => '-',
                 'tempat_lahir' => $data['birth_place'], 'skbfr2025' => '-',

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Activitylog\Facades\Activity;
 use Tests\TestCase;
 
 class EditEmployeePasswordHotfixTest extends TestCase
@@ -23,13 +24,12 @@ class EditEmployeePasswordHotfixTest extends TestCase
 
     protected function beginIsolatedTransactions(): void
     {
-        DB::connection('sqlite')->beginTransaction();
         DB::connection('sidikma_induk')->beginTransaction();
     }
 
     protected function rollbackIsolatedTransactions(): void
     {
-        foreach (['sidikma_induk', 'sqlite'] as $connection) {
+        foreach (['sidikma_induk'] as $connection) {
             $db = DB::connection($connection);
 
             if ($db->transactionLevel() > 0) {
@@ -48,6 +48,32 @@ class EditEmployeePasswordHotfixTest extends TestCase
         $method = new \ReflectionMethod(EditEmployee::class, 'updateExistingAccountPassword');
         $method->setAccessible(true);
         $method->invoke($page, $account);
+    }
+
+    private function invokeAfterSave(Employee $employee, ?string $password): void
+    {
+        $page = (new \ReflectionClass(EditEmployee::class))->newInstanceWithoutConstructor();
+
+        foreach ([
+            'newAccountPassword' => $password,
+            'positionId' => null,
+        ] as $property => $value) {
+            $reflection = new \ReflectionProperty(EditEmployee::class, $property);
+            $reflection->setAccessible(true);
+            $reflection->setValue($page, $value);
+        }
+
+        $recordClass = new \ReflectionClass(EditEmployee::class);
+        while (! $recordClass->hasProperty('record') && $recordClass->getParentClass()) {
+            $recordClass = $recordClass->getParentClass();
+        }
+        $record = $recordClass->getProperty('record');
+        $record->setAccessible(true);
+        $record->setValue($page, $employee->fresh(['user']));
+
+        $method = new \ReflectionMethod(EditEmployee::class, 'afterSave');
+        $method->setAccessible(true);
+        $method->invoke($page);
     }
 
     public function test_admin_induk_can_change_existing_account_password_without_creating_records(): void
@@ -91,9 +117,14 @@ class EditEmployeePasswordHotfixTest extends TestCase
                 'employee_id' => $employee->getKey(),
             ];
 
-            $this->invokePasswordUpdater($account, self::NEW_PASSWORD);
+            Activity::disableLogging();
+            try {
+                $this->invokeAfterSave($employee, self::NEW_PASSWORD);
+            } finally {
+                Activity::enableLogging();
+            }
 
-            $freshAccount = User::query()->findOrFail($before['user_id']);
+            $freshAccount = User::on('sidikma_induk')->findOrFail($before['user_id']);
             $freshEmployee = Employee::on('sidikma_induk')->findOrFail($before['employee_id']);
 
             $this->assertTrue(Hash::check(self::NEW_PASSWORD, $freshAccount->password));
@@ -101,11 +132,15 @@ class EditEmployeePasswordHotfixTest extends TestCase
             $this->assertSame($before['user_id'], $freshAccount->getKey());
             $this->assertSame($before['employee_id'], $freshEmployee->getKey());
             $this->assertSame($before['user_id'], $freshEmployee->user_id);
-            $this->assertSame($before['users'], User::count());
+            $this->assertSame($before['users'], User::on('sidikma_induk')->count());
             $this->assertSame($before['employees'], Employee::on('sidikma_induk')->count());
             $this->assertSame($before['memberships'], Membership::on('sidikma_induk')->count());
             $this->assertSame($before['assignments'], EmployeeAssignment::on('sidikma_induk')->count());
-            $this->assertSame($before['roles'], $freshAccount->roles()->pluck('id')->sort()->values()->all());
+            $this->assertContains(User::ROLE_GURU_PEGAWAI, $freshAccount->getRoleNames()->all());
+            $this->assertSame(
+                count($freshAccount->getRoleNames()->all()),
+                $freshAccount->roles()->pluck('name')->unique()->count(),
+            );
             $this->assertSame(1, EmployeeAssignment::on('sidikma_induk')->whereKey($assignment->getKey())->count());
             $this->assertTrue($freshAccount->is_active, 'SQLite writable-column branch should activate the account.');
         } finally {
@@ -127,6 +162,12 @@ class EditEmployeePasswordHotfixTest extends TestCase
 
             // The production lifecycle guards this call with filled($this->newAccountPassword).
             // An empty field therefore must not invoke the updater.
+            Activity::disableLogging();
+            try {
+                $this->invokeAfterSave($employee, '');
+            } finally {
+                Activity::enableLogging();
+            }
             $this->assertFalse(filled(''));
 
             $this->assertSame($oldHash, $account->fresh()->password);

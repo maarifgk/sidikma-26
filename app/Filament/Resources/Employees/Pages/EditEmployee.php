@@ -109,7 +109,7 @@ class EditEmployee extends EditRecord
     {
         if (filled($this->newAccountPassword) && $this->record->user) {
             $this->updateExistingAccountPassword($this->record->user);
-            $this->record->user->syncWithoutDetaching([User::ROLE_GURU_PEGAWAI]);
+            $this->record->user->assignRole(User::ROLE_GURU_PEGAWAI);
         }
 
         if (blank($this->positionId)) {

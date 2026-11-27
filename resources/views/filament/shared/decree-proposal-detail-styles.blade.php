@@ -724,4 +724,88 @@
             scroll-behavior: auto;
         }
     }
+
+    /* Final scoped typography/alignment for the proposal detail modal. */
+    .decree-proposal-detail-modal .fi-modal-header .fi-modal-heading {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section .fi-section-header-heading {
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.5;
+        text-align: left;
+    }
+
+    .decree-proposal-detail-modal .fi-section-header-heading {
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.5;
+        text-align: left;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-label,
+    .decree-proposal-detail-modal .fi-in-entry-label-col {
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.5;
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    .decree-proposal-detail-modal .fi-in-entry-content-col,
+    .decree-proposal-detail-modal .fi-in-entry-content,
+    .decree-proposal-detail-modal .fi-in-entry-content-ctn,
+    .decree-proposal-detail-modal .fi-in-text,
+    .decree-proposal-detail-modal .fi-in-badge {
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.5;
+        text-align: left;
+        align-items: flex-start;
+        justify-content: flex-start;
+        overflow-wrap: anywhere;
+    }
+
+    .decree-proposal-detail-modal .fi-in-text-item,
+    .decree-proposal-detail-modal .fi-in-text-item *,
+    .decree-proposal-detail-modal .fi-in-badge,
+    .decree-proposal-detail-modal .fi-in-badge * {
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.5;
+        text-align: left;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry-label,
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry-content {
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+    .decree-proposal-detail-modal .decree-proposal-detail-section--documents .fi-in-entry-content {
+        font-weight: 400;
+    }
+
+    .decree-proposal-detail-modal .fi-fo-field-label {
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.5;
+        text-align: left;
+    }
+
+    .decree-proposal-detail-modal .fi-input-wrp input:not(.fi-fo-hidden),
+    .decree-proposal-detail-modal .fi-input-wrp textarea,
+    .decree-proposal-detail-modal .fi-select-input {
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.5;
+        text-align: left;
+    }
+
+    .decree-proposal-detail-modal .fi-modal-footer {
+        justify-content: flex-start;
+    }
 </style>

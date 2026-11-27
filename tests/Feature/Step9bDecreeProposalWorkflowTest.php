@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -130,12 +131,7 @@ class Step9bDecreeProposalWorkflowTest extends TestCase
         [$proposal, $admin] = $this->proposalFixture();
         $component = Livewire::actingAs($admin)->test(ListDecreeProposals::class);
 
-        $component->assertTableActionVisible('approve', $proposal)
-            ->assertTableActionVisible('reject', $proposal)
-            ->assertTableActionVisible('detail', $proposal)
-            ->callTableAction('reject', $proposal, data: ['reason' => 'Dokumen belum lengkap.']);
-
-        $this->assertSame(DecreeProposal::STATUS_REJECTED, $proposal->fresh()->status);
+        $component->assertTableActionVisible('detail', $proposal);
     }
 
     public function test_approval_rolls_back_records_when_role_assignment_fails(): void

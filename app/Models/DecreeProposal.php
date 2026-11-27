@@ -125,6 +125,15 @@ class DecreeProposal extends Model
             : null;
     }
 
+    public function decisionReason(): ?string
+    {
+        if (! is_string($this->notes) || blank($this->notes)) return null;
+        $payload = json_decode($this->notes, true);
+        return is_array($payload) && filled($payload['decision_reason'] ?? null)
+            ? (string) $payload['decision_reason']
+            : $this->rejectionReason();
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

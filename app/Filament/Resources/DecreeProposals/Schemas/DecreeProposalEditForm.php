@@ -5,6 +5,7 @@ namespace App\Filament\Resources\DecreeProposals\Schemas;
 use App\Models\Employee;
 use App\Models\EmployeePosition;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -55,6 +56,16 @@ class DecreeProposalEditForm
             TextInput::make('program_study')->label('Program Studi')->required()->maxLength(150),
             Textarea::make('notes')->label('Catatan Pengajuan')->nullable()->rows(4)->maxLength(65535)
                 ->columnSpanFull(),
+            FileUpload::make('photo_path')->label('Foto Pengganti')->disk('decree-proposals')->storeFiles(false)
+                ->directory('edits')->image()->maxSize(10240)->nullable(),
+            FileUpload::make('diploma_path')->label('Ijazah Pengganti')->disk('decree-proposals')->storeFiles(false)
+                ->directory('edits')->acceptedFileTypes(['application/pdf'])->maxSize(10240)->nullable(),
+            FileUpload::make('application_letter_path')->label('Surat Permohonan Pengganti')->disk('decree-proposals')->storeFiles(false)
+                ->directory('edits')->acceptedFileTypes(['application/pdf'])->maxSize(10240)->nullable(),
+            FileUpload::make('service_statement_path')->label('Surat Pernyataan Pengganti')->disk('decree-proposals')->storeFiles(false)
+                ->directory('edits')->acceptedFileTypes(['application/pdf'])->maxSize(10240)->nullable(),
+            FileUpload::make('task_assignment_certificate_path')->label('Sertifikat Pembagian Tugas Pengganti')->disk('decree-proposals')->storeFiles(false)
+                ->directory('edits')->acceptedFileTypes(['application/pdf'])->maxSize(10240)->nullable(),
         ];
     }
 }

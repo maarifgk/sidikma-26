@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\DecreeProposalApprovalService;
 use App\Services\DecreeProposalEditService;
 use App\Services\DecreeProposalRejectionService;
+use App\Services\DecreeProposalStatusService;
 use App\Filament\Resources\DecreeProposals\Schemas\DecreeProposalEditForm;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
@@ -94,6 +95,7 @@ class DecreeProposalsTable
                         self::editAction('editFromDetail', true),
                         self::approveAction('approveFromDetail'),
                         self::rejectAction('rejectFromDetail'),
+                        self::statusAction(),
                         Action::make('closeDetail')
                             ->label('Tutup')
                             ->icon('heroicon-o-x-mark')
@@ -135,9 +137,7 @@ class DecreeProposalsTable
             ->tooltip('Perbaiki Data Pengajuan')
             ->visible(fn (DecreeProposal $record): bool => ($detail || auth()->user()?->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH))
                 && (auth()->user()?->can('view', $record) ?? false))
-            ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
-                || $record->employee_id !== null
-                || ! (auth()->user()?->can('edit', $record) ?? false))
+            ->disabled(fn (DecreeProposal $record): bool => ! (auth()->user()?->can('edit', $record) ?? false))
             ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('edit', $record) ?? false)
             ->modalHeading('Edit Data Pengajuan')
             ->modalDescription('Perbaiki data pengajuan tanpa menyetujui atau mengubah statusnya.')
@@ -158,26 +158,41 @@ class DecreeProposalsTable
     private static function approveAction(string $name = 'approve'): Action
     {
         return Action::make($name)
-            ->label('Simpan')
+            ->label('Setujui')
             ->icon('heroicon-o-check-circle')
             ->color('success')
             ->button()
             ->tooltip('Simpan dan Setujui Pengajuan')
             ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
                 && (auth()->user()?->can('view', $record) ?? false))
-            ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
+            ->disabled(fn (DecreeProposal $record): bool => ($record->employee_id === null
+                    && ! in_array($record->status, [
+                        DecreeProposal::STATUS_SUBMITTED,
+                        DecreeProposal::STATUS_REJECTED,
+                    ], true))
                 || ($record->employee_id !== null
                     && ! app(DecreeProposalApprovalService::class)->legacyEligibility($record)['eligible'])
                 || ! (auth()->user()?->can('update', $record) ?? false))
-            ->tooltip(fn (DecreeProposal $record): string => ! (auth()->user()?->can('update', $record) ?? false)
-                ? 'Anda tidak memiliki izin untuk menyetujui pengajuan ini.'
-                : ($record->employee_id !== null
-                    ? (app(DecreeProposalApprovalService::class)->legacyEligibility($record)['eligible']
+            ->tooltip(function (DecreeProposal $record): string {
+                if (! (auth()->user()?->can('update', $record) ?? false)) {
+                    return 'Anda tidak memiliki izin untuk menyetujui pengajuan ini.';
+                }
+
+                if ($record->employee_id !== null) {
+                    $eligibility = app(DecreeProposalApprovalService::class)->legacyEligibility($record);
+
+                    return $eligibility['eligible']
                         ? 'Proposal legacy valid. Persetujuan akan menggunakan akun dan data pegawai yang sudah tersedia tanpa membuat akun baru.'
-                        : implode(' ', app(DecreeProposalApprovalService::class)->legacyEligibility($record)['reasons']))
-                    : ($record->status === DecreeProposal::STATUS_SUBMITTED
-                        ? 'Simpan dan Setujui Pengajuan'
-                        : 'Pengajuan sudah diproses.')))
+                        : implode(' ', $eligibility['reasons']);
+                }
+
+                return in_array($record->status, [
+                    DecreeProposal::STATUS_SUBMITTED,
+                    DecreeProposal::STATUS_REJECTED,
+                ], true)
+                    ? 'Simpan dan Setujui Pengajuan'
+                    : 'Pengajuan sudah diproses.';
+            })
             ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('update', $record) ?? false)
             ->requiresConfirmation()
             ->modalHeading('Setujui Usulan SK Baru')
@@ -210,9 +225,7 @@ class DecreeProposalsTable
             ->button()
             ->visible(fn (DecreeProposal $record): bool => (auth()->user()?->isAdminInduk() ?? false)
                 && (auth()->user()?->can('view', $record) ?? false))
-            ->disabled(fn (DecreeProposal $record): bool => $record->status !== DecreeProposal::STATUS_SUBMITTED
-                || $record->employee_id !== null
-                || ! (auth()->user()?->can('update', $record) ?? false))
+            ->disabled(fn (DecreeProposal $record): bool => ! (auth()->user()?->can('update', $record) ?? false))
             ->tooltip(fn (DecreeProposal $record): string => ! (auth()->user()?->can('update', $record) ?? false)
                 ? 'Anda tidak memiliki izin untuk menolak pengajuan ini.'
                 : ($record->employee_id !== null
@@ -237,6 +250,47 @@ class DecreeProposalsTable
                 abort_unless($actor instanceof User && $actor->can('update', $record), 403);
                 app(DecreeProposalRejectionService::class)->reject($record, $actor, (string) ($data['reason'] ?? ''));
                 Notification::make()->title('Pengajuan SK baru berhasil ditolak.')->body('Keterangan penolakan telah disimpan.')->success()->send();
+            });
+    }
+
+    private static function statusAction(): Action
+    {
+        return Action::make('updateStatus')
+            ->label('Perbarui Status')
+            ->icon('heroicon-o-arrow-path')
+            ->color('warning')
+            ->button()
+            ->visible(fn (DecreeProposal $record): bool => auth()->user()?->isAdminInduk()
+                && (auth()->user()?->can('view', $record) ?? false))
+            ->authorize(fn (DecreeProposal $record): bool => auth()->user()?->can('updateStatus', $record) ?? false)
+            ->schema([
+                \Filament\Forms\Components\Select::make('status')
+                    ->label('Status Terbaru')
+                    ->options(DecreeProposal::statusOptions())
+                    ->required(),
+                Textarea::make('reason')
+                    ->label('Keterangan Pengajuan')
+                    ->helperText('Wajib diisi ketika status Ditolak.')
+                    ->maxLength(65535)
+                    ->rows(5),
+            ])
+            ->fillForm(fn (DecreeProposal $record): array => [
+                'status' => $record->status,
+                'reason' => $record->decisionReason(),
+            ])
+            ->requiresConfirmation()
+            ->modalHeading('Perbarui Status Pengajuan')
+            ->modalSubmitActionLabel('Simpan Status')
+            ->action(function (DecreeProposal $record, array $data): void {
+                $actor = auth()->user();
+                abort_unless($actor instanceof User, 403);
+                app(DecreeProposalStatusService::class)->update(
+                    $record,
+                    $actor,
+                    (string) ($data['status'] ?? ''),
+                    isset($data['reason']) ? (string) $data['reason'] : null,
+                );
+                Notification::make()->title('Status pengajuan berhasil diperbarui.')->success()->send();
             });
     }
 

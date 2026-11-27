@@ -7,7 +7,9 @@ use App\Models\Employee;
 use App\Models\EmployeePosition;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 
 class DecreeProposalEditService
@@ -27,12 +29,6 @@ class DecreeProposalEditService
 
             abort_unless($actor->can('edit', $locked), 403);
 
-            if ($locked->status !== DecreeProposal::STATUS_SUBMITTED || filled($locked->employee_id)) {
-                throw ValidationException::withMessages([
-                    'proposal' => 'Pengajuan sudah diproses atau sudah terhubung dengan data pegawai sehingga tidak dapat diedit.',
-                ]);
-            }
-
             if (blank($data['edit_version'] ?? null)
                 || (string) $locked->getRawOriginal('updated_at') !== (string) $data['edit_version']) {
                 throw ValidationException::withMessages([
@@ -40,6 +36,7 @@ class DecreeProposalEditService
                 ]);
             }
 
+            $this->validateReplacementDocuments($data);
             $normalized = $this->normalize($data);
             $this->validateConflicts($locked, $normalized);
 
@@ -75,8 +72,71 @@ class DecreeProposalEditService
                 'legacy_snapshot' => $snapshot,
                 'notes' => json_encode($notes, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             ]);
-            $locked->save();
+            $documentFields = ['photo_path', 'diploma_path', 'application_letter_path', 'service_statement_path', 'task_assignment_certificate_path'];
+            $oldPaths = collect($documentFields)
+                ->map(fn (string $field): mixed => $locked->getAttribute($field))
+                ->filter(fn (mixed $path): bool => is_string($path) && $path !== '')
+                ->values()
+                ->all();
+            $storedPaths = [];
+
+            try {
+                foreach ($documentFields as $document) {
+                    if (($data[$document] ?? null) instanceof UploadedFile) {
+                        $newPath = $data[$document]->store('edits', 'decree-proposals');
+                        if (! is_string($newPath) || blank($newPath)) {
+                            throw ValidationException::withMessages([
+                                $document => 'File pengganti gagal disimpan.',
+                            ]);
+                        }
+                        $storedPaths[] = $newPath;
+                        $locked->setAttribute($document, $newPath);
+                    }
+                }
+                $locked->save();
+            } catch (\Throwable $exception) {
+                foreach ($storedPaths as $storedPath) {
+                    if (in_array($storedPath, $oldPaths, true)) {
+                        continue;
+                    }
+
+                    $referenced = DecreeProposal::on('sidikma_induk')
+                        ->where(function ($query) use ($documentFields, $storedPath): void {
+                            foreach ($documentFields as $field) {
+                                $query->orWhere($field, $storedPath);
+                            }
+                        })
+                        ->exists();
+
+                    if (! $referenced) {
+                        Storage::disk('decree-proposals')->delete($storedPath);
+                    }
+                }
+
+                throw $exception;
+            }
         });
+    }
+
+    /** @param array<string, mixed> $data */
+    private function validateReplacementDocuments(array $data): void
+    {
+        $rules = [];
+        foreach ([
+            'photo_path' => ['file', 'mimetypes:image/jpeg,image/png,image/webp', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'diploma_path' => ['file', 'mimetypes:application/pdf', 'mimes:pdf', 'max:10240'],
+            'application_letter_path' => ['file', 'mimetypes:application/pdf', 'mimes:pdf', 'max:10240'],
+            'service_statement_path' => ['file', 'mimetypes:application/pdf', 'mimes:pdf', 'max:10240'],
+            'task_assignment_certificate_path' => ['file', 'mimetypes:application/pdf', 'mimes:pdf', 'max:10240'],
+        ] as $field => $fieldRules) {
+            if (array_key_exists($field, $data) && filled($data[$field])) {
+                $rules[$field] = $fieldRules;
+            }
+        }
+
+        if ($rules !== []) {
+            Validator::make($data, $rules)->validate();
+        }
     }
 
     /** @param array<string, mixed> $data @return array<string, mixed> */
@@ -146,8 +206,14 @@ class DecreeProposalEditService
         $errors = [];
 
         $connection = 'sidikma_induk';
-        if (User::on($connection)->where('email', $data['email'])->exists()) $errors['email'] = 'Email sudah digunakan oleh akun lain.';
-        if (Employee::on($connection)->withTrashed()->where(function ($query) use ($data): void {
+        $currentEmployee = Employee::on($connection)->withTrashed()->find($proposal->employee_id);
+        $currentUserId = $currentEmployee?->user_id;
+
+        if (User::on($connection)
+            ->when($currentUserId !== null, fn ($query) => $query->where('id', '!=', $currentUserId))
+            ->where('email', $data['email'])
+            ->exists()) $errors['email'] = 'Email sudah digunakan oleh akun lain.';
+        if (Employee::on($connection)->withTrashed()->when($proposal->employee_id !== null, fn ($query) => $query->where('id', '!=', $proposal->employee_id))->where(function ($query) use ($data): void {
             $query->where('email', $data['email'])->orWhere('employee_code', $data['employee_code']);
             if (filled($data['nuptk'])) $query->orWhere('nuptk', $data['nuptk']);
             if (filled($data['nip'])) $query->orWhere('nip', $data['nip']);

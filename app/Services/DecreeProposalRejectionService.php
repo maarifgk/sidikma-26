@@ -20,17 +20,6 @@ class DecreeProposalRejectionService
             $locked = DecreeProposal::on($connection)->whereKey($proposal->getKey())->lockForUpdate()->firstOrFail();
 
             if (! $actor->isAdminInduk() || ! $actor->can('update', $locked)) abort(403);
-            if ($locked->status !== DecreeProposal::STATUS_SUBMITTED) {
-                throw ValidationException::withMessages(['proposal' => 'Pengajuan ini sudah diproses dan tidak dapat ditolak kembali.']);
-            }
-            if ($locked->employee_id !== null) {
-                $legacy = app(DecreeProposalApprovalService::class)->legacyEligibility($locked);
-                throw ValidationException::withMessages([
-                    'proposal' => 'Pengajuan legacy tidak dapat ditolak otomatis karena akun/data pegawai yang sudah tersedia harus diputuskan secara manual.'
-                        .($legacy['reasons'] === [] ? '' : ' '.implode(' ', $legacy['reasons'])),
-                ]);
-            }
-
             $payload = [
                 'initial' => $locked->initialNotes(),
                 'rejection_reason' => $reason,
@@ -60,7 +49,12 @@ class DecreeProposalRejectionService
         $default = config('database.connections.'.$defaultName, []);
         $sidikma = config('database.connections.sidikma_induk', []);
 
-        foreach (['driver', 'host', 'port', 'database', 'username', 'unix_socket'] as $key) {
+        $driver = (string) ($default['driver'] ?? '');
+        $keys = in_array($driver, ['mysql', 'mariadb', 'pgsql', 'sqlsrv'], true)
+            ? ['driver', 'host', 'port', 'database', 'username', 'unix_socket']
+            : ['driver', 'database'];
+
+        foreach ($keys as $key) {
             if (($default[$key] ?? null) !== ($sidikma[$key] ?? null)) {
                 throw ValidationException::withMessages([
                     'database' => 'Koneksi autentikasi dan SIDIKMA berbeda; penolakan dihentikan untuk mencegah transaksi parsial.',

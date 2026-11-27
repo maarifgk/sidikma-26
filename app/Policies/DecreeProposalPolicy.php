@@ -36,10 +36,6 @@ class DecreeProposalPolicy
 
     public function edit(User $user, DecreeProposal $decreeProposal): bool
     {
-        if ($decreeProposal->status !== DecreeProposal::STATUS_SUBMITTED || filled($decreeProposal->employee_id)) {
-            return false;
-        }
-
         if ($user->isAdminInduk()) {
             return $user->can('approval.update');
         }
@@ -47,6 +43,13 @@ class DecreeProposalPolicy
         return $user->hasRole(User::ROLE_ADMIN_SEKOLAH_MADRASAH)
             && $user->can('approval.view')
             && $this->belongsToAccessibleSchool($user, $decreeProposal);
+    }
+
+    public function updateStatus(User $user, DecreeProposal $decreeProposal): bool
+    {
+        return $user->isAdminInduk()
+            && $user->can('approval.update')
+            && $this->canAccessProposal($user, $decreeProposal);
     }
 
     public function delete(User $user, DecreeProposal $decreeProposal): bool

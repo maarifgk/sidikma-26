@@ -14,7 +14,7 @@ abstract class TestCase extends BaseTestCase
         $database = $app['config']->get("database.connections.{$connection}.database");
 
         $databaseIsTestingSqlite = $connection === 'sqlite'
-            && in_array($database, [':memory:', 'database/testing.sqlite', 'database/testing-step9a.sqlite'], true);
+            && in_array($database, [':memory:', 'database/testing.sqlite', 'database/testing-step9a.sqlite', 'database/testing-usulan-sk-v9.sqlite'], true);
 
         if (! $databaseIsTestingSqlite) {
             throw new \RuntimeException(

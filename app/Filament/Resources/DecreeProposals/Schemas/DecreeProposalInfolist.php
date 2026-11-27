@@ -44,8 +44,7 @@ class DecreeProposalInfolist
                         TextEntry::make('candidate_name')
                             ->label('Nama Lengkap')
                             ->state(fn (DecreeProposal $record): string => $record->displayName())
-                            ->weight('bold')
-                            ->size('lg'),
+                            ->extraAttributes(['class' => 'decree-proposal-field-value']),
                         TextEntry::make('candidate_school')
                             ->label('Asal Madrasah/Sekolah')
                             ->state(fn (DecreeProposal $record): string => $record->displaySchoolName())
@@ -220,10 +219,10 @@ class DecreeProposalInfolist
                             ->state(fn (DecreeProposal $record): ?string => $record->initialNotes())
                             ->placeholder('-'),
                         TextEntry::make('rejection_reason')
-                            ->label('Keterangan Penolakan')
-                            ->state(fn (DecreeProposal $record): string => $record->rejectionReason()
-                                ?? 'Keterangan penolakan belum tersedia.')
-                            ->visible(fn (DecreeProposal $record): bool => $record->status === DecreeProposal::STATUS_REJECTED),
+                            ->label('Keterangan Pengajuan')
+                            ->state(fn (DecreeProposal $record): string => $record->decisionReason()
+                                ?? 'Keterangan belum tersedia.')
+                            ->visible(fn (DecreeProposal $record): bool => filled($record->decisionReason())),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),

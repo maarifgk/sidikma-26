@@ -276,4 +276,5 @@ class DecreeProposalResourceTest extends TestCase
         $this->assertFalse($policy->update($guru, $proposal));
         $this->assertFalse($policy->delete($guru, $proposal));
     }
+
 }
